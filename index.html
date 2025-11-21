@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD Helper v13 (Cloud Sync)</title>
+    <style>
+        :root {
+            --primary: #0078d4;
+            --secondary: #f3f2f1;
+            --text: #323130;
+            --border: #e1dfdd;
+            --success: #107c10;
+            --bg: #ffffff;
+            --danger: #a80000;
+            --warning: #d83b01;
+            --clone: #6b69d6;
+            --deepl: #0F2B46;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #faf9f8;
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar Styles --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e1dfdd;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            background: #e1dfdd;
+            padding: 3px;
+            border-radius: 5px;
+        }
+
+        .lang-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .lang-btn.active {
+            background-color: var(--bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        /* Category List Area */
+        .category-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding-top: 10px;
+        }
+
+        .category-list { list-style: none; padding: 0; margin: 0; }
+
+        .category-item {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-item:hover { background-color: #e1dfdd; }
+        .category-item.active { background-color: var(--primary); color: white; }
+        
+        .category-item.trash-item { margin-top: 10px; color: var(--danger); font-weight: bold; border: 1px solid transparent; }
+        .category-item.trash-item:hover { background-color: #fde7e9; border-color: var(--danger); }
+        .category-item.trash-item.active { background-color: var(--danger); color: white; }
+
+        .cat-delete-btn {
+            background: transparent; border: none; color: #666; font-weight: bold; cursor: pointer;
+            font-size: 1.1rem; padding: 0 6px; display: none; line-height: 1;
+        }
+        .category-item:hover .cat-delete-btn { display: block; }
+        .category-item.active .cat-delete-btn { color: #fff; }
+
+        /* Time Settings */
+        .time-settings {
+            background: #e6eff7;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #cce0f5;
+        }
+        .time-settings h4 { margin: 0 0 10px 0; font-size: 0.85rem; color: var(--primary); }
+        .time-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; font-size: 0.8rem; }
+        .time-input { width: 45px; padding: 2px; border: 1px solid #999; border-radius: 3px; text-align: center; }
+
+        /* Login Overlay */
+        .auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); 
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 2000;
+            flex-direction: column;
+        }
+        .auth-box {
+            background: white; padding: 30px; border-radius: 8px; width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid #ccc;
+            text-align: center;
+        }
+        .auth-box h2 { color: var(--primary); margin-top: 0; }
+        .auth-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .auth-error { color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; display: none; }
+        .toggle-auth { margin-top: 15px; font-size: 0.9rem; cursor: pointer; color: var(--primary); text-decoration: underline; }
+
+        /* --- Main Content Styles --- */
+        .main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box { flex-grow: 1; min-width: 200px; max-width: 400px; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s;
+        }
+        .btn-sm { padding: 6px 10px; font-size: 0.85rem; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #005a9e; }
+        .btn-secondary { background-color: #e1dfdd; color: var(--text); }
+        .btn-secondary:hover { background-color: #d0d0d0; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #7a0000; }
+
+        /* Cards Grid */
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding-bottom: 50px;
+        }
+
+        .card {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; display: flex; flex-direction: column; min-height: 180px;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .card-title { font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; padding-right: 25px; word-break: break-word; line-height: 1.3; }
+        .card-preview { 
+            font-size: 0.9rem; color: #605e5c; margin-bottom: 15px; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; 
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        }
+        .card-actions { display: flex; gap: 8px; margin-top: auto; }
+        
+        .card-btn { flex: 1; padding: 8px 5px; border: 1px solid var(--border); background: transparent; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-align: center; }
+        .card-btn.use { background-color: var(--primary); color: white; border: none; flex: 1.5; font-weight: bold; }
+        .card-btn.clone { background-color: var(--secondary); color: var(--clone); border: 1px solid var(--clone); }
+        .card-btn.edit:hover { background-color: #f3f2f1; }
+        .card-btn.restore { background-color: var(--success); color: white; border: none; }
+        .card-btn.delete-forever { background-color: var(--danger); color: white; border: none; }
+
+        .delete-btn {
+            position: absolute; top: 10px; right: 10px; background: none; border: none;
+            color: #ccc; cursor: pointer; font-size: 1.5rem; line-height: 1; transition: color 0.2s; z-index: 10;
+        }
+        .delete-btn:hover { color: var(--danger); }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal {
+            background: white; padding: 25px; border-radius: 8px; width: 650px; max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;
+        }
+        .modal-body { overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
+        .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        textarea.form-control { resize: vertical; min-height: 120px; font-family: monospace; }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+        .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
+        .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+
+        /* Translation Toolbar */
+        .trans-toolbar {
+            display: flex; gap: 10px; background: #f0f3f5; padding: 8px; border-radius: 4px;
+            margin-bottom: 5px; border: 1px solid #dbe4ea; align-items: center;
+        }
+        .trans-label { font-size: 0.8rem; font-weight: bold; color: var(--deepl); margin-right: 5px; }
+        .trans-btn {
+            background: white; border: 1px solid var(--deepl); color: var(--deepl); padding: 4px 10px;
+            font-size: 0.8rem; border-radius: 3px; cursor: pointer; display: flex; align-items: center;
+            gap: 5px; transition: all 0.2s; font-weight: 600;
+        }
+        .trans-btn:hover { background: var(--deepl); color: white; }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background-color: #323130; color: white;
+            padding: 12px 24px; border-radius: 4px; display: none; animation: fadeIn 0.3s; z-index: 2000;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .helper-text { font-size: 0.8rem; color: #666; margin-top: 5px; background: #f0f0f0; padding: 8px; border-radius: 4px; }
+        .var-list { border: 1px solid var(--border); border-radius: 4px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+        .var-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--secondary); align-items: center;}
+        .var-item:last-child { border-bottom: none; }
+        .var-item:hover { background: #f3f2f1; }
+        .var-key { font-weight: bold; color: var(--primary); }
+        .add-var-form { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
+
+    </style>
+</head>
+<body>
+
+    <!-- AUTH OVERLAY -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-box" id="loginBox">
+            <h2>🔑 Login</h2>
+            <div class="auth-error" id="authError">Invalid email or password.</div>
+            <input type="email" id="loginEmail" class="auth-input" placeholder="Email Address">
+            <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+            <button class="btn btn-primary" style="width:100%" onclick="app.login()">Sign In</button>
+            <div class="toggle-auth" onclick="app.toggleAuthMode('register')">No account? Register here</div>
+        </div>
+
+        <div class="auth-box" id="registerBox" style="display:none;">
+            <h2>📝 Register</h2>
+            <div class="auth-error" id="regError">Error creating account.</div>
+            <input type="email" id="regEmail" class="auth-input" placeholder="Email Address">
+            <input type="password" id="regPassword" class="auth-input" placeholder="Password (min 6 chars)">
+            <button class="btn btn-success" style="width:100%; background-color:var(--success); color:white;" onclick="app.register()">Create Account</button>
+            <div class="toggle-auth" onclick="app.toggleAuthMode('login')">Back to Login</div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="app-title">🛠️ SD Helper Cloud</div>
+        
+        <div class="user-info">
+            <div id="userEmailDisplay">Loading...</div>
+            <button class="btn btn-sm btn-danger" style="margin-top:5px; width:100%" onclick="app.logout()">Sign Out</button>
+        </div>
+
+        <div class="lang-switcher">
+            <button class="lang-btn active" id="btnEn" onclick="app.setLang('en')">EN</button>
+            <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
+        </div>
+
+        <div class="time-settings">
+            <h4>Time Logic (0-23)</h4>
+            <div class="time-row">
+                <span>Start (Morning):</span>
+                <input type="number" id="timeStart" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
+            </div>
+            <div class="time-row">
+                <span>End (Day):</span>
+                <input type="number" id="timeEnd" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
+            </div>
+            <div class="time-row">
+                <span>Eve (Evening):</span>
+                <input type="number" id="timeEve" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
+            </div>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-bottom: 10px; width: 100%;" onclick="app.openVarsModal()">⚙️ Variables</button>
+
+        <h3>Categories</h3>
+        <div class="category-container">
+            <ul class="category-list" id="categoryList"></ul>
+        </div>
+        <button class="btn btn-sm btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="app.addNewCategory()">+ New Category</button>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main">
+        <div class="header-actions">
+            <h2 id="currentCategoryTitle" style="margin:0;">All Templates</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search templates..." onkeyup="app.renderTemplates()">
+            </div>
+            <div id="headerButtons">
+                <button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>
+            </div>
+        </div>
+
+        <div class="grid" id="templateGrid"></div>
+    </div>
+
+    <!-- MODALS (Editor, Vars, Filler) same as before -->
+    <div class="modal-overlay" id="editorModal">
+        <div class="modal">
+            <div class="modal-header"><span id="editorTitle">Create Template</span></div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>Template Name</label>
+                    <input type="text" class="form-control" id="inputTitle" placeholder="Template Title">
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Language</label>
+                            <select class="form-control" id="inputLang">
+                                <option value="en">English</option>
+                                <option value="de">German</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select class="form-control" id="inputCategory"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Content</label>
+                    <div class="trans-toolbar">
+                        <span class="trans-label">DeepL:</span>
+                        <button class="trans-btn" onclick="app.openDeepL('de')">DE</button>
+                        <button class="trans-btn" onclick="app.openDeepL('en')">EN</button>
+                        <span class="trans-label" style="margin-left:10px; padding-left:10px; border-left:1px solid #ccc;">Google:</span>
+                        <button class="trans-btn" onclick="app.openGoogleTranslate('de')">DE</button>
+                        <button class="trans-btn" onclick="app.openGoogleTranslate('en')">EN</button>
+                    </div>
+                    <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..."></textarea>
+                    <div class="helper-text">
+                        <strong>System:</strong> {{greeting}}, {{salutation}}, {{name}}, {{ticket}}<br>
+                        <strong>Custom:</strong> <span id="customVarListHelper"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('editorModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveTemplate()">Save Template</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="varsModal">
+        <div class="modal" style="width: 700px;">
+            <div class="modal-header">Custom Variables</div>
+            <div class="modal-body">
+                <div class="var-list" id="variableListContainer"></div>
+                <div class="add-var-form">
+                    <h4 style="margin-top:0;">Add Variable</h4>
+                    <div class="row">
+                        <div class="col">
+                            <label>Key (e.g. urgency)</label>
+                            <input type="text" class="form-control" id="newVarKey">
+                        </div>
+                        <div class="col">
+                            <label>Label (Question)</label>
+                            <input type="text" class="form-control" id="newVarLabel">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:10px;">
+                        <div class="col">
+                            <label>Type</label>
+                            <select class="form-control" id="newVarType" onchange="app.toggleVarOptions()">
+                                <option value="text">Text Input</option>
+                                <option value="select">Dropdown</option>
+                                <option value="radio">Radio Buttons</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Options (comma separated)</label>
+                            <input type="text" class="form-control" id="newVarOptions" disabled placeholder="N/A">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="app.addCustomVariable()">Add</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('varsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fillerModal">
+        <div class="modal">
+            <div class="modal-header">Fill Details</div>
+            <div class="modal-body" id="fillerInputs"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('fillerModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.processAndCopy()">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <!-- FIREBASE MODULE SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ---------------------------------------------------------
+        // ⚠️ REPLACE THIS WITH YOUR FIREBASE CONFIG
+        // ---------------------------------------------------------
+        // 2. Your Exact Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQS7aWi2csB39FVo2Rw6ooGaWW1UpeoRY",
+            authDomain: "sdhelper-fe410.firebaseapp.com",
+            projectId: "sdhelper-fe410",
+            storageBucket: "sdhelper-fe410.firebasestorage.app",
+            messagingSenderId: "330491544880",
+            appId: "1:330491544880:web:10d366068a8703507674f5"
+        };
+        // ---------------------------------------------------------
+
+        let auth, db;
+        try {
+            const firebaseApp = initializeApp(firebaseConfig);
+            auth = getAuth(firebaseApp);
+            db = getFirestore(firebaseApp);
+        } catch (error) {
+            console.error("Firebase Init Error. Did you paste the config?", error);
+            alert("Firebase config is missing or invalid. Check the console/code.");
+        }
+
+        // The Main Application Logic
+        const app = {
+            user: null,
+            data: {
+                currentLang: 'en',
+                currentCategory: 'All',
+                templates: [],
+                categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
+                customVars: [],
+                timeSettings: { start: 6, end: 11, eve: 17 }
+            },
+
+            // --- Authentication ---
+            initAuth: function() {
+                if(!auth) return;
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        // User is signed in
+                        this.user = user;
+                        document.getElementById('authOverlay').style.display = 'none';
+                        document.getElementById('userEmailDisplay').innerText = user.email;
+                        this.loadUserData();
+                    } else {
+                        // User is signed out
+                        this.user = null;
+                        document.getElementById('authOverlay').style.display = 'flex';
+                        document.getElementById('userEmailDisplay').innerText = "Not Logged In";
+                        // Reset data to prevent seeing previous user stuff
+                        this.data.templates = [];
+                        this.renderTemplates();
+                    }
+                });
+            },
+
+            toggleAuthMode: function(mode) {
+                document.getElementById('loginBox').style.display = (mode === 'login') ? 'block' : 'none';
+                document.getElementById('registerBox').style.display = (mode === 'register') ? 'block' : 'none';
+                document.getElementById('authError').style.display = 'none';
+                document.getElementById('regError').style.display = 'none';
+            },
+
+            login: async function() {
+                const email = document.getElementById('loginEmail').value;
+                const pass = document.getElementById('loginPassword').value;
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (error) {
+                    const errDiv = document.getElementById('authError');
+                    errDiv.innerText = error.message;
+                    errDiv.style.display = 'block';
+                }
+            },
+
+            register: async function() {
+                const email = document.getElementById('regEmail').value;
+                const pass = document.getElementById('regPassword').value;
+                try {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                    // On success, auth state changes automatically to logged in
+                } catch (error) {
+                    const errDiv = document.getElementById('regError');
+                    errDiv.innerText = error.message;
+                    errDiv.style.display = 'block';
+                }
+            },
+
+            logout: function() {
+                signOut(auth);
+            },
+
+            // --- Data Persistence (Firestore) ---
+            loadUserData: async function() {
+                if (!this.user) return;
+                const userDocRef = doc(db, "users", this.user.uid);
+                
+                try {
+                    const docSnap = await getDoc(userDocRef);
+                    
+                    if (docSnap.exists()) {
+                        const savedData = docSnap.data();
+                        this.data.templates = savedData.templates || [];
+                        this.data.categories = savedData.categories || ['General'];
+                        this.data.customVars = savedData.customVars || [];
+                        if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
+                    } else {
+                        // First time user? Save default template
+                        this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false }];
+                        this.saveData();
+                    }
+                    
+                    // Initial Render
+                    document.getElementById('timeStart').value = this.data.timeSettings.start;
+                    document.getElementById('timeEnd').value = this.data.timeSettings.end;
+                    document.getElementById('timeEve').value = this.data.timeSettings.eve;
+                    this.renderCategories();
+                    this.renderTemplates();
+                    this.updateLangUI();
+
+                } catch (error) {
+                    console.error("Error loading doc:", error);
+                    alert("Failed to load data from cloud.");
+                }
+            },
+
+            saveData: async function() {
+                if (!this.user) return;
+                const userDocRef = doc(db, "users", this.user.uid);
+                
+                // Prepare object to save
+                const payload = {
+                    templates: this.data.templates,
+                    categories: this.data.categories,
+                    customVars: this.data.customVars,
+                    timeSettings: this.data.timeSettings,
+                    lastUpdated: new Date()
+                };
+
+                try {
+                    await setDoc(userDocRef, payload);
+                    // console.log("Cloud save success"); 
+                } catch (e) {
+                    console.error("Cloud save failed:", e);
+                    // alert("Warning: Could not save to cloud.");
+                }
+            },
+
+            saveTimeSettings: function() {
+                this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
+                this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
+                this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
+                this.saveData();
+            },
+
+            // --- Helper Utils ---
+            escapeHtml: function(text) {
+                if (typeof text !== 'string') return text;
+                return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            },
+
+            setLang: function(lang) {
+                this.data.currentLang = lang;
+                this.updateLangUI();
+                this.renderTemplates();
+            },
+
+            updateLangUI: function() {
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                if (this.data.currentLang === 'en') document.getElementById('btnEn').classList.add('active');
+                else document.getElementById('btnDe').classList.add('active');
+            },
+
+            // --- UI Rendering ---
+            renderCategories: function() {
+                const list = document.getElementById('categoryList');
+                const current = this.data.currentCategory;
+                let html = `<li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')">All</li>`;
+                
+                this.data.categories.forEach(cat => {
+                    const safeCat = this.escapeHtml(cat);
+                    html += `
+                        <li class="category-item ${current === cat ? 'active' : ''}" onclick="app.selectCategory('${safeCat}')">
+                            <span>${safeCat}</span>
+                            <button class="cat-delete-btn" onclick="app.deleteCategory(event, '${safeCat}')">×</button>
+                        </li>`;
+                });
+                html += `<li class="category-item trash-item ${current === 'Trash' ? 'active' : ''}" onclick="app.selectCategory('Trash')">🗑️ Trash</li>`;
+                list.innerHTML = html;
+
+                const select = document.getElementById('inputCategory');
+                select.innerHTML = '';
+                this.data.categories.forEach(cat => {
+                    select.innerHTML += `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
+                });
+            },
+
+            selectCategory: function(cat) {
+                this.data.currentCategory = cat;
+                const titleEl = document.getElementById('currentCategoryTitle');
+                const btnArea = document.getElementById('headerButtons');
+
+                if (cat === 'All') titleEl.innerText = "All Templates";
+                else if (cat === 'Trash') titleEl.innerText = "Trash";
+                else titleEl.innerText = cat;
+
+                if (cat === 'Trash') btnArea.innerHTML = `<button class="btn btn-danger" onclick="app.emptyTrash()">Empty Trash</button>`;
+                else btnArea.innerHTML = `<button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>`;
+
+                this.renderCategories();
+                this.renderTemplates();
+            },
+
+            renderTemplates: function() {
+                const grid = document.getElementById('templateGrid');
+                const searchEl = document.getElementById('searchInput');
+                const term = searchEl ? searchEl.value.toLowerCase() : "";
+                grid.innerHTML = '';
+
+                const filtered = this.data.templates.filter(t => {
+                    const isTrash = (this.data.currentCategory === 'Trash');
+                    if (isTrash !== t.deleted) return false;
+                    if (!isTrash && t.lang !== this.data.currentLang) return false;
+                    if (!isTrash && this.data.currentCategory !== 'All' && t.category !== this.data.currentCategory) return false;
+                    if (term && !t.title.toLowerCase().includes(term) && !t.content.toLowerCase().includes(term)) return false;
+                    return true;
+                });
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No templates found.</p>';
+                    return;
+                }
+
+                filtered.forEach(t => {
+                    const safeTitle = this.escapeHtml(t.title);
+                    const safeContent = this.escapeHtml(t.content).replace(/\n/g, ' '); 
+                    let btns = '', delBtn = '';
+
+                    if (t.deleted) {
+                        btns = `<button class="card-btn restore" onclick="app.restoreTemplate(${t.id})">Restore</button>
+                                <button class="card-btn delete-forever" onclick="app.deleteForever(${t.id})">Delete</button>`;
+                    } else {
+                        delBtn = `<button class="delete-btn" onclick="app.moveToTrash(${t.id})">×</button>`;
+                        btns = `<button class="card-btn clone" onclick="app.cloneTemplate(${t.id})">Clone</button>
+                                <button class="card-btn edit" onclick="app.openEditor(${t.id})">Edit</button>
+                                <button class="card-btn use" onclick="app.prepareTemplate(${t.id})">Use</button>`;
+                    }
+
+                    grid.innerHTML += `
+                        <div class="card">
+                            ${delBtn}
+                            <div class="card-title">${safeTitle}</div>
+                            <div class="card-preview">${safeContent}</div>
+                            <div class="card-actions">${btns}</div>
+                        </div>`;
+                });
+            },
+
+            // --- Logic: CRUD ---
+            saveTemplate: function() {
+                const id = document.getElementById('editId').value;
+                const title = document.getElementById('inputTitle').value;
+                const category = document.getElementById('inputCategory').value;
+                const lang = document.getElementById('inputLang').value;
+                const content = document.getElementById('inputContent').value;
+
+                if (!title || !content) { alert("Title and Content required."); return; }
+
+                if (id) {
+                    const idx = this.data.templates.findIndex(t => t.id == id);
+                    if (idx > -1) this.data.templates[idx] = { ...this.data.templates[idx], title, category, lang, content };
+                } else {
+                    this.data.templates.push({ id: Date.now(), title, category, lang, content, deleted: false });
+                }
+                this.saveData();
+                this.closeModal('editorModal');
+                this.renderTemplates();
+            },
+
+            moveToTrash: function(id) {
+                if (!confirm("Move to Trash?")) return;
+                const t = this.data.templates.find(x => x.id === id);
+                if(t) { t.deleted = true; this.saveData(); this.renderTemplates(); }
+            },
+
+            restoreTemplate: function(id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(t) { 
+                    t.deleted = false; 
+                    if(!this.data.categories.includes(t.category)) t.category = "General";
+                    this.saveData(); this.renderTemplates(); 
+                }
+            },
+
+            deleteForever: function(id) {
+                if (!confirm("Permanently Delete?")) return;
+                this.data.templates = this.data.templates.filter(t => t.id !== id);
+                this.saveData(); this.renderTemplates();
+            },
+
+            emptyTrash: function() {
+                if (!confirm("Empty Trash?")) return;
+                this.data.templates = this.data.templates.filter(t => !t.deleted);
+                this.saveData(); this.renderTemplates();
+            },
+
+            addNewCategory: function() {
+                const name = prompt("New Category Name:");
+                if (name && !this.data.categories.includes(name)) {
+                    this.data.categories.push(name);
+                    this.saveData();
+                    this.renderCategories();
+                }
+            },
+
+            deleteCategory: function(e, cat) {
+                e.stopPropagation();
+                const count = this.data.templates.filter(t => t.category === cat && !t.deleted).length;
+                if (count > 0) {
+                    if (!confirm(`Category has ${count} templates. Move them to Trash? (Cancel = Move to General)`)) {
+                        this.data.templates.forEach(t => { if (t.category === cat) t.category = "General"; });
+                    } else {
+                        this.data.templates.forEach(t => { if (t.category === cat) t.deleted = true; });
+                    }
+                }
+                this.data.categories = this.data.categories.filter(c => c !== cat);
+                if (this.data.currentCategory === cat) this.selectCategory('All');
+                this.saveData();
+                this.renderCategories();
+                this.renderTemplates();
+            },
+
+            // --- Logic: Editor & Variables ---
+            openEditor: function(id) {
+                document.getElementById('editorModal').style.display = 'flex';
+                const varList = this.data.customVars.map(v => `{{${v.key}}}`).join(', ');
+                document.getElementById('customVarListHelper').innerText = varList || "None";
+
+                if (id) {
+                    const t = this.data.templates.find(x => x.id === id);
+                    document.getElementById('editorTitle').innerText = "Edit Template";
+                    document.getElementById('editId').value = t.id;
+                    document.getElementById('inputTitle').value = t.title;
+                    document.getElementById('inputCategory').value = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                    document.getElementById('inputLang').value = t.lang;
+                    document.getElementById('inputContent').value = t.content;
+                } else {
+                    document.getElementById('editorTitle').innerText = "New Template";
+                    document.getElementById('editId').value = "";
+                    document.getElementById('inputTitle').value = "";
+                    if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                        document.getElementById('inputCategory').value = this.data.currentCategory;
+                    }
+                    document.getElementById('inputLang').value = this.data.currentLang;
+                    document.getElementById('inputContent').value = "";
+                }
+            },
+
+            cloneTemplate: function(id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(!t) return;
+                this.openEditor();
+                document.getElementById('editorTitle').innerText = "Clone Template";
+                document.getElementById('inputTitle').value = t.title + " (Copy)";
+                document.getElementById('inputCategory').value = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                document.getElementById('inputLang').value = t.lang;
+                document.getElementById('inputContent').value = t.content;
+            },
+
+            openVarsModal: function() {
+                document.getElementById('varsModal').style.display = 'flex';
+                this.renderVarsList();
+                this.resetVarForm();
+            },
+
+            renderVarsList: function() {
+                const container = document.getElementById('variableListContainer');
+                container.innerHTML = '';
+                if (this.data.customVars.length === 0) {
+                    container.innerHTML = '<div style="padding:10px; color:#888;">No custom variables.</div>';
+                    return;
+                }
+                this.data.customVars.forEach((v, idx) => {
+                    container.innerHTML += `
+                        <div class="var-item">
+                            <div><span class="var-key">{{${this.escapeHtml(v.key)}}}</span> - ${this.escapeHtml(v.label)}</div>
+                            <button class="btn btn-danger btn-sm" onclick="app.deleteVar(${idx})">Del</button>
+                        </div>`;
+                });
+            },
+
+            addCustomVariable: function() {
+                const key = document.getElementById('newVarKey').value.trim().replace(/[{}]/g, '');
+                const label = document.getElementById('newVarLabel').value.trim();
+                const type = document.getElementById('newVarType').value;
+                const opts = document.getElementById('newVarOptions').value;
+
+                if (!key || !label) return alert("Key/Label required");
+                if (this.data.customVars.find(v => v.key === key)) return alert("Exists!");
+                let options = [];
+                if (type !== 'text') {
+                    if (!opts) return alert("Options required");
+                    options = opts.split(',').map(s => s.trim());
+                }
+                this.data.customVars.push({ key, label, type, options });
+                this.saveData();
+                this.renderVarsList();
+                this.resetVarForm();
+            },
+
+            deleteVar: function(idx) {
+                if(confirm("Delete variable?")) {
+                    this.data.customVars.splice(idx, 1);
+                    this.saveData();
+                    this.renderVarsList();
+                }
+            },
+
+            resetVarForm: function() {
+                document.getElementById('newVarKey').value = '';
+                document.getElementById('newVarLabel').value = '';
+                document.getElementById('newVarOptions').value = '';
+                document.getElementById('newVarType').value = 'text';
+                this.toggleVarOptions();
+            },
+
+            toggleVarOptions: function() {
+                const type = document.getElementById('newVarType').value;
+                const el = document.getElementById('newVarOptions');
+                if (type === 'text') { el.disabled = true; el.placeholder = 'N/A'; }
+                else { el.disabled = false; el.placeholder = 'Option 1, Option 2'; }
+            },
+
+            // --- Logic: Filler & Usage ---
+            tempContent: "",
+
+            prepareTemplate: function(id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(!t) return;
+                this.tempContent = t.content;
+
+                if (this.tempContent.includes("{{greeting}}")) {
+                    const h = new Date().getHours();
+                    const s = this.data.timeSettings;
+                    let str = "";
+                    if (h >= s.start && h < s.end) str = (this.data.currentLang === 'de') ? "Morgen" : "Morning";
+                    else if (h >= s.end && h < s.eve) str = (this.data.currentLang === 'de') ? "Tag" : "Day";
+                    else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
+                    this.tempContent = this.tempContent.replace(/{{greeting}}/g, str);
+                }
+
+                const regex = /{{(.*?)}}/g;
+                const matches = [...new Set(this.tempContent.match(regex))];
+
+                if (!matches || matches.length === 0) {
+                    this.copyToClipboard(this.tempContent);
+                    return;
+                }
+
+                const container = document.getElementById('fillerInputs');
+                container.innerHTML = '';
+
+                matches.forEach(m => {
+                    const key = m.replace(/[{}]/g, '').trim();
+                    const v = this.data.customVars.find(cv => cv.key === key);
+                    let html = '';
+                    if (key.toLowerCase() === 'salutation') {
+                        html = `<div class="form-group"><label>Gender</label>
+                                <div class="radio-group">
+                                    <label class="radio-label"><input type="radio" name="val_salutation" value="m" checked> Male</label>
+                                    <label class="radio-label"><input type="radio" name="val_salutation" value="f"> Female</label>
+                                </div></div>`;
+                    } else if (v) {
+                        html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
+                        if (v.type === 'text') {
+                            html += `<input type="text" class="form-control" id="val_${key}">`;
+                        } else if (v.type === 'select') {
+                            html += `<select class="form-control" id="val_${key}">`;
+                            v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
+                            html += `</select>`;
+                        } else {
+                            html += `<div class="radio-group">`;
+                            v.options.forEach((o, i) => html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(o)}" ${i===0?'checked':''}> ${this.escapeHtml(o)}</label>`);
+                            html += `</div>`;
+                        }
+                        html += `</div>`;
+                    } else {
+                        html = `<div class="form-group"><label>${key}</label><input type="text" class="form-control" id="val_${key}"></div>`;
+                    }
+                    container.innerHTML += html;
+                });
+
+                document.getElementById('fillerModal').style.display = 'flex';
+                setTimeout(() => { const el = container.querySelector('input, select'); if(el) el.focus(); }, 50);
+            },
+
+            processAndCopy: function() {
+                let txt = this.tempContent;
+                const regex = /{{(.*?)}}/g;
+                const matches = [...new Set(txt.match(regex))];
+                matches.forEach(m => {
+                    const key = m.replace(/[{}]/g, '').trim();
+                    let val = "";
+                    if (key.toLowerCase() === 'salutation') {
+                        const g = document.querySelector('input[name="val_salutation"]:checked').value;
+                        if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
+                        else val = (g === 'm') ? "Mr." : "Ms.";
+                    } else {
+                        const radio = document.querySelector(`input[name="val_${key}"]:checked`);
+                        if (radio) val = radio.value;
+                        else {
+                            const el = document.getElementById(`val_${key}`);
+                            if (el) val = el.value;
+                        }
+                    }
+                    txt = txt.split(m).join(val);
+                });
+                this.copyToClipboard(txt);
+                this.closeModal('fillerModal');
+            },
+
+            copyToClipboard: function(text) {
+                const toast = document.getElementById('toast');
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    toast.style.display = 'block';
+                    setTimeout(() => toast.style.display = 'none', 2000);
+                } catch (err) {
+                    alert("Clipboard failed. Please copy manually.");
+                    console.log(text);
+                }
+                document.body.removeChild(ta);
+            },
+
+            openDeepL: function(target) {
+                const text = document.getElementById('inputContent').value;
+                if (!text) return;
+                const sourceLang = document.getElementById('inputLang').value || 'auto';
+                window.open(`https://www.deepl.com/translator?share=generic#${sourceLang}/${target}/${encodeURIComponent(text)}`, '_blank');
+            },
+
+            openGoogleTranslate: function(target) {
+                const text = document.getElementById('inputContent').value;
+                if (!text) return;
+                window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
+            },
+
+            closeModal: function(id) { document.getElementById(id).style.display = 'none'; }
+        };
+
+        // Make app global so onclick works in HTML
+        window.app = app;
+
+        // Start App Logic (Wait for auth listener)
+        window.addEventListener('DOMContentLoaded', () => {
+            app.initAuth();
+            window.onclick = function(event) {
+                if (event.target.classList.contains('modal-overlay') && event.target.id !== 'authOverlay') {
+                    event.target.style.display = "none";
+                }
+            };
+        });
+    </script>
+</body>
+</html>
