@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v13 (Cloud Sync)</title>
+    <title>SD Helper v14.2 (Quick View Icon)</title>
     <style>
         :root {
             --primary: #0078d4;
@@ -16,7 +16,9 @@
             --warning: #d83b01;
             --clone: #6b69d6;
             --deepl: #0F2B46;
-            --view-mode: #605e5c; /* Szín a View Only módhoz */
+            --view-mode: #605e5c;
+            --folder-bg: #fff4ce;
+            --folder-border: #e6c875;
         }
 
         * { box-sizing: border-box; }
@@ -175,6 +177,8 @@
 
         .search-box { flex-grow: 1; min-width: 200px; max-width: 400px; }
 
+        #headerButtons { display: flex; gap: 10px; }
+
         .btn {
             padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s;
         }
@@ -186,6 +190,8 @@
         .btn-danger { background-color: var(--danger); color: white; }
         .btn-danger:hover { background-color: #7a0000; }
         .btn-success { background-color: var(--success); color: white; }
+        .btn-folder { background-color: #ffe082; color: #5d4037; }
+        .btn-folder:hover { background-color: #ffca28; }
 
         /* Cards Grid */
         .grid {
@@ -199,34 +205,62 @@
         }
         .card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-        .card-title { font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; padding-right: 30px; word-break: break-word; line-height: 1.3; }
+        /* FOLDER CARD STYLE */
+        .card.folder-card {
+            background-color: var(--folder-bg) !important;
+            border-color: var(--folder-border);
+            min-height: 140px;
+        }
+        .card.folder-card .card-title {
+            display: flex; align-items: center; gap: 10px; font-size: 1.2rem;
+        }
+        .folder-icon { font-size: 2rem; }
+
+        .card-title { font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; padding-right: 30px; word-break: break-word; line-height: 1.3; color: inherit; }
         .card-preview {
             font-size: 0.9rem; color: #605e5c; margin-bottom: 15px; overflow: hidden; text-overflow: ellipsis; flex-grow: 1;
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
         }
+
+        /* Fix text color in colored cards */
+        .card-preview, .card-title { color: inherit; }
+
         .card-actions { display: flex; gap: 8px; margin-top: auto; }
 
-        .card-btn { flex: 1; padding: 8px 5px; border: 1px solid var(--border); background: transparent; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-align: center; }
-        .card-btn.use { background-color: var(--primary); color: white; border: none; font-weight: bold; }
-        .card-btn.use:hover { background-color: #005a9e; }
+        .card-btn { flex: 1; padding: 8px 5px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.6); border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-align: center; color: var(--text); transition: all 0.2s;}
+        .card-btn:hover { background: rgba(255,255,255,0.9); }
 
-        /* View Only Button Style */
+        .card-btn.use { background-color: var(--primary); color: white; border: none; font-weight: bold; opacity: 1; }
+        .card-btn.use:hover { background-color: #005a9e; }
+        .card-btn.open-folder { background-color: #ffb300; color: #3e2723; border: none; font-weight: bold; }
+
         .card-btn.view-only { background-color: var(--view-mode); color: white; border: none; font-weight: bold; }
         .card-btn.view-only:hover { background-color: #4a4846; }
 
-        .card-btn.clone { background-color: var(--secondary); color: var(--clone); border: 1px solid var(--clone); }
+        .card-btn.clone { color: var(--clone); border: 1px solid var(--clone); }
         .card-btn.restore { background-color: var(--success); color: white; border: none; }
         .card-btn.delete-forever { background-color: var(--danger); color: white; border: none; }
 
-        /* --- DROPDOWN MENU STYLES --- */
+        /* --- CARD HEADER BUTTONS --- */
         .card-menu-btn {
             position: absolute; top: 10px; right: 5px;
             background: none; border: none;
-            font-size: 1.4rem; color: #605e5c;
+            font-size: 1.4rem; color: rgba(0,0,0,0.5);
             cursor: pointer; padding: 0 10px;
             line-height: 1; z-index: 10;
         }
-        .card-menu-btn:hover { color: var(--primary); }
+        .card-menu-btn:hover { color: var(--text); }
+
+        /* NEW: Quick View Icon next to Menu */
+        .card-view-btn {
+            position: absolute; top: 10px; right: 40px; /* Left of the menu btn */
+            background: none; border: none;
+            font-size: 1.3rem; color: rgba(0,0,0,0.3);
+            cursor: pointer; padding: 0;
+            line-height: 1; z-index: 10; transition: color 0.2s;
+        }
+        .card-view-btn:hover { color: var(--primary); transform: scale(1.1); }
+
 
         .dropdown-menu {
             position: absolute; top: 40px; right: 10px;
@@ -272,6 +306,18 @@
         .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
 
+        /* Color Picker Styles */
+        .color-picker-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .color-swatch {
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .color-swatch:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .color-swatch.selected { border-color: #323130; transform: scale(1.1); }
+        .color-swatch.none { background: #ffffff; border: 1px solid #ccc; position: relative; }
+        .color-swatch.none::after { content: '×'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); color: #666; font-size: 18px; font-weight: bold; }
+        input[type="color"] { width: 40px; height: 30px; border: none; background: none; cursor: pointer; padding: 0; }
+
         /* Checkbox style override */
         input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
 
@@ -301,6 +347,19 @@
         .var-item:hover { background: #f3f2f1; }
         .var-key { font-weight: bold; color: var(--primary); }
         .add-var-form { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
+
+        .breadcrumb-back {
+            grid-column: 1 / -1;
+            padding: 10px;
+            background: #e6eff7;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex; align-items: center; gap: 5px;
+            margin-bottom: 10px;
+        }
+        .breadcrumb-back:hover { background: #d0e1f5; }
 
     </style>
 </head>
@@ -371,6 +430,7 @@
             <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search templates..." onkeyup="app.renderTemplates()">
         </div>
         <div id="headerButtons">
+            <button class="btn btn-folder" id="btnNewFolder" onclick="app.createFolder()">+ New Folder</button>
             <button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>
         </div>
     </div>
@@ -400,7 +460,36 @@
                 <div class="col">
                     <div class="form-group">
                         <label>Category</label>
-                        <select class="form-control" id="inputCategory"></select>
+                        <select class="form-control" id="inputCategory" onchange="app.updateFolderOptions()"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Folder (Optional)</label>
+                <select class="form-control" id="inputFolder">
+                    <option value="">(No Folder / Root)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Color Coding</label>
+                <div class="color-picker-container">
+                    <input type="hidden" id="inputColor" value="#ffffff">
+                    <div class="color-swatch none selected" onclick="app.selectColor('#ffffff', this)" title="None"></div>
+                    <div class="color-swatch" style="background:#ffcdd2" onclick="app.selectColor('#ffcdd2', this)" title="Red (Urgent)"></div>
+                    <div class="color-swatch" style="background:#fff9c4" onclick="app.selectColor('#fff9c4', this)" title="Yellow (Warning)"></div>
+                    <div class="color-swatch" style="background:#c8e6c9" onclick="app.selectColor('#c8e6c9', this)" title="Green (Done/Good)"></div>
+                    <div class="color-swatch" style="background:#bbdefb" onclick="app.selectColor('#bbdefb', this)" title="Blue (Info)"></div>
+                    <div class="color-swatch" style="background:#e1bee7" onclick="app.selectColor('#e1bee7', this)" title="Purple"></div>
+                    <div class="color-swatch" style="background:#ffe0b2" onclick="app.selectColor('#ffe0b2', this)" title="Orange"></div>
+                    <div class="color-swatch" style="background:#b2dfdb" onclick="app.selectColor('#b2dfdb', this)" title="Teal"></div>
+                    <div class="color-swatch" style="background:#f8bbd0" onclick="app.selectColor('#f8bbd0', this)" title="Pink"></div>
+                    <div class="color-swatch" style="background:#cfd8dc" onclick="app.selectColor('#cfd8dc', this)" title="Grey"></div>
+
+                    <div style="border-left: 1px solid #ccc; padding-left: 10px; display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.85rem;">Custom:</span>
+                        <input type="color" id="customColorPicker" onchange="app.selectColor(this.value, null)">
                     </div>
                 </div>
             </div>
@@ -539,12 +628,14 @@
 
     const app = {
         user: null,
-        editingVarIndex: -1, // -1 jelenti, hogy új hozzáadása, >=0 pedig a szerkesztés
+        editingVarIndex: -1,
         data: {
             currentLang: 'en',
             currentCategory: 'All',
+            currentFolderId: null, // Track if we are inside a folder (null = root)
             templates: [],
             categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
+            folders: [], // New Folders Array {id, name, category, deleted}
             customVars: [],
             timeSettings: { start: 6, end: 11, eve: 17 }
         },
@@ -614,10 +705,11 @@
                 if (docSnap.exists()) {
                     const savedData = docSnap.data();
                     this.data.templates = savedData.templates || [];
+                    this.data.folders = savedData.folders || []; // Load Folders
                     this.data.categories = savedData.categories || ['General'];
                     this.data.customVars = savedData.customVars || [];
                     if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
-                    if(savedData.currentLang) this.data.currentLang = savedData.currentLang; // Add this
+                    if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                 } else {
                     this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.saveData();
@@ -641,11 +733,12 @@
 
             const payload = {
                 templates: this.data.templates,
+                folders: this.data.folders, // Save Folders
                 categories: this.data.categories,
                 customVars: this.data.customVars,
                 timeSettings: this.data.timeSettings,
                 lastUpdated: new Date(),
-                currentLang: this.data.currentLang, // Add this
+                currentLang: this.data.currentLang,
             };
 
             try {
@@ -672,7 +765,7 @@
             this.data.currentLang = lang;
             this.updateLangUI();
             this.renderTemplates();
-            this.saveData(); // Add this to persist the change immediately
+            this.saveData();
         },
 
         updateLangUI: function() {
@@ -707,18 +800,99 @@
 
         selectCategory: function(cat) {
             this.data.currentCategory = cat;
+            this.data.currentFolderId = null; // Reset folder nav when changing category
             const titleEl = document.getElementById('currentCategoryTitle');
-            const btnArea = document.getElementById('headerButtons');
+            const btnNewFolder = document.getElementById('btnNewFolder');
 
             if (cat === 'All') titleEl.innerText = "All Templates";
             else if (cat === 'Trash') titleEl.innerText = "Trash";
             else titleEl.innerText = cat;
 
-            if (cat === 'Trash') btnArea.innerHTML = `<button class="btn btn-danger" onclick="app.emptyTrash()">Empty Trash</button>`;
-            else btnArea.innerHTML = `<button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>`;
+            // Show "New Folder" button only in specific categories (not All, not Trash)
+            if (cat !== 'All' && cat !== 'Trash') {
+                btnNewFolder.style.display = 'inline-block';
+            } else {
+                btnNewFolder.style.display = 'none';
+            }
+
+            if (cat === 'Trash') {
+                 document.getElementById('headerButtons').innerHTML = `<button class="btn btn-danger" onclick="app.emptyTrash()">Empty Trash</button>`;
+            } else {
+                 document.getElementById('headerButtons').innerHTML = `
+                    <button class="btn btn-folder" id="btnNewFolder" onclick="app.createFolder()" style="${(cat==='All'?'display:none;':'')}">+ New Folder</button>
+                    <button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>`;
+            }
 
             this.renderCategories();
             this.renderTemplates();
+        },
+
+        // --- FOLDER LOGIC ---
+        createFolder: function() {
+            const name = prompt("Folder Name:");
+            if(name) {
+                const newFolder = {
+                    id: Date.now(),
+                    name: name,
+                    category: this.data.currentCategory,
+                    deleted: false
+                };
+                this.data.folders.push(newFolder);
+                this.saveData();
+                this.renderTemplates();
+            }
+        },
+
+        openFolder: function(folderId) {
+            this.data.currentFolderId = folderId;
+            this.renderTemplates();
+        },
+
+        exitFolder: function() {
+            this.data.currentFolderId = null;
+            this.renderTemplates();
+        },
+
+        deleteFolder: function(id) {
+            if(!confirm("Move Folder to Trash?")) return;
+            const idx = this.data.folders.findIndex(f => f.id === id);
+            if(idx > -1) {
+                this.data.folders[idx].deleted = true;
+                this.saveData();
+                this.renderTemplates();
+            }
+        },
+
+        restoreFolder: function(id) {
+            const idx = this.data.folders.findIndex(f => f.id === id);
+            if(idx > -1) {
+                this.data.folders[idx].deleted = false;
+                this.saveData();
+                this.renderTemplates();
+            }
+        },
+
+        deleteFolderForever: function(id) {
+             if(!confirm("Permanently Delete Folder? Template inside will be effectively lost unless reassigned.")) return;
+             this.data.folders = this.data.folders.filter(f => f.id !== id);
+             // Optional: Clean up templates that were in this folder or move them to root
+             this.data.templates.forEach(t => {
+                 if(t.folderId === id) t.folderId = null; // Move orphans to root of category or delete them?
+                 // Let's move them to root to be safe
+             });
+             this.saveData();
+             this.renderTemplates();
+        },
+
+        updateFolderOptions: function() {
+            const cat = document.getElementById('inputCategory').value;
+            const folderSelect = document.getElementById('inputFolder');
+            folderSelect.innerHTML = '<option value="">(No Folder / Root)</option>';
+
+            const activeFolders = this.data.folders.filter(f => f.category === cat && !f.deleted);
+            activeFolders.forEach(f => {
+                folderSelect.innerHTML += `<option value="${f.id}">📂 ${this.escapeHtml(f.name)}</option>`;
+            });
         },
 
         // --- MAIN RENDER LOGIC ---
@@ -726,25 +900,99 @@
             const grid = document.getElementById('templateGrid');
             const searchEl = document.getElementById('searchInput');
             const term = searchEl ? searchEl.value.toLowerCase() : "";
+            const isTrash = (this.data.currentCategory === 'Trash');
+            const currentCat = this.data.currentCategory;
+            const currentFolderId = this.data.currentFolderId;
+
             grid.innerHTML = '';
 
+            // 0. Breadcrumb if in folder
+            if (currentFolderId && !isTrash && currentCat !== 'All' && !term) {
+                 const currentFolderObj = this.data.folders.find(f => f.id === currentFolderId);
+                 const folderName = currentFolderObj ? currentFolderObj.name : 'Unknown';
+                 grid.innerHTML += `<div class="breadcrumb-back" onclick="app.exitFolder()">⬅️ Back to ${this.escapeHtml(currentCat)} / ${this.escapeHtml(folderName)}</div>`;
+            }
+
+            // 1. Render FOLDERS
+            // Only show folders if: Not Searching, Not in All (unless we want to?), Not inside another folder (no nesting for now)
+            if (!term && !currentFolderId && currentCat !== 'All') {
+                const foldersToShow = this.data.folders.filter(f => {
+                    if (isTrash) return f.deleted; // Show deleted folders in Trash
+                    return f.category === currentCat && !f.deleted; // Show active folders in Category
+                });
+
+                foldersToShow.forEach(f => {
+                     let html = '';
+                     if (isTrash) {
+                         html = `
+                            <div class="card folder-card">
+                                <div class="card-title"><span class="folder-icon">📂</span> ${this.escapeHtml(f.name)}</div>
+                                <div class="card-actions">
+                                    <button class="card-btn restore" onclick="app.restoreFolder(${f.id})">Restore Folder</button>
+                                    <button class="card-btn delete-forever" onclick="app.deleteFolderForever(${f.id})">Delete Forever</button>
+                                </div>
+                            </div>`;
+                     } else {
+                         html = `
+                            <div class="card folder-card" onclick="app.openFolder(${f.id})" style="cursor:pointer;">
+                                <div class="card-title"><span class="folder-icon">📂</span> ${this.escapeHtml(f.name)}</div>
+                                <div class="card-actions">
+                                    <button class="card-btn open-folder" onclick="event.stopPropagation(); app.openFolder(${f.id})">Open</button>
+                                    <button class="card-btn delete-forever" onclick="event.stopPropagation(); app.deleteFolder(${f.id})" style="flex:0 0 auto; background:transparent; color:#a80000; border:none;" title="Delete Folder">🗑️</button>
+                                </div>
+                            </div>`;
+                     }
+                     grid.innerHTML += html;
+                });
+            }
+
+            // 2. Render TEMPLATES
             const filtered = this.data.templates.filter(t => {
-                const isTrash = (this.data.currentCategory === 'Trash');
-                if (isTrash !== t.deleted) return false;
-                if (!isTrash && t.lang !== this.data.currentLang) return false;
-                if (!isTrash && this.data.currentCategory !== 'All' && t.category !== this.data.currentCategory) return false;
-                if (term && !t.title.toLowerCase().includes(term) && !t.content.toLowerCase().includes(term)) return false;
+                // Trash Logic
+                if (isTrash) return t.deleted;
+                if (t.deleted) return false;
+
+                // Search Logic overrides hierarchy
+                if (term) {
+                    if (!t.title.toLowerCase().includes(term) && !t.content.toLowerCase().includes(term)) return false;
+                    return true; // Return all matching templates regardless of folder
+                }
+
+                // Filter by Language
+                if (t.lang !== this.data.currentLang) return false;
+
+                // Filter by Category
+                if (currentCat !== 'All' && t.category !== currentCat) return false;
+
+                // Filter by Folder
+                if (currentCat !== 'All') {
+                    // Check if parent folder is deleted (don't show orphans if folder is trash)
+                    if (t.folderId) {
+                        const parentFolder = this.data.folders.find(f => f.id == t.folderId);
+                        if (parentFolder && parentFolder.deleted) return false; // Hide templates in deleted folders
+                    }
+
+                    if (currentFolderId) {
+                        // We are IN a folder, only show matches
+                        return t.folderId == currentFolderId;
+                    } else {
+                        // We are at ROOT, only show templates with NO folder
+                        return !t.folderId;
+                    }
+                }
+
                 return true;
             });
 
-            if (filtered.length === 0) {
-                grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No templates found.</p>';
+            if (filtered.length === 0 && !grid.innerHTML) { // Check if grid is empty (no folders either)
+                grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No items found.</p>';
                 return;
             }
 
             filtered.forEach(t => {
                 const safeTitle = this.escapeHtml(t.title);
                 const safeContent = this.escapeHtml(t.content).replace(/\n/g, ' ');
+                const bgColor = t.color || '#ffffff';
                 let html = '';
 
                 if (t.deleted) {
@@ -752,7 +1000,7 @@
                                   <button class="card-btn delete-forever" onclick="app.deleteForever(${t.id})">Delete Forever</button>`;
 
                     html = `
-                        <div class="card">
+                        <div class="card" style="background-color: ${bgColor};">
                             <div class="card-title">${safeTitle}</div>
                             <div class="card-preview">${safeContent}</div>
                             <div class="card-actions">${btns}</div>
@@ -761,6 +1009,7 @@
                     const menu = `
                         <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                         <div class="dropdown-menu" id="menu-${t.id}">
+                            <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
                             <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
                             <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
                             <div class="dropdown-divider"></div>
@@ -768,16 +1017,22 @@
                         </div>
                     `;
 
-                    // --- MODIFICATION: View Only Logic ---
                     let useBtn = '';
+                    let quickViewBtn = '';
+
                     if (t.isViewOnly) {
+                        // View Only Mode
                         useBtn = `<button class="card-btn use view-only" style="width:100%" onclick="app.viewTemplate(${t.id})">👁️ View</button>`;
                     } else {
+                        // Use Mode
                         useBtn = `<button class="card-btn use" style="width:100%" onclick="app.prepareTemplate(${t.id})">Use</button>`;
+                        // Add Quick View Icon only for USE templates
+                        quickViewBtn = `<button class="card-view-btn" onclick="app.viewTemplate(${t.id})" title="Quick View">👁️</button>`;
                     }
 
                     html = `
-                        <div class="card">
+                        <div class="card" style="background-color: ${bgColor};">
+                            ${quickViewBtn}
                             ${menu}
                             <div class="card-title">${safeTitle}</div>
                             <div class="card-preview">${safeContent}</div>
@@ -806,16 +1061,27 @@
             const category = document.getElementById('inputCategory').value;
             const lang = document.getElementById('inputLang').value;
             const content = document.getElementById('inputContent').value;
-            // --- MODIFICATION: Read View Only Checkbox ---
             const isViewOnly = document.getElementById('inputViewOnly').checked;
+            const color = document.getElementById('inputColor').value;
+            // Get selected folder
+            const folderId = document.getElementById('inputFolder').value || null;
 
             if (!title || !content) { alert("Title and Content required."); return; }
 
             if (id) {
                 const idx = this.data.templates.findIndex(t => t.id == id);
-                if (idx > -1) this.data.templates[idx] = { ...this.data.templates[idx], title, category, lang, content, isViewOnly };
+                if (idx > -1) this.data.templates[idx] = {
+                    ...this.data.templates[idx],
+                    title, category, lang, content, isViewOnly, color,
+                    folderId: folderId ? parseInt(folderId) : null
+                };
             } else {
-                this.data.templates.push({ id: Date.now(), title, category, lang, content, deleted: false, isViewOnly });
+                this.data.templates.push({
+                    id: Date.now(),
+                    title, category, lang, content,
+                    deleted: false, isViewOnly, color,
+                    folderId: folderId ? parseInt(folderId) : null
+                });
             }
             this.saveData();
             this.closeModal('editorModal');
@@ -844,9 +1110,11 @@
         },
 
         emptyTrash: function() {
-            if (!confirm("Empty Trash?")) return;
+            if (!confirm("Empty Trash? This will delete all items AND folders in trash.")) return;
             this.data.templates = this.data.templates.filter(t => !t.deleted);
-            this.saveData(); this.renderTemplates();
+            this.data.folders = this.data.folders.filter(f => !f.deleted); // Empty folders too
+            this.saveData();
+            this.renderTemplates();
         },
 
         addNewCategory: function() {
@@ -863,9 +1131,12 @@
             const count = this.data.templates.filter(t => t.category === cat && !t.deleted).length;
             if (count > 0) {
                 if (!confirm(`Category has ${count} templates. Move them to Trash? (Cancel = Move to General)`)) {
-                    this.data.templates.forEach(t => { if (t.category === cat) t.category = "General"; });
+                    this.data.templates.forEach(t => { if (t.category === cat) { t.category = "General"; t.folderId = null; } });
+                    // Also move folders to general or delete? Simpler to delete/reset
+                    this.data.folders.forEach(f => { if(f.category === cat) f.category = "General"; });
                 } else {
                     this.data.templates.forEach(t => { if (t.category === cat) t.deleted = true; });
+                    this.data.folders.forEach(f => { if(f.category === cat) f.deleted = true; });
                 }
             }
             this.data.categories = this.data.categories.filter(c => c !== cat);
@@ -876,31 +1147,70 @@
         },
 
         // --- Logic: Editor & Variables ---
+        selectColor: function(colorHex, element) {
+            document.getElementById('inputColor').value = colorHex;
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+            if(element) {
+                element.classList.add('selected');
+            }
+        },
+
         openEditor: function(id) {
             document.getElementById('editorModal').style.display = 'flex';
             const varList = this.data.customVars.map(v => `{{${v.key}}}`).join(', ');
             document.getElementById('customVarListHelper').innerText = varList || "None";
+
+            // Reset Color Selection
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+
+            // Populate Dropdowns
+            // Note: Folder dropdown needs current Category to populate correctly
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
                 document.getElementById('editorTitle').innerText = "Edit Template";
                 document.getElementById('editId').value = t.id;
                 document.getElementById('inputTitle').value = t.title;
-                document.getElementById('inputCategory').value = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                document.getElementById('inputCategory').value = cat;
                 document.getElementById('inputLang').value = t.lang;
                 document.getElementById('inputContent').value = t.content;
-                // --- MODIFICATION: Set Checkbox ---
                 document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+
+                // Color Load
+                const color = t.color || '#ffffff';
+                document.getElementById('inputColor').value = color;
+                const swatch = document.querySelector(`.color-swatch[onclick*="${color}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
+
+                // Update Folders then Set
+                this.updateFolderOptions();
+                document.getElementById('inputFolder').value = t.folderId || "";
+
             } else {
                 document.getElementById('editorTitle').innerText = "New Template";
                 document.getElementById('editId').value = "";
                 document.getElementById('inputTitle').value = "";
+
+                let defaultCat = "General";
                 if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
-                    document.getElementById('inputCategory').value = this.data.currentCategory;
+                    defaultCat = this.data.currentCategory;
                 }
+                document.getElementById('inputCategory').value = defaultCat;
+
                 document.getElementById('inputLang').value = this.data.currentLang;
                 document.getElementById('inputContent').value = "";
                 document.getElementById('inputViewOnly').checked = false;
+
+                // Default White
+                document.getElementById('inputColor').value = '#ffffff';
+                document.querySelector('.color-swatch.none').classList.add('selected');
+
+                // Update Folders then Set
+                this.updateFolderOptions();
+                // If we are currently INSIDE a folder, pre-select it
+                document.getElementById('inputFolder').value = this.data.currentFolderId || "";
             }
         },
 
@@ -910,19 +1220,31 @@
             this.openEditor();
             document.getElementById('editorTitle').innerText = "Clone Template";
             document.getElementById('inputTitle').value = t.title + " (Copy)";
-            document.getElementById('inputCategory').value = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+
+            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+            document.getElementById('inputCategory').value = cat;
+
             document.getElementById('inputLang').value = t.lang;
             document.getElementById('inputContent').value = t.content;
             document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+
+            // Color Clone
+            const color = t.color || '#ffffff';
+            document.getElementById('inputColor').value = color;
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+            const swatch = document.querySelector(`.color-swatch[onclick*="${color}"]`);
+            if(swatch) swatch.classList.add('selected');
+            else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
+
+            // Update folder list then select same folder
+            this.updateFolderOptions();
+            document.getElementById('inputFolder').value = t.folderId || "";
         },
 
-        // --- NEW: View Only Logic ---
         viewTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
             document.getElementById('viewOnlyTitle').innerText = t.title;
-            // Using innerText for content preserves safety but might lose some formatting,
-            // but white-space: pre-wrap in CSS handles newlines.
             document.getElementById('viewOnlyContent').innerText = t.content;
             document.getElementById('viewOnlyModal').style.display = 'flex';
         },
@@ -952,7 +1274,6 @@
             });
         },
 
-        // --- ÚJ MENTÉS FUNKCIÓ (Hozzáadás ÉS Módosítás egyben) ---
         saveCustomVariable: function() {
             const key = document.getElementById('newVarKey').value.trim().replace(/[{}]/g, '');
             let label = document.getElementById('newVarLabel').value.trim();
@@ -961,13 +1282,11 @@
 
             if (!key) return alert("Key required");
 
-            // Ellenőrzés: Ha ÚJ elem, ne legyen duplikáció. Ha SZERKESZTÜNK, akkor lehet ugyanaz a neve.
             const existingIdx = this.data.customVars.findIndex(v => v.key === key);
             if (existingIdx !== -1 && existingIdx !== this.editingVarIndex) {
                 return alert("Key already exists!");
             }
 
-            // Logika: Type validáció
             if (type === 'text') {
                 if (!label) return alert("Label (Question) is required for Text Input");
             } else {
@@ -980,18 +1299,14 @@
                 options = opts;
             } else if (type !== 'text') {
                 if (!opts) return alert("Options required");
-
-                // --- MÓDOSÍTÁS: Sortörés alapján vágunk vessző helyett ---
                 options = opts.split('\n').map(s => s.trim()).filter(s => s.length > 0);
             }
 
             const newVarObj = { key, label, type, options };
 
             if (this.editingVarIndex > -1) {
-                // MÓDOSÍTÁS (UPDATE)
                 this.data.customVars[this.editingVarIndex] = newVarObj;
             } else {
-                // ÚJ HOZZÁADÁSA (ADD)
                 this.data.customVars.push(newVarObj);
             }
 
@@ -1000,34 +1315,30 @@
             this.resetVarForm();
         },
 
-        // --- ÚJ SZERKESZTÉS BETÖLTÉSE FUNKCIÓ ---
         editVar: function(idx) {
             const v = this.data.customVars[idx];
-            this.editingVarIndex = idx; // Beállítjuk, hogy melyiket szerkesztjük
+            this.editingVarIndex = idx;
 
-            // Adatok betöltése a mezőkbe
             document.getElementById('newVarKey').value = v.key;
             document.getElementById('newVarLabel').value = v.label;
             document.getElementById('newVarType').value = v.type;
 
-            // Options visszaalakítása szöveggé (Array -> String sortörésekkel)
             let optsStr = "";
             if (Array.isArray(v.options)) {
                 optsStr = v.options.join('\n');
             } else {
-                optsStr = v.options || ""; // Fixed text esetén ez sima string
+                optsStr = v.options || "";
             }
             document.getElementById('newVarOptions').value = optsStr;
 
-            // UI frissítése (Gomb szöveg, Cancel gomb megjelenítése)
             const saveBtn = document.getElementById('btnSaveVar');
             saveBtn.innerText = "Update";
             saveBtn.classList.remove('btn-primary');
-            saveBtn.classList.add('btn-success'); // Zöldre vált
+            saveBtn.classList.add('btn-success');
 
             document.getElementById('btnCancelVar').style.display = 'inline-block';
 
-            this.toggleVarOptions(); // Hogy a mezők tiltása/engedélyezése frissüljön
+            this.toggleVarOptions();
         },
 
         deleteVar: function(idx) {
@@ -1039,13 +1350,12 @@
         },
 
         resetVarForm: function() {
-            this.editingVarIndex = -1; // Visszaállunk "Új" módba
+            this.editingVarIndex = -1;
             document.getElementById('newVarKey').value = '';
             document.getElementById('newVarLabel').value = '';
             document.getElementById('newVarOptions').value = '';
             document.getElementById('newVarType').value = 'text';
 
-            // Gombok visszaállítása
             const btn = document.getElementById('btnSaveVar');
             btn.innerText = "Add";
             btn.classList.add('btn-primary');
@@ -1060,25 +1370,21 @@
             const optEl = document.getElementById('newVarOptions');
             const lblEl = document.getElementById('newVarLabel');
 
-            // Reset first
             optEl.disabled = false;
             lblEl.disabled = false;
             lblEl.placeholder = "Question (e.g. Ticket Number?)";
 
             if (type === 'text') {
-                // Text: Needs Label, No Options
                 optEl.disabled = true;
                 optEl.placeholder = 'N/A';
             } else {
-                // Others: No Label (auto-generated from key), Needs Options
                 lblEl.disabled = true;
-                lblEl.value = ''; // Clear value visually
+                lblEl.value = '';
                 lblEl.placeholder = "Auto-generated from Key";
 
                 if (type === 'fixed') {
                     optEl.placeholder = 'Enter your text (e.g. Best Regards,\nName)';
                 } else {
-                    // --- MÓDOSÍTÁS: Új placeholder ---
                     optEl.placeholder = 'Option 1\nOption 2\nOption 3';
                 }
             }
@@ -1092,7 +1398,6 @@
             if(!t) return;
             this.tempContent = t.content;
 
-            // 1. Resolve System Var: Daytime (Auto) - ROBUST REGEX
             const h = new Date().getHours();
             const s = this.data.timeSettings;
             let str = "";
@@ -1100,10 +1405,8 @@
             else if (h >= s.end && h < s.eve) str = (this.data.currentLang === 'de') ? "Tag" : "Day";
             else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
 
-            // Replace {{daytime}} case-insensitive, allowing spaces
             this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
 
-            // 2. Pre-process Fixed Text variables (Auto) - Do this BEFORE checking for remaining inputs
             let regex = /{{(.*?)}}/g;
             let matches = [...new Set(this.tempContent.match(regex))];
 
@@ -1112,13 +1415,11 @@
                     const key = m.replace(/[{}]/g, '').trim();
                     const v = this.data.customVars.find(cv => cv.key === key);
                     if (v && v.type === 'fixed') {
-                        // Resolve Fixed Text immediately
                         this.tempContent = this.tempContent.split(m).join(v.options);
                     }
                 });
             }
 
-            // 3. Re-check for remaining variables that actually need input
             matches = [...new Set(this.tempContent.match(regex))];
 
             if (!matches || matches.length === 0) {
@@ -1126,7 +1427,6 @@
                 return;
             }
 
-            // 4. Build Modal for remaining variables (Gender, Text, Select, Radio)
             const container = document.getElementById('fillerInputs');
             container.innerHTML = '';
 
@@ -1142,10 +1442,8 @@
                                 <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
                             </div></div>`;
                 } else if (v) {
-                    // Custom Vars (Text, Select, Radio)
                     html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
                     if (v.type === 'text') {
-                        // --- MÓDOSÍTÁS: Textarea input helyett ---
                         html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea>`;
                     } else if (v.type === 'select') {
                         html += `<select class="form-control" id="val_${key}">`;
@@ -1156,11 +1454,8 @@
                         v.options.forEach((o, i) => html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(o)}" ${i===0?'checked':''}> ${this.escapeHtml(o)}</label>`);
                         html += `</div>`;
                     }
-                    // Note: 'fixed' type is purposely excluded here as it's already handled
                     html += `</div>`;
                 } else {
-                    // Ad-hoc variable (mostantól textarea ez is)
-                    // --- MÓDOSÍTÁS: Textarea input helyett ---
                     html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea></div>`;
                 }
                 container.innerHTML += html;
@@ -1229,21 +1524,15 @@
         closeModal: function(id) { document.getElementById(id).style.display = 'none'; }
     };
 
-    // Make app global
     window.app = app;
 
-    // Start App Logic and Global Listeners
     window.addEventListener('DOMContentLoaded', () => {
         app.initAuth();
-
         window.onclick = function(event) {
-        // A modális ablakok bezárása háttérre kattintáskor ELTÁVOLÍTVA
-
-        // A legördülő menük (kártya menü) bezárása, ha máshova kattintasz, az maradjon:
-        if (!event.target.classList.contains('card-menu-btn')) {
-            document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
-        }
-    };
+            if (!event.target.classList.contains('card-menu-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
+            }
+        };
     });
 </script>
 </body>
