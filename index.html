@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v19 (Nested Folders)</title>
+    <title>SD Helper v20.8 (Category Manager)</title>
     <style>
         :root {
             --primary: #0078d4;
@@ -20,6 +20,8 @@
             --folder-bg: #fff9c4;
             --folder-hover: #fff59d;
             --folder-active: #fdd835;
+            --selected-border: #005a9e;
+            --selected-bg: #e6f2ff;
         }
 
         * { box-sizing: border-box; }
@@ -37,7 +39,7 @@
 
         /* --- Sidebar Styles --- */
         .sidebar {
-            width: 300px; /* Widened for deeper nesting */
+            width: 300px; /* Kissé szélesebb a szerkesztő gombok miatt */
             background-color: #bcbce4;
             border-right: 1px solid var(--border);
             padding: 20px;
@@ -92,6 +94,18 @@
             color: var(--primary);
         }
 
+        /* Category Header with Edit Button */
+        .cat-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
+        }
+        .cat-header h3 { margin: 0; font-size: 1rem; }
+        .btn-cat-edit {
+            background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
+            font-size: 0.8rem; padding: 2px 6px; color: #444;
+        }
+        .btn-cat-edit:hover { background: white; }
+        .btn-cat-edit.active { background: var(--primary); color: white; border-color: var(--primary); }
+
         /* Category List Area */
         .category-container {
             flex: 1;
@@ -117,6 +131,7 @@
             color: #201f1e;
             font-weight: 600;
             border-bottom: 1px solid rgba(255,255,255,0.3);
+            min-height: 42px;
         }
 
         .category-item span, .folder-item span {
@@ -125,7 +140,6 @@
             text-overflow: clip;
             display: block;
             flex: 1;
-            padding-right: 25px;
         }
 
         .category-item:nth-child(odd) { background-color: #a6e7f4; }
@@ -137,9 +151,26 @@
             color: white;
         }
 
+        /* EDIT MODE STYLES */
+        .cat-input {
+            width: 100%; border: 1px solid #ccc; padding: 4px; font-size: 0.9rem; border-radius: 3px;
+        }
+        .cat-controls {
+            display: flex; gap: 2px; margin-left: 5px;
+        }
+        .cat-btn {
+            background: rgba(255,255,255,0.6); border: 1px solid #999;
+            cursor: pointer; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: center;
+            width: 24px; height: 24px;
+        }
+        .cat-btn:hover { background: white; }
+        .cat-btn.del { color: #c50f1f; font-weight: bold; }
+        .cat-btn.del:hover { background: #c50f1f; color: white; border-color: #c50f1f; }
+
+
         /* FOLDER ITEM (Sidebar) */
         .folder-item {
-            /* Padding set dynamically in JS for nesting */
             padding-top: 4px;
             padding-bottom: 4px;
             padding-right: 10px;
@@ -189,32 +220,15 @@
             padding: 2px 5px;
             border-radius: 4px;
         }
-
-        .category-item:hover .sidebar-delete-btn,
         .folder-item:hover .sidebar-delete-btn { opacity: 1; background: rgba(255,255,255,0.6); }
         .sidebar-delete-btn:hover { transform: translateY(-50%) scale(1.2); background: white !important; opacity: 1 !important;}
-        .category-item.active .sidebar-delete-btn { color: white; }
-        .folder-item.active .sidebar-delete-btn { color: black; }
-
-
-        /* Time Settings */
-        .time-settings {
-            background: #e6eff7;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            border: 1px solid #cce0f5;
-        }
-        .time-settings h4 { margin: 0 0 10px 0; font-size: 0.85rem; color: var(--primary); }
-        .time-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; font-size: 0.8rem; }
-        .time-input { width: 45px; padding: 2px; border: 1px solid #999; border-radius: 3px; text-align: center; }
 
         /* Login Overlay */
         .auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.95);
             display: flex; justify-content: center; align-items: center;
-            z-index: 2000;
+            z-index: 3000;
             flex-direction: column;
         }
         .auth-box {
@@ -269,6 +283,7 @@
         .btn-save-order { background-color: var(--success); color: white; }
         .btn-color-sort { background-color: #607d8b; color: white; }
         .btn-color-sort:hover { background-color: #455a64; }
+        .btn-move-batch { background-color: var(--primary); color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
         /* Cards Grid */
         .grid {
@@ -286,9 +301,33 @@
         .card.dragging { opacity: 0.4; border: 2px dashed var(--primary); transform: scale(0.95); }
         .card.rearrange-mode {
             border: 2px dashed #999;
-            cursor: move;
+            cursor: pointer;
         }
         .card.rearrange-mode:hover { border-color: var(--primary); background: #f0f8ff !important; }
+
+        /* SELECTED STATE in Rearrange Mode */
+        .card.selected {
+            border: 3px solid var(--selected-border) !important;
+            background-color: var(--selected-bg) !important;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
 
         .rearrange-active .card-actions,
         .rearrange-active .card-menu-btn,
@@ -371,7 +410,8 @@
         /* --- Modals --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+            z-index: 1000; /* Base modal index */
         }
         .modal {
             background: white; padding: 25px; border-radius: 8px; width: 650px; max-width: 90%;
@@ -388,6 +428,24 @@
         .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
         .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+
+        /* Custom Z-Indices for stacking modals */
+        #fillerModal { z-index: 1100; }
+        #batchMoveModal { z-index: 1150; }
+
+        /* New Link Style - UPDATED */
+        .template-link {
+            color: var(--primary);
+            text-decoration: none; /* No underline */
+            cursor: pointer;
+            font-weight: inherit; /* Same weight as surrounding text */
+            font-size: inherit;   /* Same size as surrounding text */
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .template-link:hover {
+            color: #005a9e;
+        }
 
         /* Color Picker Styles */
         .color-picker-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -420,7 +478,7 @@
         /* Toast Notification */
         .toast {
             position: fixed; bottom: 20px; right: 20px; background-color: #323130; color: white;
-            padding: 12px 24px; border-radius: 4px; display: none; animation: fadeIn 0.3s; z-index: 2000;
+            padding: 12px 24px; border-radius: 4px; display: none; animation: fadeIn 0.3s; z-index: 4000;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .helper-text { font-size: 0.8rem; color: #666; margin-top: 5px; background: #f0f0f0; padding: 8px; border-radius: 4px; }
@@ -497,26 +555,12 @@
         <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
     </div>
 
-    <div class="time-settings">
-        <h4>Time Logic (0-23)</h4>
-        <div class="time-row">
-            <span>Start (Morning):</span>
-            <input type="number" id="timeStart" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
-        </div>
-        <div class="time-row">
-            <span>End (Day):</span>
-            <input type="number" id="timeEnd" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
-        </div>
-        <div class="time-row">
-            <span>Eve (Evening):</span>
-            <input type="number" id="timeEve" class="time-input" min="0" max="23" onchange="app.saveTimeSettings()">
-        </div>
-    </div>
-
-    <button class="btn btn-secondary" style="margin-bottom: 10px; width: 100%;" onclick="app.openVarsModal()">⚙️ Variables</button>
     <button class="btn btn-secondary" style="margin-bottom: 10px; width: 100%;" onclick="app.openSettingsModal()">⚙️ Settings</button>
 
-    <h3>Categories</h3>
+    <div class="cat-header">
+        <h3>Categories</h3>
+        <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
+    </div>
     <div class="category-container">
         <ul class="category-list" id="categoryList"></ul>
     </div>
@@ -558,7 +602,7 @@
                 <div class="col">
                     <div class="form-group">
                         <label>Category</label>
-                        <select class="form-control" id="inputCategory" onchange="app.updateFolderOptions()"></select>
+                        <select class="form-control" id="inputCategory" onchange="app.updateFolderOptions('inputCategory', 'inputFolder')"></select>
                     </div>
                 </div>
             </div>
@@ -612,13 +656,37 @@
                 <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..."></textarea>
                 <div class="helper-text">
                     <strong>System:</strong> {{daytime}}, {{gender}}, {{name}}, {{ticket}}<br>
-                    <strong>Custom:</strong> <span id="customVarListHelper"></span>
+                    <strong>Custom:</strong> <span id="customVarListHelper"></span><br>
+                    <strong>Link:</strong> {{link:Template Name}} OR {{link:Template Name|Custom Text}}
                 </div>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('editorModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.saveTemplate()">Save Template</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="batchMoveModal">
+    <div class="modal" style="width: 450px;">
+        <div class="modal-header">Move Selected Items</div>
+        <div class="modal-body">
+            <p id="batchMoveCountText" style="margin-bottom:15px; color:#666;">Moving 0 items...</p>
+            <div class="form-group">
+                <label>Destination Category</label>
+                <select class="form-control" id="batchCategory" onchange="app.updateFolderOptions('batchCategory', 'batchFolder')"></select>
+            </div>
+            <div class="form-group">
+                <label>Destination Folder</label>
+                <select class="form-control" id="batchFolder">
+                    <option value="">(No Folder / Root)</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('batchMoveModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.executeBatchMove()">Move</button>
         </div>
     </div>
 </div>
@@ -643,9 +711,10 @@
 </div>
 
 <div class="modal-overlay" id="settingsModal">
-    <div class="modal" style="width: 400px;">
-        <div class="modal-header">App Settings</div>
+    <div class="modal" style="width: 500px;">
+        <div class="modal-header">Settings</div>
         <div class="modal-body">
+            <h4 style="margin-top:0;">General</h4>
             <div class="form-group">
                 <label class="radio-label">
                     <input type="checkbox" id="settingAutoSort">
@@ -655,6 +724,31 @@
                     When enabled, adding or editing a template will automatically sort all items in that category/folder based on your color priority.
                 </p>
             </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Time Logic (0-23)</h4>
+            <div class="row" style="margin-bottom: 15px;">
+                <div class="col">
+                    <label style="font-size:0.8rem">Morning Start</label>
+                    <input type="number" id="timeStart" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+                <div class="col">
+                    <label style="font-size:0.8rem">Day Start</label>
+                    <input type="number" id="timeEnd" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+                <div class="col">
+                    <label style="font-size:0.8rem">Evening Start</label>
+                    <input type="number" id="timeEve" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Variables</h4>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Manage custom variables for your templates.</p>
+            <button class="btn btn-secondary" style="width:100%" onclick="app.openVarsModal()">Manage Variables</button>
+
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('settingsModal')">Close</button>
@@ -719,21 +813,6 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="viewOnlyModal">
-    <div class="modal" style="width: 800px; max-width: 95%;">
-        <div class="modal-header">
-            <span id="viewOnlyTitle">Title</span>
-            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('viewOnlyModal')">Close</button>
-        </div>
-        <div class="modal-body">
-            <div id="viewOnlyContent" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" onclick="app.closeModal('viewOnlyModal')">Close</button>
-        </div>
-    </div>
-</div>
-
 <div class="toast" id="toast">Copied to clipboard!</div>
 
 <script type="module">
@@ -741,9 +820,6 @@
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ---------------------------------------------------------
-    // ⚠️ YOUR FIREBASE CONFIG
-    // ---------------------------------------------------------
     const firebaseConfig = {
         apiKey: "AIzaSyDQS7aWi2csB39FVo2Rw6ooGaWW1UpeoRY",
         authDomain: "sdhelper-fe410.firebaseapp.com",
@@ -752,7 +828,6 @@
         messagingSenderId: "330491544880",
         appId: "1:330491544880:web:10d366068a8703507674f5"
     };
-    // ---------------------------------------------------------
 
     let auth, db;
     try {
@@ -786,13 +861,15 @@
             currentCategory: 'All',
             currentFolderId: null,
             isRearranging: false,
+            isCategoryEditing: false, // Track category edit mode
             templates: [],
             categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
             folders: [],
             customVars: [],
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
-            settings: { autoSortColor: false } // New Settings
+            settings: { autoSortColor: false },
+            selectedIds: []
         },
 
         // --- Authentication ---
@@ -866,10 +943,7 @@
                     if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
                     if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                     this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-
-                    // Load Settings
                     if(savedData.settings) this.data.settings = savedData.settings;
-
                 } else {
                     this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
@@ -879,6 +953,7 @@
                 document.getElementById('timeStart').value = this.data.timeSettings.start;
                 document.getElementById('timeEnd').value = this.data.timeSettings.end;
                 document.getElementById('timeEve').value = this.data.timeSettings.eve;
+
                 this.renderCategories();
                 this.renderTemplates();
                 this.updateLangUI();
@@ -901,7 +976,7 @@
                 lastUpdated: new Date(),
                 currentLang: this.data.currentLang,
                 colorOrder: this.data.colorOrder,
-                settings: this.data.settings // Save Settings
+                settings: this.data.settings
             };
 
             try {
@@ -918,7 +993,6 @@
             this.saveData();
         },
 
-        // --- Helper Utils ---
         escapeHtml: function(text) {
             if (typeof text !== 'string') return text;
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -937,38 +1011,114 @@
             else document.getElementById('btnDe').classList.add('active');
         },
 
-        // --- UI Rendering ---
+        // --- NEW CATEGORY EDIT LOGIC ---
+        toggleCategoryEditMode: function() {
+            this.data.isCategoryEditing = !this.data.isCategoryEditing;
+            const btn = document.getElementById('btnCatEdit');
+            if(this.data.isCategoryEditing) {
+                btn.classList.add('active');
+                btn.innerText = "✓ Done";
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = "✎ Edit";
+                this.saveData(); // Save on exit
+            }
+            this.renderCategories();
+        },
+
+        moveCategory: function(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= this.data.categories.length) return;
+            // Swap
+            const temp = this.data.categories[newIndex];
+            this.data.categories[newIndex] = this.data.categories[index];
+            this.data.categories[index] = temp;
+            this.renderCategories();
+        },
+
+        renameCategory: function(index, newName) {
+            const oldName = this.data.categories[index];
+            if (!newName || newName === oldName) return;
+            // Prevent duplicate names
+            if (this.data.categories.includes(newName)) {
+                alert("Category name already exists!");
+                this.renderCategories(); // Reset input
+                return;
+            }
+
+            // Update Array
+            this.data.categories[index] = newName;
+
+            // Update Templates
+            this.data.templates.forEach(t => {
+                if (t.category === oldName) t.category = newName;
+            });
+
+            // Update Folders
+            this.data.folders.forEach(f => {
+                if (f.category === oldName) f.category = newName;
+            });
+
+            // Update Current View if we were looking at that category
+            if (this.data.currentCategory === oldName) {
+                this.data.currentCategory = newName;
+                document.getElementById('currentCategoryTitle').innerText = newName;
+            }
+            this.renderCategories();
+        },
+
         renderCategories: function() {
             const list = document.getElementById('categoryList');
             const current = this.data.currentCategory;
             const currentFolder = this.data.currentFolderId;
+            const editing = this.data.isCategoryEditing;
+
             let html = `<li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')"><span>All Templates</span></li>`;
 
-            this.data.categories.forEach(cat => {
+            this.data.categories.forEach((cat, index) => {
                 const safeCat = this.escapeHtml(cat);
                 const isActiveCat = (current === cat);
 
-                html += `
-                    <li class="category-item ${isActiveCat && !currentFolder ? 'active' : ''}" onclick="app.selectCategory('${safeCat}')" title="${safeCat}">
-                        <span>${safeCat}</span>
-                        <button class="sidebar-delete-btn" onclick="app.deleteCategory(event, '${safeCat}')">×</button>
-                    </li>`;
+                if (editing) {
+                    // EDIT MODE RENDER
+                    html += `
+                        <li class="category-item" style="cursor:default; background-color: #f0f0f0;">
+                            <input type="text" class="cat-input" value="${safeCat}" onchange="app.renameCategory(${index}, this.value)">
+                            <div class="cat-controls">
+                                <button class="cat-btn" onclick="app.moveCategory(${index}, -1)">↑</button>
+                                <button class="cat-btn" onclick="app.moveCategory(${index}, 1)">↓</button>
+                                <button class="cat-btn del" onclick="app.deleteCategory(event, '${safeCat}')">×</button>
+                            </div>
+                        </li>`;
+                } else {
+                    // NORMAL MODE RENDER
+                    // Removed the "delete" button here as requested
+                    html += `
+                        <li class="category-item ${isActiveCat && !currentFolder ? 'active' : ''}" onclick="app.selectCategory('${safeCat}')" title="${safeCat}">
+                            <span>${safeCat}</span>
+                        </li>`;
 
-                if (isActiveCat) {
-                    const myFolders = this.data.folders.filter(f => f.category === cat && !f.deleted && !f.parentFolderId);
-                    myFolders.forEach(f => {
-                       html += this.renderFolderTree(cat, f.id, 0, currentFolder);
-                    });
+                    if (isActiveCat) {
+                        const myFolders = this.data.folders.filter(f => f.category === cat && !f.deleted && !f.parentFolderId);
+                        myFolders.forEach(f => {
+                           html += this.renderFolderTree(cat, f.id, 0, currentFolder);
+                        });
+                    }
                 }
             });
 
             html += `<li class="category-item trash-item ${current === 'Trash' ? 'active' : ''}" onclick="app.selectCategory('Trash')"><span>🗑️ Trash</span></li>`;
             list.innerHTML = html;
 
+            // Update Dropdowns
             const select = document.getElementById('inputCategory');
+            const batchSelect = document.getElementById('batchCategory');
             select.innerHTML = '';
+            batchSelect.innerHTML = '';
             this.data.categories.forEach(cat => {
-                select.innerHTML += `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
+                const opt = `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
+                select.innerHTML += opt;
+                batchSelect.innerHTML += opt;
             });
         },
 
@@ -977,7 +1127,7 @@
             if(!folder) return '';
 
             const isFolderActive = (activeId === folder.id);
-            const padding = 30 + (level * 20); // Dynamic indentation
+            const padding = 30 + (level * 20);
 
             let html = `
                 <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
@@ -985,7 +1135,6 @@
                     <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
                 </li>`;
 
-            // Children
             const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
             children.forEach(child => {
                 html += this.renderFolderTree(cat, child.id, level + 1, activeId);
@@ -995,6 +1144,7 @@
         },
 
         selectCategory: function(cat) {
+            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return; // Prevent selection during edit
             this.data.currentCategory = cat;
             this.data.currentFolderId = null;
             this.updateHeaderButtons(cat);
@@ -1030,6 +1180,9 @@
                  const showRearrange = (this.data.templates.filter(t => !t.deleted).length > 1);
 
                  if (this.data.isRearranging) {
+                     if (this.data.selectedIds.length > 0) {
+                         content += `<button class="btn btn-move-batch" style="margin-right:10px;" onclick="app.openBatchMoveModal()">📦 Move ${this.data.selectedIds.length} Items</button>`;
+                     }
                      content += `<button class="btn btn-color-sort" style="margin-right:10px;" onclick="app.openColorModal()">🎨 Arrange via Color</button>`;
                      content += `<button class="btn btn-save-order" onclick="app.toggleRearrange()">💾 Save Order</button>`;
                  } else {
@@ -1045,7 +1198,6 @@
             container.innerHTML = content;
         },
 
-        // --- FOLDER LOGIC ---
         createFolder: function() {
             const name = prompt("Folder Name:");
             if(name) {
@@ -1053,7 +1205,7 @@
                     id: Date.now(),
                     name: name,
                     category: this.data.currentCategory,
-                    parentFolderId: this.data.currentFolderId || null, // Handle subfolders
+                    parentFolderId: this.data.currentFolderId || null,
                     deleted: false
                 };
                 this.data.folders.push(newFolder);
@@ -1069,9 +1221,7 @@
             const idx = this.data.folders.findIndex(f => f.id === id);
             if(idx > -1) {
                 this.data.folders[idx].deleted = true;
-                // Recursive delete children
                 this.deleteFolderRecursive(id);
-
                 if(this.data.currentFolderId === id) {
                     this.data.currentFolderId = null;
                 }
@@ -1109,30 +1259,63 @@
              this.renderTemplates();
         },
 
-        updateFolderOptions: function() {
-            const cat = document.getElementById('inputCategory').value;
-            const folderSelect = document.getElementById('inputFolder');
+        updateFolderOptions: function(catSelectId = 'inputCategory', folderSelectId = 'inputFolder') {
+            const cat = document.getElementById(catSelectId).value;
+            const folderSelect = document.getElementById(folderSelectId);
+            const currentSelection = folderSelect.value;
+
             folderSelect.innerHTML = '<option value="">(No Folder / Root)</option>';
 
-            // Recursive dropdown builder
             const buildOptions = (parentId, prefix) => {
-                const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
+                const children = this.data.folders.filter(f => {
+                    const isCat = f.category === cat;
+                    const isActive = !f.deleted;
+                    let isParent = false;
+                    if (parentId === null) isParent = !f.parentFolderId;
+                    else isParent = f.parentFolderId === parentId;
+                    return isCat && isActive && isParent;
+                });
+
+                children.sort((a, b) => a.name.localeCompare(b.name));
+
                 children.forEach(f => {
                     folderSelect.innerHTML += `<option value="${f.id}">${prefix}📂 ${this.escapeHtml(f.name)}</option>`;
                     buildOptions(f.id, prefix + "&nbsp;&nbsp;&nbsp;");
                 });
             };
 
-            // Start with root folders (parentFolderId is null)
             buildOptions(null, "");
+
+            if (currentSelection) {
+                const exists = Array.from(folderSelect.options).some(o => o.value === currentSelection);
+                if (exists) {
+                    folderSelect.value = currentSelection;
+                }
+            }
         },
 
-        // --- REARRANGE & COLOR SORT LOGIC ---
         toggleRearrange: function() {
             if(this.data.isRearranging) {
                 this.saveNewOrder();
+                this.data.selectedIds = [];
             }
             this.data.isRearranging = !this.data.isRearranging;
+            this.updateHeaderButtons(this.data.currentCategory);
+            this.renderTemplates();
+        },
+
+        toggleSelection: function(e, id) {
+            if (!this.data.isRearranging) return;
+            if (e.ctrlKey || e.metaKey) {
+                const index = this.data.selectedIds.indexOf(id);
+                if (index > -1) {
+                    this.data.selectedIds.splice(index, 1);
+                } else {
+                    this.data.selectedIds.push(id);
+                }
+            } else {
+                this.data.selectedIds = [id];
+            }
             this.updateHeaderButtons(this.data.currentCategory);
             this.renderTemplates();
         },
@@ -1153,7 +1336,37 @@
             this.saveData();
         },
 
-        // Color Modal Logic
+        openBatchMoveModal: function() {
+            if (this.data.selectedIds.length === 0) return;
+            document.getElementById('batchMoveCountText').innerText = `Moving ${this.data.selectedIds.length} items...`;
+            let defaultCat = "General";
+            if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                defaultCat = this.data.currentCategory;
+            }
+            document.getElementById('batchCategory').value = defaultCat;
+            this.updateFolderOptions('batchCategory', 'batchFolder');
+            document.getElementById('batchMoveModal').style.display = 'flex';
+        },
+
+        executeBatchMove: function() {
+            const newCat = document.getElementById('batchCategory').value;
+            const newFolderId = document.getElementById('batchFolder').value || null;
+            let updatedCount = 0;
+            this.data.templates.forEach(t => {
+                if (this.data.selectedIds.includes(t.id)) {
+                    t.category = newCat;
+                    t.folderId = newFolderId ? parseInt(newFolderId) : null;
+                    updatedCount++;
+                }
+            });
+            this.saveData();
+            this.data.selectedIds = [];
+            this.closeModal('batchMoveModal');
+            this.updateHeaderButtons(this.data.currentCategory);
+            this.renderTemplates();
+            alert(`Successfully moved ${updatedCount} templates.`);
+        },
+
         openColorModal: function() {
             document.getElementById('colorOrderModal').style.display = 'flex';
             this.renderColorOrderList();
@@ -1162,7 +1375,6 @@
         renderColorOrderList: function() {
             const container = document.getElementById('colorOrderList');
             container.innerHTML = '';
-
             this.data.colorOrder.forEach((color, idx) => {
                 container.innerHTML += `
                     <div class="color-order-item">
@@ -1182,12 +1394,9 @@
         moveColor: function(idx, direction) {
             const newIdx = idx + direction;
             if (newIdx < 0 || newIdx >= this.data.colorOrder.length) return;
-
-            // Swap
             const temp = this.data.colorOrder[newIdx];
             this.data.colorOrder[newIdx] = this.data.colorOrder[idx];
             this.data.colorOrder[idx] = temp;
-
             this.renderColorOrderList();
         },
 
@@ -1199,17 +1408,12 @@
         applyColorSort: function() {
             const currentCat = this.data.currentCategory;
             const currentFolderId = this.data.currentFolderId;
-
-            // Call internal sorter with context
             this.reorderTemplatesByColorInternal(currentCat, currentFolderId);
-
             this.renderTemplates();
             this.closeModal('colorOrderModal');
         },
 
-        // Helper function for sorting specific context
         reorderTemplatesByColorInternal: function(category, folderId) {
-            // 1. Identify templates in this scope
             let relevantTemplates = this.data.templates.filter(t => {
                 if(t.deleted) return false;
                 if(category !== 'All' && t.category !== category) return false;
@@ -1218,40 +1422,55 @@
                 return true;
             });
 
-            // 2. Sort them based on Color Order
             relevantTemplates.sort((a, b) => {
                 const colorA = a.color || '#ffffff';
                 const colorB = b.color || '#ffffff';
-
                 const idxA = this.data.colorOrder.findIndex(c => c.hex === colorA);
                 const idxB = this.data.colorOrder.findIndex(c => c.hex === colorB);
-
                 const posA = idxA === -1 ? 999 : idxA;
                 const posB = idxB === -1 ? 999 : idxB;
-
                 return posA - posB;
             });
 
-            // 3. Apply new orderIndex
             relevantTemplates.forEach((t, index) => {
                 t.orderIndex = index;
             });
         },
 
-        // --- SETTINGS LOGIC ---
         openSettingsModal: function() {
             document.getElementById('settingAutoSort').checked = this.data.settings.autoSortColor;
+            document.getElementById('timeStart').value = this.data.timeSettings.start;
+            document.getElementById('timeEnd').value = this.data.timeSettings.end;
+            document.getElementById('timeEve').value = this.data.timeSettings.eve;
             document.getElementById('settingsModal').style.display = 'flex';
         },
 
         saveSettings: function() {
             const autoSort = document.getElementById('settingAutoSort').checked;
             this.data.settings.autoSortColor = autoSort;
+            this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
+            this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
+            this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
             this.saveData();
             this.closeModal('settingsModal');
         },
 
-        // Drag & Drop Handlers
+        findAndUseTemplate: function(templateName) {
+            const target = this.data.templates.find(t =>
+                !t.deleted && t.title.toLowerCase() === templateName.toLowerCase()
+            );
+
+            if (target) {
+                if (target.isViewOnly) {
+                    this.viewTemplate(target.id);
+                } else {
+                    this.prepareTemplate(target.id);
+                }
+            } else {
+                alert(`Template not found: "${templateName}"`);
+            }
+        },
+
         handleDragStart: function(e) {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
@@ -1281,15 +1500,12 @@
             if (e.stopPropagation) {
                 e.stopPropagation();
             }
-
             let targetCard = e.target.closest('.card');
-
             if (this.dragSrcEl !== targetCard && targetCard) {
                 const grid = document.getElementById('templateGrid');
                 const cards = Array.from(grid.children);
                 const srcIndex = cards.indexOf(this.dragSrcEl);
                 const targetIndex = cards.indexOf(targetCard);
-
                 if (srcIndex < targetIndex) {
                     targetCard.after(this.dragSrcEl);
                 } else {
@@ -1307,8 +1523,6 @@
             });
         },
 
-
-        // --- MAIN RENDER LOGIC ---
         renderTemplates: function() {
             const grid = document.getElementById('templateGrid');
             const searchEl = document.getElementById('searchInput');
@@ -1323,7 +1537,6 @@
 
             grid.innerHTML = '';
 
-            // 1. Render DELETED FOLDERS only in Trash view
             if (isTrash && !term) {
                 const deletedFolders = this.data.folders.filter(f => f.deleted);
                 deletedFolders.forEach(f => {
@@ -1340,7 +1553,6 @@
                 });
             }
 
-            // 2. Render TEMPLATES
             let filtered = this.data.templates.filter(t => {
                 if (isTrash) return t.deleted;
                 if (t.deleted) return false;
@@ -1360,7 +1572,6 @@
                 return true;
             });
 
-            // SORT BY ORDER INDEX
             filtered.sort((a, b) => {
                 const orderA = (a.orderIndex !== undefined) ? a.orderIndex : 999999;
                 const orderB = (b.orderIndex !== undefined) ? b.orderIndex : 999999;
@@ -1374,15 +1585,13 @@
 
             filtered.forEach(t => {
                 const safeTitle = this.escapeHtml(t.title);
-
                 let safeContent = this.escapeHtml(t.content);
                 safeContent = safeContent.replace(/{{(.*?)}}/g, '<span style="font-weight:bold;">{{$1}}</span>');
-
                 const bgColor = t.color || '#ffffff';
                 let html = '';
 
-                // Draggable Attributes
-                const dragAttr = rearranging ? `draggable="true" class="card rearrange-mode"` : `class="card"`;
+                const isSelected = rearranging && this.data.selectedIds.includes(t.id);
+                const selectionClass = isSelected ? ' selected' : '';
 
                 if (t.deleted) {
                     const btns = `<button class="card-btn restore" onclick="app.restoreTemplate(${t.id})">Restore</button>
@@ -1394,6 +1603,7 @@
                             <div class="card-preview">${safeContent}</div>
                             <div class="card-actions">${btns}</div>
                         </div>`;
+                    grid.innerHTML += html;
                 } else {
                     const menu = `
                         <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
@@ -1416,12 +1626,12 @@
                         quickViewBtn = `<button class="card-view-btn" onclick="app.viewTemplate(${t.id})" title="Quick View">👁️</button>`;
                     }
 
-                    // Create Element to attach listeners
                     const div = document.createElement('div');
-                    div.className = rearranging ? "card rearrange-mode" : "card";
+                    div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
                     if(rearranging) div.draggable = true;
                     div.style.backgroundColor = bgColor;
                     div.setAttribute('data-id', t.id);
+                    if(rearranging) div.setAttribute('onclick', `app.toggleSelection(event, ${t.id})`);
 
                     div.innerHTML = `
                             ${quickViewBtn}
@@ -1450,12 +1660,10 @@
             document.querySelectorAll('.dropdown-menu').forEach(el => {
                 if(el.id !== `menu-${id}`) el.classList.remove('show');
             });
-
             const menu = document.getElementById(`menu-${id}`);
             if(menu) menu.classList.toggle('show');
         },
 
-        // --- Logic: CRUD ---
         saveTemplate: function() {
             const id = document.getElementById('editId').value;
             const title = document.getElementById('inputTitle').value;
@@ -1484,7 +1692,6 @@
                 });
             }
 
-            // AUTO SORT Logic (only applied to the specific category/folder we are saving to)
             if(this.data.settings && this.data.settings.autoSortColor) {
                 const targetFolderId = folderId ? parseInt(folderId) : null;
                 this.reorderTemplatesByColorInternal(category, targetFolderId);
@@ -1519,7 +1726,7 @@
         emptyTrash: function() {
             if (!confirm("Empty Trash? This will delete all items AND folders in trash.")) return;
             this.data.templates = this.data.templates.filter(t => !t.deleted);
-            this.data.folders = this.data.folders.filter(f => !f.deleted); // Empty folders too
+            this.data.folders = this.data.folders.filter(f => !f.deleted);
             this.saveData();
             this.renderTemplates();
         },
@@ -1539,7 +1746,6 @@
             if (count > 0) {
                 if (!confirm(`Category has ${count} templates. Move them to Trash? (Cancel = Move to General)`)) {
                     this.data.templates.forEach(t => { if (t.category === cat) { t.category = "General"; t.folderId = null; } });
-                    // Also move folders to general or delete? Simpler to delete/reset
                     this.data.folders.forEach(f => { if(f.category === cat) f.category = "General"; });
                 } else {
                     this.data.templates.forEach(t => { if (t.category === cat) t.deleted = true; });
@@ -1553,7 +1759,6 @@
             this.renderTemplates();
         },
 
-        // --- Logic: Editor & Variables ---
         selectColor: function(colorHex, element) {
             document.getElementById('inputColor').value = colorHex;
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
@@ -1566,34 +1771,29 @@
             document.getElementById('editorModal').style.display = 'flex';
             const varList = this.data.customVars.map(v => `{{${v.key}}}`).join(', ');
             document.getElementById('customVarListHelper').innerText = varList || "None";
-
-            // Reset Color Selection
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-
-            // Populate Dropdowns
-            // Note: Folder dropdown needs current Category to populate correctly
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
                 document.getElementById('editorTitle').innerText = "Edit Template";
                 document.getElementById('editId').value = t.id;
                 document.getElementById('inputTitle').value = t.title;
+
                 const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
                 document.getElementById('inputCategory').value = cat;
+
                 document.getElementById('inputLang').value = t.lang;
                 document.getElementById('inputContent').value = t.content;
                 document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
 
-                // Color Load
                 const color = t.color || '#ffffff';
                 document.getElementById('inputColor').value = color;
                 const swatch = document.querySelector(`.color-swatch[onclick*="${color}"]`);
                 if(swatch) swatch.classList.add('selected');
                 else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
 
-                // Update Folders then Set
-                this.updateFolderOptions();
-                document.getElementById('inputFolder').value = t.folderId || "";
+                this.updateFolderOptions('inputCategory', 'inputFolder');
+                document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
 
             } else {
                 document.getElementById('editorTitle').innerText = "New Template";
@@ -1610,14 +1810,11 @@
                 document.getElementById('inputContent').value = "";
                 document.getElementById('inputViewOnly').checked = false;
 
-                // Default White
                 document.getElementById('inputColor').value = '#ffffff';
                 document.querySelector('.color-swatch.none').classList.add('selected');
 
-                // Update Folders then Set
-                this.updateFolderOptions();
-                // If we are currently INSIDE a folder, pre-select it
-                document.getElementById('inputFolder').value = this.data.currentFolderId || "";
+                this.updateFolderOptions('inputCategory', 'inputFolder');
+                document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
             }
         },
 
@@ -1635,7 +1832,6 @@
             document.getElementById('inputContent').value = t.content;
             document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
 
-            // Color Clone
             const color = t.color || '#ffffff';
             document.getElementById('inputColor').value = color;
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
@@ -1643,23 +1839,63 @@
             if(swatch) swatch.classList.add('selected');
             else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
 
-            // Update folder list then select same folder
-            this.updateFolderOptions();
-            document.getElementById('inputFolder').value = t.folderId || "";
+            this.updateFolderOptions('inputCategory', 'inputFolder');
+            document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
         },
 
         viewTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
-            document.getElementById('viewOnlyTitle').innerText = t.title;
 
-            // --- NEW VIEW LOGIC: Bold Variables ---
             let safeContent = this.escapeHtml(t.content);
-            safeContent = safeContent.replace(/{{(.*?)}}/g, '<span style="font-weight:bold;">{{$1}}</span>');
+            safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+                if(p1.trim().startsWith('link:')) return match;
+                return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+            });
+            safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                const parts = content.split('|');
+                const tplName = parts[0].trim();
+                const displayText = parts.length > 1 ? parts[1].trim() : tplName;
+                const safeName = tplName.replace(/'/g, "\\'");
+                return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
+            });
 
-            // Change innerText to innerHTML to support bold tags
-            document.getElementById('viewOnlyContent').innerHTML = safeContent;
-            document.getElementById('viewOnlyModal').style.display = 'flex';
+            const existingModals = document.querySelectorAll('.dynamic-view-modal');
+            const baseZIndex = 1050;
+            const newZIndex = baseZIndex + (existingModals.length * 10);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay dynamic-view-modal';
+            overlay.style.zIndex = newZIndex;
+            overlay.style.display = 'flex';
+
+            overlay.innerHTML = `
+                <div class="modal" style="width: 800px; max-width: 95%;">
+                    <div class="modal-header">
+                        <span>${this.escapeHtml(t.title)}</span>
+                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary close-dynamic-btn">Close</button>
+                    </div>
+                </div>
+            `;
+
+            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
+            closeBtns.forEach(btn => {
+                btn.onclick = function() {
+                    overlay.remove();
+                };
+            });
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            };
+            document.body.appendChild(overlay);
         },
 
         openVarsModal: function() {
@@ -1731,11 +1967,9 @@
         editVar: function(idx) {
             const v = this.data.customVars[idx];
             this.editingVarIndex = idx;
-
             document.getElementById('newVarKey').value = v.key;
             document.getElementById('newVarLabel').value = v.label;
             document.getElementById('newVarType').value = v.type;
-
             let optsStr = "";
             if (Array.isArray(v.options)) {
                 optsStr = v.options.join('\n');
@@ -1743,14 +1977,11 @@
                 optsStr = v.options || "";
             }
             document.getElementById('newVarOptions').value = optsStr;
-
             const saveBtn = document.getElementById('btnSaveVar');
             saveBtn.innerText = "Update";
             saveBtn.classList.remove('btn-primary');
             saveBtn.classList.add('btn-success');
-
             document.getElementById('btnCancelVar').style.display = 'inline-block';
-
             this.toggleVarOptions();
         },
 
@@ -1768,13 +1999,11 @@
             document.getElementById('newVarLabel').value = '';
             document.getElementById('newVarOptions').value = '';
             document.getElementById('newVarType').value = 'text';
-
             const btn = document.getElementById('btnSaveVar');
             btn.innerText = "Add";
             btn.classList.add('btn-primary');
             btn.classList.remove('btn-success');
             document.getElementById('btnCancelVar').style.display = 'none';
-
             this.toggleVarOptions();
         },
 
@@ -1782,11 +2011,9 @@
             const type = document.getElementById('newVarType').value;
             const optEl = document.getElementById('newVarOptions');
             const lblEl = document.getElementById('newVarLabel');
-
             optEl.disabled = false;
             lblEl.disabled = false;
             lblEl.placeholder = "Question (e.g. Ticket Number?)";
-
             if (type === 'text') {
                 optEl.disabled = true;
                 optEl.placeholder = 'N/A';
@@ -1794,7 +2021,6 @@
                 lblEl.disabled = true;
                 lblEl.value = '';
                 lblEl.placeholder = "Auto-generated from Key";
-
                 if (type === 'fixed') {
                     optEl.placeholder = 'Enter your text (e.g. Best Regards,\nName)';
                 } else {
@@ -1802,9 +2028,6 @@
                 }
             }
         },
-
-        // --- Logic: Filler & Usage ---
-        tempContent: "",
 
         prepareTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
@@ -1819,6 +2042,11 @@
             else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
 
             this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
+
+            this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                const parts = content.split('|');
+                return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+            });
 
             let regex = /{{(.*?)}}/g;
             let matches = [...new Set(this.tempContent.match(regex))];
@@ -1916,7 +2144,6 @@
                 setTimeout(() => toast.style.display = 'none', 2000);
             } catch (err) {
                 alert("Clipboard failed. Please copy manually.");
-                console.log(text);
             }
             document.body.removeChild(ta);
         },
