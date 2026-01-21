@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v20.17 (Smart Context)</title>
+    <title>SD Helper v20.18 (Color Preview)</title>
     <style>
         :root {
             --primary: #0078d4;
@@ -416,6 +416,8 @@
         .modal {
             background: white; padding: 25px; border-radius: 8px; width: 650px; max-width: 90%;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;
+            /* Updated for smooth color transition */
+            transition: background-color 0.3s ease;
         }
         .modal-body { overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
         .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
@@ -1922,9 +1924,21 @@
 
         selectColor: function(colorHex, element) {
             document.getElementById('inputColor').value = colorHex;
+
+            // Visual swatch selection
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
             if(element) {
                 element.classList.add('selected');
+            } else {
+                // If triggered programmatically without element, try to find the matching swatch
+                // (This logic was partly in openEditor, moving/consolidating it is cleaner,
+                // but to keep it simple and less invasive, I'll just add the background change here)
+            }
+
+            // THE NEW PART: Change Modal Background
+            const modalContent = document.querySelector('#editorModal .modal');
+            if(modalContent) {
+                modalContent.style.backgroundColor = colorHex;
             }
         },
 
@@ -1955,6 +1969,9 @@
                 if(swatch) swatch.classList.add('selected');
                 else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
 
+                // NEW: Apply background color immediately
+                document.querySelector('#editorModal .modal').style.backgroundColor = color;
+
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
 
@@ -1976,15 +1993,18 @@
                 document.getElementById('inputColor').value = '#ffffff';
                 document.querySelector('.color-swatch.none').classList.add('selected');
 
+                // NEW: Reset background color to white
+                document.querySelector('#editorModal .modal').style.backgroundColor = '#ffffff';
+
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
             }
 
-            // NEW: Ensure button state is correct on open
+            // Ensure button state is correct on open
             this.toggleLinkButton();
         },
 
-        // --- NEW FUNCTION: Toggle Link Button Visibility ---
+        // --- FUNCTION: Toggle Link Button Visibility ---
         toggleLinkButton: function() {
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const btn = document.getElementById('btnLinkTemplate');
@@ -2535,6 +2555,19 @@
 
             this.insertAtCursor(tag);
             this.closeModal('linkBuilderModal');
+        },
+
+        openDeepL: function(target) {
+            const text = document.getElementById('inputContent').value;
+            if (!text) return;
+            const sourceLang = document.getElementById('inputLang').value || 'auto';
+            window.open(`https://www.deepl.com/translator?share=generic#${sourceLang}/${target}/${encodeURIComponent(text)}`, '_blank');
+        },
+
+        openGoogleTranslate: function(target) {
+            const text = document.getElementById('inputContent').value;
+            if (!text) return;
+            window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
         },
 
         closeModal: function(id) { document.getElementById(id).style.display = 'none'; }
