@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v20.8 (Category Manager)</title>
+    <title>SD Helper v20.17 (Smart Context)</title>
     <style>
         :root {
             --primary: #0078d4;
@@ -39,7 +39,7 @@
 
         /* --- Sidebar Styles --- */
         .sidebar {
-            width: 300px; /* Kissé szélesebb a szerkesztő gombok miatt */
+            width: 300px;
             background-color: #bcbce4;
             border-right: 1px solid var(--border);
             padding: 20px;
@@ -432,6 +432,8 @@
         /* Custom Z-Indices for stacking modals */
         #fillerModal { z-index: 1100; }
         #batchMoveModal { z-index: 1150; }
+        /* Link Builder needs to be highest to appear over Editor */
+        #linkBuilderModal { z-index: 1200; }
 
         /* New Link Style - UPDATED */
         .template-link {
@@ -462,61 +464,161 @@
         /* Checkbox style override */
         input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
 
-        /* Translation Toolbar */
-        .trans-toolbar {
-            display: flex; gap: 10px; background: #f0f3f5; padding: 8px; border-radius: 4px;
-            margin-bottom: 5px; border: 1px solid #dbe4ea; align-items: center;
-        }
-        .trans-label { font-size: 0.8rem; font-weight: bold; color: var(--deepl); margin-right: 5px; }
-        .trans-btn {
-            background: white; border: 1px solid var(--deepl); color: var(--deepl); padding: 4px 10px;
-            font-size: 0.8rem; border-radius: 3px; cursor: pointer; display: flex; align-items: center;
-            gap: 5px; transition: all 0.2s; font-weight: 600;
-        }
-        .trans-btn:hover { background: var(--deepl); color: white; }
-
         /* Toast Notification */
         .toast {
             position: fixed; bottom: 20px; right: 20px; background-color: #323130; color: white;
             padding: 12px 24px; border-radius: 4px; display: none; animation: fadeIn 0.3s; z-index: 4000;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .helper-text { font-size: 0.8rem; color: #666; margin-top: 5px; background: #f0f0f0; padding: 8px; border-radius: 4px; }
-        .var-list { border: 1px solid var(--border); border-radius: 4px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
-        .var-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--secondary); align-items: center;}
-        .var-item:last-child { border-bottom: none; }
-        .var-item:hover { background: #f3f2f1; }
-        .var-key { font-weight: bold; color: var(--primary); }
-        .add-var-form { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
 
-        .breadcrumb-back {
-            grid-column: 1 / -1;
+        /* --- NEW VARIABLE MANAGER STYLES (Split View) --- */
+        .vars-modal-body {
+            display: flex;
+            height: 500px; /* Fixed height for scroll */
+            padding: 0;
+            overflow: hidden;
+        }
+        .vars-sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .vars-search {
             padding: 10px;
-            background: #e6eff7;
+            border-bottom: 1px solid var(--border);
+            background: white;
+        }
+        .vars-list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .var-card {
+            padding: 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
-            color: var(--primary);
-            display: flex; align-items: center; gap: 5px;
-            margin-bottom: 10px;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+            transition: all 0.2s;
         }
-        .breadcrumb-back:hover { background: #d0e1f5; }
+        .var-card:hover {
+            background: #e1dfdd;
+        }
+        .var-card.active {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .var-card-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;
+        }
+        .var-card-key {
+            font-weight: bold; color: var(--primary); font-size: 0.95rem;
+        }
+        .var-card-type {
+            font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; background: #ddd; color: #333;
+        }
+        .var-card-label {
+            font-size: 0.8rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
 
-        /* Color Order Item */
-        .color-order-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 8px; border: 1px solid var(--border); margin-bottom: 5px;
-            background: #fff; border-radius: 4px;
+        .vars-editor-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+            display: flex;
+            flex-direction: column;
         }
-        .color-swatch-mini {
-            width: 20px; height: 20px; border-radius: 50%; border: 1px solid #ccc;
-            display: inline-block; margin-right: 10px;
+        .vars-editor-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;
         }
-        .color-controls button {
-            background: none; border: 1px solid #ddd; border-radius: 3px; cursor: pointer;
-            padding: 2px 6px; font-weight: bold;
+
+        /* Checklist Builder Styles */
+        .builder-row {
+            display: flex; gap: 5px; margin-bottom: 8px; align-items: flex-start;
         }
-        .color-controls button:hover { background: #f0f0f0; }
+        .builder-row input {
+            flex: 1; font-size: 0.9rem;
+        }
+        .builder-row textarea {
+            flex: 2; font-size: 0.85rem; font-family: monospace; height: 36px; min-height: 36px; resize: vertical;
+        }
+        .checklist-item {
+            display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #eee;
+        }
+
+        /* --- NEW EDITOR TOOLBAR STYLES --- */
+        .editor-toolbar {
+            display: flex;
+            background: #f0f3f5;
+            padding: 5px 8px;
+            border: 1px solid #dbe4ea;
+            border-bottom: none;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .editor-toolbar-btn {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex; align-items: center; gap: 6px;
+            color: #444;
+            transition: all 0.1s;
+            font-weight: 500;
+        }
+        .editor-toolbar-btn:hover { background: #e1dfdd; color: black; }
+        .editor-toolbar-btn.active { background: #cce4f7; border-color: #005a9e; color: #005a9e; font-weight: bold; }
+
+        .variable-tray {
+            background: #f8f9fa;
+            border: 1px solid #dbe4ea;
+            border-top: none;
+            border-bottom: none;
+            padding: 10px;
+            display: none;
+            animation: slideDown 0.2s;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tray-search {
+            margin-bottom: 8px;
+        }
+        .tray-chips {
+            display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto;
+        }
+        .var-chip {
+            background: #fff; border: 1px solid #0078d4; color: #0078d4;
+            padding: 4px 10px; border-radius: 14px; cursor: pointer;
+            font-size: 0.85rem; font-family: monospace; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .var-chip:hover {
+            background: #0078d4; color: white;
+        }
+        .var-chip.system {
+            border-color: #605e5c; color: #605e5c; background: #f3f2f1;
+        }
+        .var-chip.system:hover {
+            background: #605e5c; color: white;
+        }
+        .var-chip small { opacity: 0.7; font-size: 0.75em; margin-left: 4px; font-family: sans-serif; font-weight: normal; }
+
+        /* Fix textarea radius when toolbar is present */
+        textarea#inputContent {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: 0;
+        }
 
     </style>
 </head>
@@ -638,27 +740,26 @@
 
             <div class="form-group" style="background: #f0f3f5; padding: 10px; border-radius: 4px; border: 1px solid #dbe4ea;">
                 <label class="radio-label" style="margin-bottom: 0;">
-                    <input type="checkbox" id="inputViewOnly">
+                    <input type="checkbox" id="inputViewOnly" onchange="app.toggleLinkButton()">
                     <span style="margin-left: 5px;"><strong>View Only Mode</strong> (For instructions/procedures - Disables "Use/Copy" features)</span>
                 </label>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:0;">
                 <label>Content</label>
-                <div class="trans-toolbar">
-                    <span class="trans-label">DeepL:</span>
-                    <button class="trans-btn" onclick="app.openDeepL('de')">DE</button>
-                    <button class="trans-btn" onclick="app.openDeepL('en')">EN</button>
-                    <span class="trans-label" style="margin-left:10px; padding-left:10px; border-left:1px solid #ccc;">Google:</span>
-                    <button class="trans-btn" onclick="app.openGoogleTranslate('de')">DE</button>
-                    <button class="trans-btn" onclick="app.openGoogleTranslate('en')">EN</button>
+                <div class="editor-toolbar">
+                    <button class="editor-toolbar-btn" onclick="app.toggleVarTray()" id="btnTray">📦 Variables</button>
+                    <button class="editor-toolbar-btn" onclick="app.openLinkBuilder()" id="btnLinkTemplate" style="display:none;">🔗 Link Template</button>
                 </div>
-                <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..."></textarea>
-                <div class="helper-text">
-                    <strong>System:</strong> {{daytime}}, {{gender}}, {{name}}, {{ticket}}<br>
-                    <strong>Custom:</strong> <span id="customVarListHelper"></span><br>
-                    <strong>Link:</strong> {{link:Template Name}} OR {{link:Template Name|Custom Text}}
+
+                <div class="variable-tray" id="variableTray">
+                    <div class="tray-search">
+                        <input type="text" class="form-control" style="padding:4px;" placeholder="Search variables..." onkeyup="app.filterTray(this.value)">
+                    </div>
+                    <div class="tray-chips" id="trayChips"></div>
                 </div>
+
+                <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..." style="min-height: 200px;"></textarea>
             </div>
         </div>
         <div class="modal-footer">
@@ -758,12 +859,27 @@
 </div>
 
 <div class="modal-overlay" id="varsModal">
-    <div class="modal" style="width: 700px;">
-        <div class="modal-header">Custom Variables</div>
-        <div class="modal-body">
-            <div class="var-list" id="variableListContainer"></div>
-            <div class="add-var-form">
-                <h4 style="margin-top:0;">Add / Edit Variable</h4>
+    <div class="modal" style="width: 900px; max-width:95%;">
+        <div class="modal-header">Variable Manager</div>
+        <div class="modal-body vars-modal-body">
+
+            <div class="vars-sidebar">
+                <div class="vars-search">
+                    <input type="text" class="form-control" placeholder="🔍 Search variables..." id="varSearchInput" onkeyup="app.filterVars()">
+                </div>
+                <div class="vars-list-scroll" id="variableListContainer">
+                </div>
+            </div>
+
+            <div class="vars-editor-area">
+                <div class="vars-editor-header">
+                    <h4 style="margin:0;" id="varEditorTitle">Create New Variable</h4>
+                    <div>
+                        <button class="btn btn-sm btn-secondary" onclick="app.resetVarForm()">+ New</button>
+                        <button class="btn btn-sm btn-danger" id="btnDeleteVar" style="display:none;" onclick="app.deleteCurrentVar()">Delete</button>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col">
                         <label>Key (e.g. urgency)</label>
@@ -781,26 +897,57 @@
                             <option value="text">Text Input</option>
                             <option value="select">Dropdown</option>
                             <option value="radio">Radio Buttons</option>
+                            <option value="checklist">Checklist (Multi-select)</option>
                             <option value="fixed">Fixed Text (Constant)</option>
                         </select>
                     </div>
                 </div>
-                <div class="form-group" style="margin-top: 10px;">
+
+                <div class="form-group" style="margin-top: 10px;" id="varOptionsContainer">
                     <label>Options / Content</label>
-                    <textarea class="form-control" id="newVarOptions" rows="4" disabled placeholder="N/A"></textarea>
+                    <textarea class="form-control" id="newVarOptions" rows="6" disabled placeholder="N/A"></textarea>
                 </div>
 
-                <div style="margin-top: 10px; display: flex; gap: 10px;">
-                    <button class="btn btn-primary btn-sm" id="btnSaveVar" onclick="app.saveCustomVariable()">Add</button>
-                    <button class="btn btn-secondary btn-sm" id="btnCancelVar" style="display:none;" onclick="app.resetVarForm()">Cancel Edit</button>
+                <div class="form-group" style="margin-top: 10px; display:none;" id="checklistBuilder">
+                    <label>Checklist Items (Label vs Content)</label>
+                    <p style="font-size:0.8rem; color:#666; margin-bottom:5px;">If 'Content' is empty, Label will be used as content.</p>
+                    <div id="checklistRows"></div>
+                    <button class="btn btn-sm btn-secondary" style="margin-top:5px;" onclick="app.addChecklistRow()">+ Add Item</button>
+                </div>
+
+                <div style="margin-top: 20px; text-align:right;">
+                    <button class="btn btn-primary" id="btnSaveVar" onclick="app.saveCustomVariable()">Create Variable</button>
                 </div>
             </div>
+
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('varsModal')">Close</button>
         </div>
     </div>
 </div>
+
+<div class="modal-overlay" id="linkBuilderModal">
+    <div class="modal" style="width: 400px;">
+        <div class="modal-header">Link Generator</div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Template name</label>
+                <input type="text" list="templateOptions" class="form-control" id="linkNameInput" placeholder="Enter template name...">
+                <datalist id="templateOptions"></datalist>
+            </div>
+            <div class="form-group">
+                <label>Custom label (Optional)</label>
+                <input type="text" class="form-control" id="linkCustomInput" placeholder="Optional label text...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('linkBuilderModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.generateLinkTag()">Insert</button>
+        </div>
+    </div>
+</div>
+
 
 <div class="modal-overlay" id="fillerModal">
     <div class="modal">
@@ -1586,7 +1733,21 @@
             filtered.forEach(t => {
                 const safeTitle = this.escapeHtml(t.title);
                 let safeContent = this.escapeHtml(t.content);
-                safeContent = safeContent.replace(/{{(.*?)}}/g, '<span style="font-weight:bold;">{{$1}}</span>');
+
+                // --- NEW LOGIC: Render links in preview first ---
+                safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                    const parts = content.split('|');
+                    const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                    // Visually looks like a link (blue)
+                    return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                });
+
+                // Then handle other variables
+                safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+                     // Only bold if it wasn't already handled by link replacement (though regex order usually handles this)
+                     return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                });
+
                 const bgColor = t.color || '#ffffff';
                 let html = '';
 
@@ -1769,9 +1930,11 @@
 
         openEditor: function(id) {
             document.getElementById('editorModal').style.display = 'flex';
-            const varList = this.data.customVars.map(v => `{{${v.key}}}`).join(', ');
-            document.getElementById('customVarListHelper').innerText = varList || "None";
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+
+            // Reset toolbar tray
+            document.getElementById('variableTray').style.display = 'none';
+            document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
@@ -1816,6 +1979,92 @@
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
             }
+
+            // NEW: Ensure button state is correct on open
+            this.toggleLinkButton();
+        },
+
+        // --- NEW FUNCTION: Toggle Link Button Visibility ---
+        toggleLinkButton: function() {
+            const isViewOnly = document.getElementById('inputViewOnly').checked;
+            const btn = document.getElementById('btnLinkTemplate');
+            btn.style.display = isViewOnly ? 'flex' : 'none';
+        },
+
+        // --- EDITOR TOOLBAR FUNCTIONS ---
+        toggleVarTray: function() {
+            const tray = document.getElementById('variableTray');
+            const chips = document.getElementById('trayChips');
+            const btn = document.getElementById('btnTray');
+
+            // Check visibility to toggle
+            if (tray.style.display === 'block') {
+                tray.style.display = 'none';
+                btn.classList.remove('active');
+                return;
+            }
+
+            tray.style.display = 'block';
+            btn.classList.add('active');
+            chips.innerHTML = '';
+
+            // System Variables First
+            const sysVars = [
+                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
+                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
+                {key: 'name', label: 'Customer Name', type: 'SYS'},
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
+            ];
+
+            // Combine arrays
+            const allVars = [...sysVars, ...this.data.customVars];
+            this.renderTrayChips(allVars);
+        },
+
+        filterTray: function(val) {
+            const sysVars = [
+                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
+                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
+                {key: 'name', label: 'Customer Name', type: 'SYS'},
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
+            ];
+            const allVars = [...sysVars, ...this.data.customVars];
+
+            if(!val) {
+                this.renderTrayChips(allVars);
+                return;
+            }
+            const filtered = allVars.filter(v => v.key.toLowerCase().includes(val.toLowerCase()) || v.label.toLowerCase().includes(val.toLowerCase()));
+            this.renderTrayChips(filtered);
+        },
+
+        renderTrayChips: function(list) {
+            const container = document.getElementById('trayChips');
+            container.innerHTML = '';
+            if(list.length === 0) {
+                container.innerHTML = '<span style="color:#888; font-size:0.8rem;">No variables found.</span>';
+                return;
+            }
+            list.forEach(v => {
+                const chip = document.createElement('div');
+                if(v.type === 'SYS') chip.className = 'var-chip system';
+                else chip.className = 'var-chip';
+
+                chip.innerHTML = `{{${this.escapeHtml(v.key)}}}<small>${this.escapeHtml(v.label)}</small>`;
+                chip.onclick = () => this.insertAtCursor(`{{${v.key}}}`);
+                container.appendChild(chip);
+            });
+        },
+
+        insertAtCursor: function(text) {
+            const textarea = document.getElementById('inputContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const val = textarea.value;
+
+            textarea.value = val.substring(0, start) + text + val.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + text.length;
+            textarea.focus();
         },
 
         cloneTemplate: function(id) {
@@ -1906,21 +2155,58 @@
 
         renderVarsList: function() {
             const container = document.getElementById('variableListContainer');
+            const filter = document.getElementById('varSearchInput').value.toLowerCase();
             container.innerHTML = '';
+
             if (this.data.customVars.length === 0) {
-                container.innerHTML = '<div style="padding:10px; color:#888;">No custom variables.</div>';
+                container.innerHTML = '<div style="padding:15px; color:#888; text-align:center;">No custom variables.<br>Create one on the right.</div>';
                 return;
             }
-            this.data.customVars.forEach((v, idx) => {
+
+            let filteredVars = this.data.customVars.map((v, idx) => ({ ...v, originalIndex: idx }))
+                .filter(v => v.key.toLowerCase().includes(filter) || v.label.toLowerCase().includes(filter));
+
+            if (filteredVars.length === 0) {
+                container.innerHTML = '<div style="padding:15px; color:#888;">No matches found.</div>';
+                return;
+            }
+
+            filteredVars.forEach(v => {
+                let typeBadge = '';
+                if(v.type === 'text') typeBadge = 'TXT';
+                else if(v.type === 'select') typeBadge = 'SEL';
+                else if(v.type === 'radio') typeBadge = 'RAD';
+                else if(v.type === 'checklist') typeBadge = 'CHK';
+                else if(v.type === 'fixed') typeBadge = 'FIX';
+
+                const isActive = (this.editingVarIndex === v.originalIndex) ? 'active' : '';
+
                 container.innerHTML += `
-                    <div class="var-item">
-                        <div><span class="var-key">{{${this.escapeHtml(v.key)}}}</span> - ${this.escapeHtml(v.label)}</div>
-                        <div>
-                            <button class="btn btn-secondary btn-sm" style="margin-right:5px;" onclick="app.editVar(${idx})">Edit</button>
-                            <button class="btn btn-danger btn-sm" onclick="app.deleteVar(${idx})">Del</button>
+                    <div class="var-card ${isActive}" onclick="app.editVar(${v.originalIndex})">
+                        <div class="var-card-header">
+                            <span class="var-card-key">{{${this.escapeHtml(v.key)}}}</span>
+                            <span class="var-card-type">${typeBadge}</span>
                         </div>
+                        <div class="var-card-label">${this.escapeHtml(v.label)}</div>
                     </div>`;
             });
+        },
+
+        filterVars: function() {
+            this.renderVarsList();
+        },
+
+        // --- NEW: Helper for Checklist Builder ---
+        addChecklistRow: function(label = "", value = "") {
+            const container = document.getElementById('checklistRows');
+            const row = document.createElement('div');
+            row.className = 'builder-row';
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Label (e.g. Outlook)" value="${this.escapeHtml(label)}">
+                <textarea class="form-control" placeholder="Content (Values to copy)">${this.escapeHtml(value)}</textarea>
+                <button class="btn btn-danger btn-sm" style="height:36px;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
         },
 
         saveCustomVariable: function() {
@@ -1939,11 +2225,25 @@
             if (type === 'text') {
                 if (!label) return alert("Label (Question) is required for Text Input");
             } else {
-                label = key;
+                if(!label) label = key;
             }
 
             let options = [];
-            if (type === 'fixed') {
+
+            if (type === 'checklist') {
+                const rows = document.querySelectorAll('.builder-row');
+                if(rows.length === 0) return alert("Please add at least one item to the checklist.");
+
+                rows.forEach(row => {
+                    const l = row.querySelector('input').value.trim();
+                    let v = row.querySelector('textarea').value;
+                    if(l) {
+                        options.push({ label: l, value: v || l });
+                    }
+                });
+                if(options.length === 0) return alert("Please fill in the checklist items.");
+
+            } else if (type === 'fixed') {
                 if (!opts) return alert("Fixed Text content required");
                 options = opts;
             } else if (type !== 'text') {
@@ -1957,64 +2257,95 @@
                 this.data.customVars[this.editingVarIndex] = newVarObj;
             } else {
                 this.data.customVars.push(newVarObj);
+                this.editingVarIndex = this.data.customVars.length - 1; // Select the new item
             }
 
             this.saveData();
             this.renderVarsList();
-            this.resetVarForm();
+
+            // Don't fully reset, just update UI state to "Editing" the new one
+            document.getElementById('btnDeleteVar').style.display = 'inline-block';
+            document.getElementById('btnSaveVar').innerText = "Update Variable";
+            document.getElementById('varEditorTitle').innerText = "Edit Variable";
         },
 
         editVar: function(idx) {
             const v = this.data.customVars[idx];
             this.editingVarIndex = idx;
+
+            document.getElementById('varEditorTitle').innerText = "Edit Variable";
+            document.getElementById('btnSaveVar').innerText = "Update Variable";
+            document.getElementById('btnDeleteVar').style.display = 'inline-block';
+
             document.getElementById('newVarKey').value = v.key;
             document.getElementById('newVarLabel').value = v.label;
             document.getElementById('newVarType').value = v.type;
-            let optsStr = "";
-            if (Array.isArray(v.options)) {
-                optsStr = v.options.join('\n');
+
+            if (v.type === 'checklist') {
+                document.getElementById('checklistRows').innerHTML = '';
+                if(Array.isArray(v.options)) {
+                    v.options.forEach(opt => {
+                        this.addChecklistRow(opt.label, opt.value);
+                    });
+                }
             } else {
-                optsStr = v.options || "";
+                let optsStr = "";
+                if (Array.isArray(v.options)) {
+                    optsStr = v.options.join('\n');
+                } else {
+                    optsStr = v.options || "";
+                }
+                document.getElementById('newVarOptions').value = optsStr;
             }
-            document.getElementById('newVarOptions').value = optsStr;
-            const saveBtn = document.getElementById('btnSaveVar');
-            saveBtn.innerText = "Update";
-            saveBtn.classList.remove('btn-primary');
-            saveBtn.classList.add('btn-success');
-            document.getElementById('btnCancelVar').style.display = 'inline-block';
+
             this.toggleVarOptions();
+            this.renderVarsList(); // Update active state
         },
 
-        deleteVar: function(idx) {
-            if(confirm("Delete variable?")) {
-                this.data.customVars.splice(idx, 1);
+        deleteCurrentVar: function() {
+            if(this.editingVarIndex === -1) return;
+            if(confirm("Delete this variable?")) {
+                this.data.customVars.splice(this.editingVarIndex, 1);
                 this.saveData();
+                this.resetVarForm();
                 this.renderVarsList();
             }
         },
 
         resetVarForm: function() {
             this.editingVarIndex = -1;
+            document.getElementById('varEditorTitle').innerText = "Create New Variable";
+            document.getElementById('btnSaveVar').innerText = "Create Variable";
+            document.getElementById('btnDeleteVar').style.display = 'none';
+
             document.getElementById('newVarKey').value = '';
             document.getElementById('newVarLabel').value = '';
             document.getElementById('newVarOptions').value = '';
+            document.getElementById('checklistRows').innerHTML = '';
             document.getElementById('newVarType').value = 'text';
-            const btn = document.getElementById('btnSaveVar');
-            btn.innerText = "Add";
-            btn.classList.add('btn-primary');
-            btn.classList.remove('btn-success');
-            document.getElementById('btnCancelVar').style.display = 'none';
+
             this.toggleVarOptions();
+            this.renderVarsList(); // Clear active state
         },
 
         toggleVarOptions: function() {
             const type = document.getElementById('newVarType').value;
+            const optContainer = document.getElementById('varOptionsContainer');
+            const builderContainer = document.getElementById('checklistBuilder');
             const optEl = document.getElementById('newVarOptions');
             const lblEl = document.getElementById('newVarLabel');
+
+            optContainer.style.display = 'block';
+            builderContainer.style.display = 'none';
             optEl.disabled = false;
             lblEl.disabled = false;
             lblEl.placeholder = "Question (e.g. Ticket Number?)";
-            if (type === 'text') {
+
+            if (type === 'checklist') {
+                optContainer.style.display = 'none';
+                builderContainer.style.display = 'block';
+                lblEl.placeholder = "Title (e.g. Software List)";
+            } else if (type === 'text') {
                 optEl.disabled = true;
                 optEl.placeholder = 'N/A';
             } else {
@@ -2084,7 +2415,18 @@
                             </div></div>`;
                 } else if (v) {
                     html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
-                    if (v.type === 'text') {
+
+                    if (v.type === 'checklist') {
+                        if(Array.isArray(v.options)) {
+                            v.options.forEach(opt => {
+                                html += `
+                                <div class="checklist-item">
+                                    <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
+                                    <span>${this.escapeHtml(opt.label)}</span>
+                                </div>`;
+                            });
+                        }
+                    } else if (v.type === 'text') {
                         html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea>`;
                     } else if (v.type === 'select') {
                         html += `<select class="form-control" id="val_${key}">`;
@@ -2110,19 +2452,29 @@
             let txt = this.tempContent;
             const regex = /{{(.*?)}}/g;
             const matches = [...new Set(txt.match(regex))];
+
             matches.forEach(m => {
                 const key = m.replace(/[{}]/g, '').trim();
                 let val = "";
+
                 if (key.toLowerCase() === 'gender') {
                     const g = document.querySelector('input[name="val_gender"]:checked').value;
                     if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
                     else val = (g === 'm') ? "Mr." : "Ms.";
                 } else {
-                    const radio = document.querySelector(`input[name="val_${key}"]:checked`);
-                    if (radio) val = radio.value;
-                    else {
-                        const el = document.getElementById(`val_${key}`);
-                        if (el) val = el.value;
+                    const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
+
+                    if(checkboxes.length > 0) {
+                        let values = [];
+                        checkboxes.forEach(chk => values.push(chk.value));
+                        val = values.join('\n');
+                    } else {
+                        const radio = document.querySelector(`input[name="val_${key}"]:checked`);
+                        if (radio) val = radio.value;
+                        else {
+                            const el = document.getElementById(`val_${key}`);
+                            if (el) val = el.value;
+                        }
                     }
                 }
                 txt = txt.split(m).join(val);
@@ -2148,17 +2500,41 @@
             document.body.removeChild(ta);
         },
 
-        openDeepL: function(target) {
-            const text = document.getElementById('inputContent').value;
-            if (!text) return;
-            const sourceLang = document.getElementById('inputLang').value || 'auto';
-            window.open(`https://www.deepl.com/translator?share=generic#${sourceLang}/${target}/${encodeURIComponent(text)}`, '_blank');
+        // --- LINK BUILDER FUNCTIONS ---
+        openLinkBuilder: function() {
+            // Clear inputs
+            document.getElementById('linkNameInput').value = '';
+            document.getElementById('linkCustomInput').value = '';
+
+            // Populate datalist with template names
+            const list = document.getElementById('templateOptions');
+            list.innerHTML = '';
+            this.data.templates.forEach(t => {
+                if(!t.deleted) list.innerHTML += `<option value="${this.escapeHtml(t.title)}">`;
+            });
+
+            document.getElementById('linkBuilderModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('linkNameInput').focus(), 50);
         },
 
-        openGoogleTranslate: function(target) {
-            const text = document.getElementById('inputContent').value;
-            if (!text) return;
-            window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
+        generateLinkTag: function() {
+            const name = document.getElementById('linkNameInput').value.trim();
+            const custom = document.getElementById('linkCustomInput').value.trim();
+
+            if(!name) {
+                alert("Please enter a template name.");
+                return;
+            }
+
+            let tag = "";
+            if(custom) {
+                tag = `{{link:${name}|${custom}}}`;
+            } else {
+                tag = `{{link:${name}}}`;
+            }
+
+            this.insertAtCursor(tag);
+            this.closeModal('linkBuilderModal');
         },
 
         closeModal: function(id) { document.getElementById(id).style.display = 'none'; }
