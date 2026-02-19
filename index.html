@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v20.26</title>
+    <title>SD Helper v20.28</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧠</text></svg>">
     <style>
         :root {
@@ -54,7 +54,7 @@
         }
 
         .app-title {
-            font-size: 1.0rem; 
+            font-size: 1.0rem;
             font-weight: bold;
             margin-bottom: 15px;
             color: #1a1a1a;
@@ -132,7 +132,7 @@
 
         .category-list { list-style: none; padding: 0; margin: 0; }
 
-        /* Parent Category Item */
+        /* Parent Category Item - Adjusted for higher density */
         .category-item {
             padding: 5px 8px;
             cursor: pointer;
@@ -262,7 +262,7 @@
             display: flex;
             flex-direction: column;
             background-color: #d0d0e8;
-            transition: margin-right 0.1s linear; 
+            transition: margin-right 0.1s linear;
         }
 
         .header-actions {
@@ -328,7 +328,7 @@
         body.compact-mode .card-preview {
             font-size: 0.8rem;
             margin-bottom: 10px;
-            -webkit-line-clamp: 4; 
+            -webkit-line-clamp: 4;
         }
         body.compact-mode .card-actions {
             gap: 5px;
@@ -351,15 +351,21 @@
             top: 30px;
         }
 
-        /* Group Header Style */
+        /* Group Header Style - UPDATED FOR COMPACTNESS */
         .template-group-header {
             grid-column: 1 / -1;
-            margin: 20px 0 5px 0;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin: 5px 0 -10px 0; /* Negative bottom margin counteracts the grid gap to bring cards closer */
+            padding-bottom: 2px;
+            border-bottom: 1px solid rgba(0,0,0,0.15);
             color: var(--primary);
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        body.compact-mode .template-group-header {
+            margin: 5px 0 -5px 0;
+            font-size: 0.85rem;
         }
 
         .card.draggable { cursor: grab; }
@@ -614,9 +620,9 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         .quick-item:hover { background-color: #e6f2ff; border-color: var(--primary); transform: translateX(-2px); }
-        .quick-item-text { 
-            overflow: hidden; text-overflow: ellipsis; flex: 1; 
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; 
+        .quick-item-text {
+            overflow: hidden; text-overflow: ellipsis; flex: 1;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
             word-break: break-word; white-space: pre-wrap; font-family: inherit; line-height: 1.3;
         }
 
@@ -625,7 +631,7 @@
             background: rgba(255,255,255,0.7); padding: 8px; border-radius: 4px; border: 1px dashed #aaa;
         }
         .quick-edit-input { flex: 1; padding: 5px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 3px; font-family: inherit; }
-        
+
         .quick-action-btn {
             width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;
             border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; cursor: pointer; color: #444; font-size: 1rem;
@@ -651,8 +657,8 @@
     <div class="quick-header">
         <h3 id="quickSidebarTitle">⚡ Quick Snippets</h3>
         <div>
-             <button class="btn-cat-edit" id="btnQuickEdit" onclick="app.toggleQuickEdit()">✎ Edit</button>
-             <button class="btn-sm btn-secondary" onclick="app.toggleQuickSidebar()">✕</button>
+            <button class="btn-cat-edit" id="btnQuickEdit" onclick="app.toggleQuickEdit()">✎ Edit</button>
+            <button class="btn-sm btn-secondary" onclick="app.toggleQuickSidebar()">✕</button>
         </div>
     </div>
     <div class="quick-content">
@@ -661,16 +667,16 @@
         </div>
     </div>
     <div class="quick-add-box" id="quickAddBox" style="display:none;">
-         <div style="display:flex; flex-direction:column; gap:6px;">
-             <select id="newQuickMainCat" class="form-control" style="font-size:0.85rem; padding:4px;"></select>
-             
-             <input type="text" id="newQuickCatInput" list="quickCatList" class="form-control" placeholder="Sub-category (e.g. Description)" style="font-size:0.85rem;">
-             <datalist id="quickCatList"></datalist>
-             
-             <textarea id="newQuickTitleInput" class="form-control" placeholder="Snippet text / value..." rows="4" style="font-size:0.9rem; resize:vertical; font-family:inherit;"></textarea>
-             
-             <button class="btn btn-sm btn-primary" onclick="app.addQuickTitle()">Add Snippet</button>
-         </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <select id="newQuickMainCat" class="form-control" style="font-size:0.85rem; padding:4px;"></select>
+
+            <input type="text" id="newQuickCatInput" list="quickCatList" class="form-control" placeholder="Sub-category (e.g. Description)" style="font-size:0.85rem;">
+            <datalist id="quickCatList"></datalist>
+
+            <textarea id="newQuickTitleInput" class="form-control" placeholder="Snippet text / value..." rows="4" style="font-size:0.9rem; resize:vertical; font-family:inherit;"></textarea>
+
+            <button class="btn btn-sm btn-primary" onclick="app.addQuickTitle()">Add Snippet</button>
+        </div>
     </div>
 </div>
 
@@ -708,13 +714,13 @@
         <h3>Categories</h3>
         <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
     </div>
-    
+
     <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()">
 
     <div class="category-container">
         <ul class="category-list" id="categoryList"></ul>
     </div>
-    
+
     <div style="display: flex; gap: 5px; margin-bottom: 10px;">
         <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
         <button class="btn btn-sm btn-secondary" id="settingsBtnBottom" style="display: none; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
@@ -739,7 +745,7 @@
         <div class="modal-header"><span id="editorTitle">Create Template</span></div>
         <div class="modal-body">
             <input type="hidden" id="editId">
-            
+
             <div class="row">
                 <div class="col" style="flex: 2;">
                     <div class="form-group">
@@ -899,12 +905,12 @@
                     <input type="number" id="settingCardMinHeight" class="form-control" min="100" max="800" step="10" style="width: 80px; padding: 4px;">
                     <span style="font-size:0.85rem; color:#666;">px</span>
                 </div>
-                
+
                 <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingShowTitle">
                     <span style="margin-left: 5px;">Show "SD Helper Cloud" title</span>
                 </label>
-                
+
                 <label class="radio-label" style="margin-top: 8px;">
                     <input type="checkbox" id="settingShowLang">
                     <span style="margin-left: 5px;">Show EN/DE language switcher</span>
@@ -919,6 +925,10 @@
                     <input type="checkbox" id="settingAutoSort">
                     <span style="margin-left: 5px;"><strong>Auto sort by color</strong></span>
                 </label>
+                <label class="radio-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="settingUseColorLabel">
+                    <span style="margin-left: 5px;"><strong>Use color labels as subtitles</strong> (Custom subtitles override this)</span>
+                </label>
             </div>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
@@ -926,7 +936,7 @@
             <h4>Color Labels</h4>
             <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Customize the meaning of each color (shown as tooltip in the editor).</p>
             <div id="settingsColorLabelsContainer" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                </div>
+            </div>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
@@ -1109,7 +1119,7 @@
             currentCategory: 'All',
             currentFolderId: null,
             isRearranging: false,
-            isCategoryEditing: false, 
+            isCategoryEditing: false,
             isQuickTitleEditing: false,
             isQuickOpen: false,
             quickWidth: 320,
@@ -1117,10 +1127,10 @@
             categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
             folders: [],
             customVars: [],
-            quickTitles: [], 
+            quickTitles: [],
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
-            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false },
+            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false },
             selectedIds: []
         },
 
@@ -1138,10 +1148,10 @@
                     document.getElementById('authOverlay').style.display = 'flex';
                     const emailDisplay = document.getElementById('userEmailDisplay');
                     if(emailDisplay) emailDisplay.innerText = "Not Logged In";
-                    
-                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false };
+
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false };
                     this.applyAppearanceSettings();
-                    
+
                     this.data.templates = [];
                     this.renderTemplates();
                 }
@@ -1197,7 +1207,7 @@
                     this.data.folders = savedData.folders || [];
                     this.data.categories = savedData.categories || ['General'];
                     this.data.customVars = savedData.customVars || [];
-                    
+
                     let loadedQuick = savedData.quickTitles || [];
                     this.data.quickTitles = loadedQuick.map(item => {
                         if (typeof item === 'string') {
@@ -1216,7 +1226,7 @@
                     if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
                     if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                     this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-                    
+
                     if(savedData.settings) {
                         this.data.settings = savedData.settings;
                         if(!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
@@ -1224,11 +1234,12 @@
                         if(this.data.settings.showLangSwitcher === undefined) this.data.settings.showLangSwitcher = true;
                         if(this.data.settings.cardMinHeight === undefined) this.data.settings.cardMinHeight = 250;
                         if(this.data.settings.compactMode === undefined) this.data.settings.compactMode = false;
+                        if(this.data.settings.useColorLabelAsSubtitle === undefined) this.data.settings.useColorLabelAsSubtitle = false;
                     }
                 } else {
                     this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false };
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false };
                     this.saveData();
                 }
 
@@ -1238,7 +1249,7 @@
 
                 this.renderCategories();
                 this.renderTemplates();
-                this.renderQuickTitles(); 
+                this.renderQuickTitles();
                 this.updateLangUI();
                 this.updateEditorColorSwatches();
                 this.applyAppearanceSettings();
@@ -1257,7 +1268,7 @@
                 folders: this.data.folders,
                 categories: this.data.categories,
                 customVars: this.data.customVars,
-                quickTitles: this.data.quickTitles, 
+                quickTitles: this.data.quickTitles,
                 timeSettings: this.data.timeSettings,
                 lastUpdated: new Date(),
                 currentLang: this.data.currentLang,
@@ -1356,14 +1367,14 @@
 
             document.addEventListener('mousemove', (e) => {
                 if (!isResizing) return;
-                
+
                 let newWidth = window.innerWidth - e.clientX;
-                
+
                 if (newWidth < 250) newWidth = 250;
-                if (newWidth > 800) newWidth = 800; 
+                if (newWidth > 800) newWidth = 800;
 
                 this.data.quickWidth = newWidth;
-                
+
                 const sidebar = document.getElementById('quickSidebar');
                 const main = document.querySelector('.main');
                 sidebar.style.width = newWidth + 'px';
@@ -1375,7 +1386,7 @@
                     isResizing = false;
                     document.body.style.cursor = 'default';
                     document.body.style.userSelect = '';
-                    
+
                     document.getElementById('quickSidebar').style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
                     document.querySelector('.main').style.transition = 'margin-right 0.1s linear';
 
@@ -1396,7 +1407,7 @@
                 btn.classList.remove('active');
                 btn.innerText = "✎ Edit";
                 addBox.style.display = 'none';
-                this.saveData(); 
+                this.saveData();
             }
             this.renderQuickTitles();
         },
@@ -1409,10 +1420,10 @@
 
             const subCat = document.getElementById('newQuickCatInput').value.trim() || 'General';
             const txt = document.getElementById('newQuickTitleInput').value.trim();
-            
+
             if(txt) {
                 this.data.quickTitles.push({ mainCategory: mainCat, subCategory: subCat, text: txt });
-                document.getElementById('newQuickTitleInput').value = ''; 
+                document.getElementById('newQuickTitleInput').value = '';
                 this.renderQuickTitles();
                 this.saveData();
                 document.getElementById('newQuickTitleInput').focus();
@@ -1478,13 +1489,13 @@
                     const idx = item.originalIndex;
                     const safeSubCat = this.escapeHtml(item.subCategory);
                     const safeTxt = this.escapeHtml(item.text);
-                    
-                    const catOptions = this.data.categories.map(c => 
+
+                    const catOptions = this.data.categories.map(c =>
                         `<option value="${this.escapeHtml(c)}" ${c === item.mainCategory ? 'selected' : ''}>${this.escapeHtml(c)}</option>`
                     ).join('');
 
                     let li = document.createElement('li');
-                    
+
                     li.innerHTML = `
                         <div class="quick-edit-row">
                             <div style="display:flex; gap:5px; width: 100%; align-items:center;">
@@ -1506,10 +1517,10 @@
             } else {
                 const grouped = {};
                 filteredSnippets.forEach((item) => {
-                    const key = (currentMainCat === 'All' || currentMainCat === 'Trash') 
-                                ? `[${item.mainCategory}] ${item.subCategory}` 
+                    const key = (currentMainCat === 'All' || currentMainCat === 'Trash')
+                                ? `[${item.mainCategory}] ${item.subCategory}`
                                 : item.subCategory;
-                    
+
                     if(!grouped[key]) grouped[key] = [];
                     grouped[key].push(item);
                 });
@@ -1568,7 +1579,7 @@
             } else {
                 btn.classList.remove('active');
                 btn.innerText = "✎ Edit";
-                this.saveData(); 
+                this.saveData();
             }
             this.renderCategories();
         },
@@ -1587,12 +1598,12 @@
             if (!newName || newName === oldName) return;
             if (this.data.categories.includes(newName)) {
                 alert("Category name already exists!");
-                this.renderCategories(); 
+                this.renderCategories();
                 return;
             }
 
             this.data.categories[index] = newName;
-            
+
             this.data.templates.forEach(t => { if (t.category === oldName) t.category = newName; });
             this.data.folders.forEach(f => { if (f.category === oldName) f.category = newName; });
             this.data.quickTitles.forEach(q => { if (q.mainCategory === oldName) q.mainCategory = newName; });
@@ -1696,13 +1707,13 @@
         },
 
         selectCategory: function(cat) {
-            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return; 
+            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return;
             this.data.currentCategory = cat;
             this.data.currentFolderId = null;
             this.updateHeaderButtons(cat);
             this.renderCategories();
             this.renderTemplates();
-            this.renderQuickTitles(); 
+            this.renderQuickTitles();
         },
 
         selectFolder: function(folderId, catName) {
@@ -1711,7 +1722,7 @@
             this.updateHeaderButtons(catName);
             this.renderCategories();
             this.renderTemplates();
-            this.renderQuickTitles(); 
+            this.renderQuickTitles();
         },
 
         updateHeaderButtons: function(cat) {
@@ -1993,11 +2004,12 @@
 
         openSettingsModal: function() {
             document.getElementById('settingAutoSort').checked = this.data.settings.autoSortColor;
+            document.getElementById('settingUseColorLabel').checked = !!this.data.settings.useColorLabelAsSubtitle;
             document.getElementById('settingShowTitle').checked = this.data.settings.showAppTitle !== false;
             document.getElementById('settingShowLang').checked = this.data.settings.showLangSwitcher !== false;
             document.getElementById('settingCompactMode').checked = !!this.data.settings.compactMode;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
-            
+
             document.getElementById('timeStart').value = this.data.timeSettings.start;
             document.getElementById('timeEnd').value = this.data.timeSettings.end;
             document.getElementById('timeEve').value = this.data.timeSettings.eve;
@@ -2009,9 +2021,9 @@
                 {hex: '#bbdefb', name: 'Blue'}, {hex: '#e1bee7', name: 'Purple'}, {hex: '#ffe0b2', name: 'Orange'},
                 {hex: '#b2dfdb', name: 'Teal'}, {hex: '#f8bbd0', name: 'Pink'}, {hex: '#cfd8dc', name: 'Grey'}
             ];
-            
+
             if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
-            
+
             baseColors.forEach(c => {
                 const val = this.data.settings.colorLabels[c.hex] || '';
                 container.innerHTML += `
@@ -2028,15 +2040,16 @@
 
         saveSettings: function() {
             this.data.settings.autoSortColor = document.getElementById('settingAutoSort').checked;
+            this.data.settings.useColorLabelAsSubtitle = document.getElementById('settingUseColorLabel').checked;
             this.data.settings.showAppTitle = document.getElementById('settingShowTitle').checked;
             this.data.settings.showLangSwitcher = document.getElementById('settingShowLang').checked;
             this.data.settings.compactMode = document.getElementById('settingCompactMode').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
-            
+
             this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
             this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
             this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
-            
+
             if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
             document.querySelectorAll('#settingsColorLabelsContainer input').forEach(input => {
                 const hex = input.getAttribute('data-hex');
@@ -2047,6 +2060,7 @@
             this.updateEditorColorSwatches();
             this.saveData();
             this.closeModal('settingsModal');
+            this.renderTemplates();
         },
 
         findAndUseTemplate: function(templateName) {
@@ -2258,26 +2272,59 @@
             if (shouldGroup) {
                 const groups = {};
                 const ungrouped = [];
-                
+
+                const getColorPriority = (hex) => {
+                    if (!hex) hex = '#ffffff';
+                    const idx = app.data.colorOrder.findIndex(c => c.hex.toLowerCase() === hex.toLowerCase());
+                    return idx !== -1 ? idx : 999999;
+                };
+
                 filtered.forEach(t => {
-                    if (t.subtitle) {
-                        if (!groups[t.subtitle]) groups[t.subtitle] = [];
-                        groups[t.subtitle].push(t);
+                    let sub = t.subtitle && t.subtitle.trim() !== '' ? t.subtitle.trim() : null;
+
+                    if (!sub && app.data.settings.useColorLabelAsSubtitle) {
+                        const hex = (t.color || '#ffffff').toLowerCase();
+                        const cLabel = app.data.settings.colorLabels && app.data.settings.colorLabels[hex];
+                        if (cLabel && cLabel.trim() !== '') {
+                            sub = cLabel.trim();
+                        }
+                    }
+
+                    if (sub) {
+                        if (!groups[sub]) groups[sub] = { items: [], bestPriority: 999999 };
+                        groups[sub].items.push(t);
+                        const p = getColorPriority(t.color);
+                        if (p < groups[sub].bestPriority) groups[sub].bestPriority = p;
                     } else {
                         ungrouped.push(t);
                     }
                 });
 
-                ungrouped.forEach(t => grid.appendChild(createCardNode(t)));
+                const groupKeys = Object.keys(groups).sort((a, b) => {
+                    if (groups[a].bestPriority !== groups[b].bestPriority) {
+                        return groups[a].bestPriority - groups[b].bestPriority;
+                    }
+                    return a.localeCompare(b);
+                });
 
-                Object.keys(groups).sort().forEach(subtitle => {
+                groupKeys.forEach(subtitle => {
                     const header = document.createElement('h3');
                     header.className = 'template-group-header';
                     header.innerText = subtitle;
                     grid.appendChild(header);
 
-                    groups[subtitle].forEach(t => grid.appendChild(createCardNode(t)));
+                    groups[subtitle].items.forEach(t => grid.appendChild(createCardNode(t)));
                 });
+
+                if (groupKeys.length > 0 && ungrouped.length > 0) {
+                    const sep = document.createElement('div');
+                    sep.style.gridColumn = '1 / -1';
+                    sep.style.margin = '5px 0 -10px 0';
+                    sep.style.borderTop = '2px dashed rgba(0,0,0,0.15)';
+                    grid.appendChild(sep);
+                }
+
+                ungrouped.forEach(t => grid.appendChild(createCardNode(t)));
             } else {
                 filtered.forEach(t => grid.appendChild(createCardNode(t)));
             }
