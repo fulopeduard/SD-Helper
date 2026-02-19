@@ -354,7 +354,7 @@
         /* Group Header Style - UPDATED FOR COMPACTNESS */
         .template-group-header {
             grid-column: 1 / -1;
-            margin: 5px 0 -10px 0; /* Negative bottom margin counteracts the grid gap to bring cards closer */
+            margin: 5px 0 -10px 0;
             padding-bottom: 2px;
             border-bottom: 1px solid rgba(0,0,0,0.15);
             color: var(--primary);
@@ -504,6 +504,7 @@
         #fillerModal { z-index: 1100; }
         #batchMoveModal { z-index: 1150; }
         #linkBuilderModal { z-index: 1200; }
+        #clipboardHistoryModal { z-index: 1300; }
 
         .template-link {
             color: var(--primary);
@@ -643,6 +644,36 @@
 
         .quick-add-box { padding: 10px; border-top: 1px solid var(--border); background: rgba(255,255,255,0.5); }
 
+        /* Clipboard History Styles */
+        .history-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .history-text {
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 100px;
+            overflow-y: auto;
+            color: #444;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            font-family: monospace;
+        }
+        .history-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
     </style>
 </head>
 <body>
@@ -723,6 +754,7 @@
 
     <div style="display: flex; gap: 5px; margin-bottom: 10px;">
         <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
+        <button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
         <button class="btn btn-sm btn-secondary" id="settingsBtnBottom" style="display: none; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
     </div>
 </div>
@@ -878,6 +910,20 @@
             <div style="flex:1"></div>
             <button class="btn btn-secondary" onclick="app.closeModal('colorOrderModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.applyColorSort()">Apply Sort</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="clipboardHistoryModal">
+    <div class="modal" style="width: 600px;">
+        <div class="modal-header">
+            <span>🕒 Clipboard History</span>
+            <button class="btn btn-sm btn-danger" onclick="app.clearClipboardHistory()">Clear All</button>
+        </div>
+        <div class="modal-body" id="clipboardHistoryList" style="max-height: 400px; overflow-y: auto;">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('clipboardHistoryModal')">Close</button>
         </div>
     </div>
 </div>
@@ -1131,7 +1177,8 @@
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
             settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false },
-            selectedIds: []
+            selectedIds: [],
+            clipboardHistory: [] // Local storage only
         },
 
         initAuth: function() {
@@ -1317,6 +1364,85 @@
             });
         },
 
+        // --- CLIPBOARD HISTORY (LOCAL STORAGE ONLY) ---
+        initClipboardHistory: function() {
+            const history = localStorage.getItem('sdHelperClipboardHistory');
+            if (history) {
+                try {
+                    this.data.clipboardHistory = JSON.parse(history);
+                } catch(e) {
+                    this.data.clipboardHistory = [];
+                }
+            } else {
+                this.data.clipboardHistory = [];
+            }
+        },
+
+        saveClipboardHistory: function() {
+            localStorage.setItem('sdHelperClipboardHistory', JSON.stringify(this.data.clipboardHistory));
+        },
+
+        addToClipboardHistory: function(text) {
+            if(!text) return;
+            if(!this.data.clipboardHistory) this.data.clipboardHistory = [];
+
+            // Remove if exists to bring to top
+            this.data.clipboardHistory = this.data.clipboardHistory.filter(item => item !== text);
+
+            this.data.clipboardHistory.unshift(text);
+
+            // Keep max 20
+            if(this.data.clipboardHistory.length > 20) {
+                this.data.clipboardHistory = this.data.clipboardHistory.slice(0, 20);
+            }
+
+            this.saveClipboardHistory();
+        },
+
+        openClipboardHistoryModal: function() {
+            this.renderClipboardHistory();
+            document.getElementById('clipboardHistoryModal').style.display = 'flex';
+        },
+
+        renderClipboardHistory: function() {
+            const container = document.getElementById('clipboardHistoryList');
+            container.innerHTML = '';
+
+            if(!this.data.clipboardHistory || this.data.clipboardHistory.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">No history yet.</p>';
+                return;
+            }
+
+            this.data.clipboardHistory.forEach((text, index) => {
+                const safeText = this.escapeHtml(text);
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="history-text">${safeText}</div>
+                    <div class="history-actions">
+                        <button class="btn btn-sm btn-primary" onclick="app.copyFromHistory(${index})">Copy</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        },
+
+        copyFromHistory: function(index) {
+            const text = this.data.clipboardHistory[index];
+            if(text) {
+                this.copyToClipboard(text);
+            }
+        },
+
+        clearClipboardHistory: function() {
+            if(confirm('Are you sure you want to clear your clipboard history?')) {
+                this.data.clipboardHistory = [];
+                this.saveClipboardHistory();
+                this.renderClipboardHistory();
+            }
+        },
+
+        // --- QUICK TITLES (SNIPPETS) FUNCTIONALITY ---
         initQuickSidebar: function() {
             const savedOpen = localStorage.getItem('quickSidebarOpen');
             const savedWidth = localStorage.getItem('quickSidebarWidth');
@@ -2789,7 +2915,7 @@
                 this.data.customVars[this.editingVarIndex] = newVarObj;
             } else {
                 this.data.customVars.push(newVarObj);
-                this.editingVarIndex = this.data.customVars.length - 1; 
+                this.editingVarIndex = this.data.customVars.length - 1;
             }
 
             this.saveData();
@@ -2830,7 +2956,7 @@
             }
 
             this.toggleVarOptions();
-            this.renderVarsList(); 
+            this.renderVarsList();
         },
 
         deleteCurrentVar: function() {
@@ -2856,7 +2982,7 @@
             document.getElementById('newVarType').value = 'text';
 
             this.toggleVarOptions();
-            this.renderVarsList(); 
+            this.renderVarsList();
         },
 
         toggleVarOptions: function() {
@@ -3025,6 +3151,13 @@
                 document.execCommand('copy');
                 toast.style.display = 'block';
                 setTimeout(() => toast.style.display = 'none', 2000);
+
+                this.addToClipboardHistory(text);
+
+                if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
+                    this.renderClipboardHistory();
+                }
+
             } catch (err) {
                 alert("Clipboard failed. Please copy manually.");
             }
@@ -3085,7 +3218,8 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         app.initAuth();
-        app.initQuickSidebar(); 
+        app.initQuickSidebar();
+        app.initClipboardHistory();
         window.onclick = function(event) {
             if (!event.target.classList.contains('card-menu-btn')) {
                 document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
