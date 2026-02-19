@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v20.25</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛠️</text></svg>">
+    <title>SD Helper v20.26</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧠</text></svg>">
     <style>
         :root {
             --primary: #0078d4;
@@ -24,7 +24,7 @@
             --selected-border: #005a9e;
             --selected-bg: #e6f2ff;
             --sidebar-bg: #d9d9fc;
-            --card-min-height: 250px; /* Dynamic via settings */
+            --card-min-height: 250px;
         }
 
         * { box-sizing: border-box; }
@@ -54,7 +54,7 @@
         }
 
         .app-title {
-            font-size: 1.0rem;
+            font-size: 1.0rem; 
             font-weight: bold;
             margin-bottom: 15px;
             color: #1a1a1a;
@@ -262,7 +262,7 @@
             display: flex;
             flex-direction: column;
             background-color: #d0d0e8;
-            transition: margin-right 0.1s linear;
+            transition: margin-right 0.1s linear; 
         }
 
         .header-actions {
@@ -328,7 +328,7 @@
         body.compact-mode .card-preview {
             font-size: 0.8rem;
             margin-bottom: 10px;
-            -webkit-line-clamp: 4; /* Show less lines in compact */
+            -webkit-line-clamp: 4; 
         }
         body.compact-mode .card-actions {
             gap: 5px;
@@ -351,6 +351,16 @@
             top: 30px;
         }
 
+        /* Group Header Style */
+        .template-group-header {
+            grid-column: 1 / -1;
+            margin: 20px 0 5px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
 
         .card.draggable { cursor: grab; }
         .card.dragging { opacity: 0.4; border: 2px dashed var(--primary); transform: scale(0.95); }
@@ -604,9 +614,9 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         .quick-item:hover { background-color: #e6f2ff; border-color: var(--primary); transform: translateX(-2px); }
-        .quick-item-text {
-            overflow: hidden; text-overflow: ellipsis; flex: 1;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        .quick-item-text { 
+            overflow: hidden; text-overflow: ellipsis; flex: 1; 
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; 
             word-break: break-word; white-space: pre-wrap; font-family: inherit; line-height: 1.3;
         }
 
@@ -615,7 +625,7 @@
             background: rgba(255,255,255,0.7); padding: 8px; border-radius: 4px; border: 1px dashed #aaa;
         }
         .quick-edit-input { flex: 1; padding: 5px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 3px; font-family: inherit; }
-
+        
         .quick-action-btn {
             width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;
             border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; cursor: pointer; color: #444; font-size: 1rem;
@@ -641,8 +651,8 @@
     <div class="quick-header">
         <h3 id="quickSidebarTitle">⚡ Quick Snippets</h3>
         <div>
-            <button class="btn-cat-edit" id="btnQuickEdit" onclick="app.toggleQuickEdit()">✎ Edit</button>
-            <button class="btn-sm btn-secondary" onclick="app.toggleQuickSidebar()">✕</button>
+             <button class="btn-cat-edit" id="btnQuickEdit" onclick="app.toggleQuickEdit()">✎ Edit</button>
+             <button class="btn-sm btn-secondary" onclick="app.toggleQuickSidebar()">✕</button>
         </div>
     </div>
     <div class="quick-content">
@@ -651,16 +661,16 @@
         </div>
     </div>
     <div class="quick-add-box" id="quickAddBox" style="display:none;">
-        <div style="display:flex; flex-direction:column; gap:6px;">
-            <select id="newQuickMainCat" class="form-control" style="font-size:0.85rem; padding:4px;"></select>
-
-            <input type="text" id="newQuickCatInput" list="quickCatList" class="form-control" placeholder="Sub-category (e.g. Description)" style="font-size:0.85rem;">
-            <datalist id="quickCatList"></datalist>
-
-            <textarea id="newQuickTitleInput" class="form-control" placeholder="Snippet text / value..." rows="4" style="font-size:0.9rem; resize:vertical; font-family:inherit;"></textarea>
-
-            <button class="btn btn-sm btn-primary" onclick="app.addQuickTitle()">Add Snippet</button>
-        </div>
+         <div style="display:flex; flex-direction:column; gap:6px;">
+             <select id="newQuickMainCat" class="form-control" style="font-size:0.85rem; padding:4px;"></select>
+             
+             <input type="text" id="newQuickCatInput" list="quickCatList" class="form-control" placeholder="Sub-category (e.g. Description)" style="font-size:0.85rem;">
+             <datalist id="quickCatList"></datalist>
+             
+             <textarea id="newQuickTitleInput" class="form-control" placeholder="Snippet text / value..." rows="4" style="font-size:0.9rem; resize:vertical; font-family:inherit;"></textarea>
+             
+             <button class="btn btn-sm btn-primary" onclick="app.addQuickTitle()">Add Snippet</button>
+         </div>
     </div>
 </div>
 
@@ -698,13 +708,13 @@
         <h3>Categories</h3>
         <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
     </div>
-
+    
     <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()">
 
     <div class="category-container">
         <ul class="category-list" id="categoryList"></ul>
     </div>
-
+    
     <div style="display: flex; gap: 5px; margin-bottom: 10px;">
         <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
         <button class="btn btn-sm btn-secondary" id="settingsBtnBottom" style="display: none; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
@@ -729,10 +739,23 @@
         <div class="modal-header"><span id="editorTitle">Create Template</span></div>
         <div class="modal-body">
             <input type="hidden" id="editId">
-            <div class="form-group">
-                <label>Template Name</label>
-                <input type="text" class="form-control" id="inputTitle" placeholder="Template Title">
+            
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>Template Name</label>
+                        <input type="text" class="form-control" id="inputTitle" placeholder="Template Title">
+                    </div>
+                </div>
+                <div class="col" style="flex: 1.5;">
+                    <div class="form-group">
+                        <label>Subtitle (Optional Group)</label>
+                        <input type="text" list="subtitleOptions" class="form-control" id="inputSubtitle" placeholder="e.g. Teams messages">
+                        <datalist id="subtitleOptions"></datalist>
+                    </div>
+                </div>
             </div>
+
             <div class="row">
                 <div class="col">
                     <div class="form-group">
@@ -876,12 +899,12 @@
                     <input type="number" id="settingCardMinHeight" class="form-control" min="100" max="800" step="10" style="width: 80px; padding: 4px;">
                     <span style="font-size:0.85rem; color:#666;">px</span>
                 </div>
-
+                
                 <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingShowTitle">
                     <span style="margin-left: 5px;">Show "SD Helper Cloud" title</span>
                 </label>
-
+                
                 <label class="radio-label" style="margin-top: 8px;">
                     <input type="checkbox" id="settingShowLang">
                     <span style="margin-left: 5px;">Show EN/DE language switcher</span>
@@ -903,7 +926,7 @@
             <h4>Color Labels</h4>
             <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Customize the meaning of each color (shown as tooltip in the editor).</p>
             <div id="settingsColorLabelsContainer" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            </div>
+                </div>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
@@ -1086,7 +1109,7 @@
             currentCategory: 'All',
             currentFolderId: null,
             isRearranging: false,
-            isCategoryEditing: false,
+            isCategoryEditing: false, 
             isQuickTitleEditing: false,
             isQuickOpen: false,
             quickWidth: 320,
@@ -1094,7 +1117,7 @@
             categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
             folders: [],
             customVars: [],
-            quickTitles: [],
+            quickTitles: [], 
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
             settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false },
@@ -1115,10 +1138,10 @@
                     document.getElementById('authOverlay').style.display = 'flex';
                     const emailDisplay = document.getElementById('userEmailDisplay');
                     if(emailDisplay) emailDisplay.innerText = "Not Logged In";
-
+                    
                     this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false };
                     this.applyAppearanceSettings();
-
+                    
                     this.data.templates = [];
                     this.renderTemplates();
                 }
@@ -1174,7 +1197,7 @@
                     this.data.folders = savedData.folders || [];
                     this.data.categories = savedData.categories || ['General'];
                     this.data.customVars = savedData.customVars || [];
-
+                    
                     let loadedQuick = savedData.quickTitles || [];
                     this.data.quickTitles = loadedQuick.map(item => {
                         if (typeof item === 'string') {
@@ -1193,7 +1216,7 @@
                     if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
                     if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                     this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-
+                    
                     if(savedData.settings) {
                         this.data.settings = savedData.settings;
                         if(!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
@@ -1215,7 +1238,7 @@
 
                 this.renderCategories();
                 this.renderTemplates();
-                this.renderQuickTitles();
+                this.renderQuickTitles(); 
                 this.updateLangUI();
                 this.updateEditorColorSwatches();
                 this.applyAppearanceSettings();
@@ -1234,7 +1257,7 @@
                 folders: this.data.folders,
                 categories: this.data.categories,
                 customVars: this.data.customVars,
-                quickTitles: this.data.quickTitles,
+                quickTitles: this.data.quickTitles, 
                 timeSettings: this.data.timeSettings,
                 lastUpdated: new Date(),
                 currentLang: this.data.currentLang,
@@ -1333,14 +1356,14 @@
 
             document.addEventListener('mousemove', (e) => {
                 if (!isResizing) return;
-
+                
                 let newWidth = window.innerWidth - e.clientX;
-
+                
                 if (newWidth < 250) newWidth = 250;
-                if (newWidth > 800) newWidth = 800;
+                if (newWidth > 800) newWidth = 800; 
 
                 this.data.quickWidth = newWidth;
-
+                
                 const sidebar = document.getElementById('quickSidebar');
                 const main = document.querySelector('.main');
                 sidebar.style.width = newWidth + 'px';
@@ -1352,7 +1375,7 @@
                     isResizing = false;
                     document.body.style.cursor = 'default';
                     document.body.style.userSelect = '';
-
+                    
                     document.getElementById('quickSidebar').style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
                     document.querySelector('.main').style.transition = 'margin-right 0.1s linear';
 
@@ -1373,7 +1396,7 @@
                 btn.classList.remove('active');
                 btn.innerText = "✎ Edit";
                 addBox.style.display = 'none';
-                this.saveData();
+                this.saveData(); 
             }
             this.renderQuickTitles();
         },
@@ -1386,10 +1409,10 @@
 
             const subCat = document.getElementById('newQuickCatInput').value.trim() || 'General';
             const txt = document.getElementById('newQuickTitleInput').value.trim();
-
+            
             if(txt) {
                 this.data.quickTitles.push({ mainCategory: mainCat, subCategory: subCat, text: txt });
-                document.getElementById('newQuickTitleInput').value = '';
+                document.getElementById('newQuickTitleInput').value = ''; 
                 this.renderQuickTitles();
                 this.saveData();
                 document.getElementById('newQuickTitleInput').focus();
@@ -1455,13 +1478,13 @@
                     const idx = item.originalIndex;
                     const safeSubCat = this.escapeHtml(item.subCategory);
                     const safeTxt = this.escapeHtml(item.text);
-
-                    const catOptions = this.data.categories.map(c =>
+                    
+                    const catOptions = this.data.categories.map(c => 
                         `<option value="${this.escapeHtml(c)}" ${c === item.mainCategory ? 'selected' : ''}>${this.escapeHtml(c)}</option>`
                     ).join('');
 
                     let li = document.createElement('li');
-
+                    
                     li.innerHTML = `
                         <div class="quick-edit-row">
                             <div style="display:flex; gap:5px; width: 100%; align-items:center;">
@@ -1483,10 +1506,10 @@
             } else {
                 const grouped = {};
                 filteredSnippets.forEach((item) => {
-                    const key = (currentMainCat === 'All' || currentMainCat === 'Trash')
-                                ? `[${item.mainCategory}] ${item.subCategory}`
+                    const key = (currentMainCat === 'All' || currentMainCat === 'Trash') 
+                                ? `[${item.mainCategory}] ${item.subCategory}` 
                                 : item.subCategory;
-
+                    
                     if(!grouped[key]) grouped[key] = [];
                     grouped[key].push(item);
                 });
@@ -1545,7 +1568,7 @@
             } else {
                 btn.classList.remove('active');
                 btn.innerText = "✎ Edit";
-                this.saveData();
+                this.saveData(); 
             }
             this.renderCategories();
         },
@@ -1564,12 +1587,12 @@
             if (!newName || newName === oldName) return;
             if (this.data.categories.includes(newName)) {
                 alert("Category name already exists!");
-                this.renderCategories();
+                this.renderCategories(); 
                 return;
             }
 
             this.data.categories[index] = newName;
-
+            
             this.data.templates.forEach(t => { if (t.category === oldName) t.category = newName; });
             this.data.folders.forEach(f => { if (f.category === oldName) f.category = newName; });
             this.data.quickTitles.forEach(q => { if (q.mainCategory === oldName) q.mainCategory = newName; });
@@ -1673,13 +1696,13 @@
         },
 
         selectCategory: function(cat) {
-            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return;
+            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return; 
             this.data.currentCategory = cat;
             this.data.currentFolderId = null;
             this.updateHeaderButtons(cat);
             this.renderCategories();
             this.renderTemplates();
-            this.renderQuickTitles();
+            this.renderQuickTitles(); 
         },
 
         selectFolder: function(folderId, catName) {
@@ -1688,7 +1711,7 @@
             this.updateHeaderButtons(catName);
             this.renderCategories();
             this.renderTemplates();
-            this.renderQuickTitles();
+            this.renderQuickTitles(); 
         },
 
         updateHeaderButtons: function(cat) {
@@ -1974,7 +1997,7 @@
             document.getElementById('settingShowLang').checked = this.data.settings.showLangSwitcher !== false;
             document.getElementById('settingCompactMode').checked = !!this.data.settings.compactMode;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
-
+            
             document.getElementById('timeStart').value = this.data.timeSettings.start;
             document.getElementById('timeEnd').value = this.data.timeSettings.end;
             document.getElementById('timeEve').value = this.data.timeSettings.eve;
@@ -1986,9 +2009,9 @@
                 {hex: '#bbdefb', name: 'Blue'}, {hex: '#e1bee7', name: 'Purple'}, {hex: '#ffe0b2', name: 'Orange'},
                 {hex: '#b2dfdb', name: 'Teal'}, {hex: '#f8bbd0', name: 'Pink'}, {hex: '#cfd8dc', name: 'Grey'}
             ];
-
+            
             if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
-
+            
             baseColors.forEach(c => {
                 const val = this.data.settings.colorLabels[c.hex] || '';
                 container.innerHTML += `
@@ -2009,11 +2032,11 @@
             this.data.settings.showLangSwitcher = document.getElementById('settingShowLang').checked;
             this.data.settings.compactMode = document.getElementById('settingCompactMode').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
-
+            
             this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
             this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
             this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
-
+            
             if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
             document.querySelectorAll('#settingsColorLabelsContainer input').forEach(input => {
                 const hex = input.getAttribute('data-hex');
@@ -2154,7 +2177,7 @@
                 return;
             }
 
-            filtered.forEach(t => {
+            const createCardNode = (t) => {
                 const safeTitle = this.escapeHtml(t.title);
                 let safeContent = this.escapeHtml(t.content);
 
@@ -2169,22 +2192,25 @@
                 });
 
                 const bgColor = t.color || '#ffffff';
-                let html = '';
-
                 const isSelected = rearranging && this.data.selectedIds.includes(t.id);
                 const selectionClass = isSelected ? ' selected' : '';
+
+                const div = document.createElement('div');
+                div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
+                if(rearranging) div.draggable = true;
+                div.style.backgroundColor = bgColor;
+                div.setAttribute('data-id', t.id);
+                if(rearranging) div.setAttribute('onclick', `app.toggleSelection(event, ${t.id})`);
 
                 if (t.deleted) {
                     const btns = `<button class="card-btn restore" onclick="app.restoreTemplate(${t.id})">Restore</button>
                                   <button class="card-btn delete-forever" onclick="app.deleteForever(${t.id})">Delete Forever</button>`;
 
-                    html = `
-                        <div class="card" style="background-color: ${bgColor};">
-                            <div class="card-title">${safeTitle}</div>
-                            <div class="card-preview">${safeContent}</div>
-                            <div class="card-actions">${btns}</div>
-                        </div>`;
-                    grid.innerHTML += html;
+                    div.innerHTML = `
+                        <div class="card-title">${safeTitle}</div>
+                        <div class="card-preview">${safeContent}</div>
+                        <div class="card-actions">${btns}</div>
+                    `;
                 } else {
                     const menu = `
                         <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
@@ -2207,13 +2233,6 @@
                         quickViewBtn = `<button class="card-view-btn" onclick="app.viewTemplate(${t.id})" title="Quick View">👁️</button>`;
                     }
 
-                    const div = document.createElement('div');
-                    div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
-                    if(rearranging) div.draggable = true;
-                    div.style.backgroundColor = bgColor;
-                    div.setAttribute('data-id', t.id);
-                    if(rearranging) div.setAttribute('onclick', `app.toggleSelection(event, ${t.id})`);
-
                     div.innerHTML = `
                             ${quickViewBtn}
                             ${menu}
@@ -2230,10 +2249,38 @@
                         div.addEventListener('drop', app.handleDrop.bind(app));
                         div.addEventListener('dragend', app.handleDragEnd.bind(app));
                     }
-
-                    grid.appendChild(div);
                 }
-            });
+                return div;
+            };
+
+            const shouldGroup = currentCat !== 'All' && currentCat !== 'Trash' && !rearranging && !term;
+
+            if (shouldGroup) {
+                const groups = {};
+                const ungrouped = [];
+                
+                filtered.forEach(t => {
+                    if (t.subtitle) {
+                        if (!groups[t.subtitle]) groups[t.subtitle] = [];
+                        groups[t.subtitle].push(t);
+                    } else {
+                        ungrouped.push(t);
+                    }
+                });
+
+                ungrouped.forEach(t => grid.appendChild(createCardNode(t)));
+
+                Object.keys(groups).sort().forEach(subtitle => {
+                    const header = document.createElement('h3');
+                    header.className = 'template-group-header';
+                    header.innerText = subtitle;
+                    grid.appendChild(header);
+
+                    groups[subtitle].forEach(t => grid.appendChild(createCardNode(t)));
+                });
+            } else {
+                filtered.forEach(t => grid.appendChild(createCardNode(t)));
+            }
         },
 
         toggleMenu: function(e, id) {
@@ -2248,6 +2295,7 @@
         saveTemplate: function() {
             const id = document.getElementById('editId').value;
             const title = document.getElementById('inputTitle').value;
+            const subtitle = document.getElementById('inputSubtitle').value.trim();
             const category = document.getElementById('inputCategory').value;
             const lang = document.getElementById('inputLang').value;
             const content = document.getElementById('inputContent').value;
@@ -2261,13 +2309,13 @@
                 const idx = this.data.templates.findIndex(t => t.id == id);
                 if (idx > -1) this.data.templates[idx] = {
                     ...this.data.templates[idx],
-                    title, category, lang, content, isViewOnly, color,
+                    title, subtitle, category, lang, content, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null
                 };
             } else {
                 this.data.templates.push({
                     id: Date.now(),
-                    title, category, lang, content,
+                    title, subtitle, category, lang, content,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null
                 });
@@ -2371,6 +2419,7 @@
                 document.getElementById('editorTitle').innerText = "Edit Template";
                 document.getElementById('editId').value = t.id;
                 document.getElementById('inputTitle').value = t.title;
+                document.getElementById('inputSubtitle').value = t.subtitle || '';
 
                 const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
                 document.getElementById('inputCategory').value = cat;
@@ -2394,6 +2443,7 @@
                 document.getElementById('editorTitle').innerText = "New Template";
                 document.getElementById('editId').value = "";
                 document.getElementById('inputTitle').value = "";
+                document.getElementById('inputSubtitle').value = "";
 
                 let defaultCat = "General";
                 if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
@@ -2412,6 +2462,13 @@
 
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+            }
+
+            const subList = document.getElementById('subtitleOptions');
+            if (subList) {
+                const targetCat = document.getElementById('inputCategory').value;
+                const uniqueSubs = [...new Set(this.data.templates.filter(temp => temp.category === targetCat && temp.subtitle).map(temp => temp.subtitle))].sort();
+                subList.innerHTML = uniqueSubs.map(s => `<option value="${this.escapeHtml(s)}">`).join('');
             }
 
             this.toggleLinkButton();
@@ -2501,6 +2558,7 @@
             this.openEditor();
             document.getElementById('editorTitle').innerText = "Clone Template";
             document.getElementById('inputTitle').value = t.title + " (Copy)";
+            document.getElementById('inputSubtitle').value = t.subtitle || '';
 
             const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
             document.getElementById('inputCategory').value = cat;
