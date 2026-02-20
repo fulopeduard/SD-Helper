@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v20.29</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧠</text></svg>">
+    <title>SD Helper v20.30</title>
     <style>
         :root {
             --primary: #0078d4;
@@ -643,6 +642,36 @@
         .quick-action-btn.del:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
         .quick-add-box { padding: 10px; border-top: 1px solid var(--border); background: rgba(255,255,255,0.5); }
+
+        /* Clipboard History Styles */
+        .history-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .history-text {
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 100px;
+            overflow-y: auto;
+            color: #444;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            font-family: monospace;
+        }
+        .history-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
 
     </style>
 </head>
@@ -1386,7 +1415,7 @@
 
                 const div = document.createElement('div');
                 div.className = 'card';
-                div.style.minHeight = '150px'; // Overriding default slightly for history readability
+                div.style.minHeight = '150px';
 
                 let quickViewBtn = `<button class="card-view-btn" onclick="app.viewHistoryItem(${index})" title="Quick View" style="right: 5px;">👁️</button>`;
                 let useBtn = `<button class="card-btn use" style="width:100%" onclick="app.copyFromHistory(${index})">Use</button>`;
@@ -1774,11 +1803,23 @@
                 html += `<li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')"><span>All Templates</span></li>`;
             }
 
+            const doesFolderMatch = (folderId) => {
+                const folder = this.data.folders.find(f => f.id === folderId);
+                if (!folder) return false;
+                if (folder.name.toLowerCase().includes(searchTerm)) return true;
+                const children = this.data.folders.filter(f => f.parentFolderId === folderId && !f.deleted);
+                return children.some(child => doesFolderMatch(child.id));
+            };
+
             this.data.categories.forEach((cat, index) => {
                 const safeCat = this.escapeHtml(cat);
                 const isActiveCat = (current === cat);
+                const catMatches = searchTerm && cat.toLowerCase().includes(searchTerm);
 
-                if (searchTerm && !cat.toLowerCase().includes(searchTerm)) return;
+                const rootFolders = this.data.folders.filter(f => f.category === cat && !f.deleted && !f.parentFolderId);
+                const hasMatchingFolder = searchTerm ? rootFolders.some(f => doesFolderMatch(f.id)) : false;
+
+                if (searchTerm && !catMatches && !hasMatchingFolder) return;
 
                 if (editing) {
                     html += `
@@ -1796,10 +1837,11 @@
                             <span>${safeCat}</span>
                         </li>`;
 
-                    if (isActiveCat) {
-                        const myFolders = this.data.folders.filter(f => f.category === cat && !f.deleted && !f.parentFolderId);
-                        myFolders.forEach(f => {
-                           html += this.renderFolderTree(cat, f.id, 0, currentFolder);
+                    if (isActiveCat || (searchTerm && (hasMatchingFolder || catMatches))) {
+                        rootFolders.forEach(f => {
+                           if (!searchTerm || catMatches || doesFolderMatch(f.id)) {
+                               html += this.renderFolderTree(cat, f.id, 0, currentFolder, searchTerm, catMatches);
+                           }
                         });
                     }
                 }
@@ -1829,23 +1871,37 @@
             }
         },
 
-        renderFolderTree: function(cat, parentId, level, activeId) {
+        renderFolderTree: function(cat, parentId, level, activeId, searchTerm = '', catMatches = false) {
             const folder = this.data.folders.find(f => f.id === parentId);
             if(!folder) return '';
 
             const isFolderActive = (activeId === folder.id);
             const padding = 30 + (level * 20);
 
-            let html = `
-                <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
-                    <span><i class="folder-icon-tree">└</i> ${this.escapeHtml(folder.name)}</span>
-                    <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
-                </li>`;
+            const folderMatches = searchTerm !== '' && folder.name.toLowerCase().includes(searchTerm);
 
-            const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
-            children.forEach(child => {
-                html += this.renderFolderTree(cat, child.id, level + 1, activeId);
-            });
+            const doesDescendantMatch = (fid) => {
+                const children = this.data.folders.filter(f => f.parentFolderId === fid && !f.deleted);
+                if (children.some(c => c.name.toLowerCase().includes(searchTerm))) return true;
+                return children.some(c => doesDescendantMatch(c.id));
+            };
+
+            const hasMatchingDescendant = searchTerm !== '' && doesDescendantMatch(folder.id);
+
+            let html = '';
+
+            if (searchTerm === '' || folderMatches || hasMatchingDescendant || catMatches) {
+                html += `
+                    <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
+                        <span><i class="folder-icon-tree">└</i> ${this.escapeHtml(folder.name)}</span>
+                        <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
+                    </li>`;
+
+                const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
+                children.forEach(child => {
+                    html += this.renderFolderTree(cat, child.id, level + 1, activeId, searchTerm, catMatches);
+                });
+            }
 
             return html;
         },
