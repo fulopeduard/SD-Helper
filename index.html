@@ -317,6 +317,11 @@
             min-height: var(--card-min-height);
         }
 
+        /* JAVÍTÁS: Magasabb z-index, amikor a kártya menüje nyitva van, hogy ne vágja le a többi kártya */
+        .card.menu-open {
+            z-index: 150 !important;
+        }
+
         /* Hover Preview Clone */
         #hover-preview-clone {
             position: fixed;
@@ -3090,13 +3095,28 @@
             }
         },
 
+        /* JAVÍTÁS: A z-index kezelése a szülő .card elemen amikor a menü aktív */
         toggleMenu: function(e, id) {
             e.stopPropagation();
             document.querySelectorAll('.dropdown-menu').forEach(el => {
-                if(el.id !== `menu-${id}`) el.classList.remove('show');
+                if(el.id !== `menu-${id}`) {
+                    el.classList.remove('show');
+                    const parentCard = el.closest('.card');
+                    if (parentCard) parentCard.classList.remove('menu-open');
+                }
             });
             const menu = document.getElementById(`menu-${id}`);
-            if(menu) menu.classList.toggle('show');
+            if(menu) {
+                menu.classList.toggle('show');
+                const parentCard = menu.closest('.card');
+                if (parentCard) {
+                    if (menu.classList.contains('show')) {
+                        parentCard.classList.add('menu-open');
+                    } else {
+                        parentCard.classList.remove('menu-open');
+                    }
+                }
+            }
         },
 
         saveTemplate: function() {
