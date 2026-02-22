@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SD Helper v20.32</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧠</text></svg>">
     <style>
         :root {
             --primary: #0078d4;
@@ -1041,10 +1040,15 @@
                 <textarea class="form-control" id="snippetContent" placeholder="Snippet text / content..." style="min-height: 150px;"></textarea>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-danger" id="btnDeleteSnippet" style="display:none; margin-right:auto;" onclick="app.deleteSnippetFromModal()">Delete</button>
-            <button class="btn btn-secondary" onclick="app.closeModal('snippetModal')">Cancel</button>
-            <button class="btn btn-primary" onclick="app.saveSnippet()">Save Snippet</button>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-danger" id="btnDeleteSnippet" style="display:none;" onclick="app.deleteSnippetFromModal()">Delete</button>
+                <button class="btn btn-success" id="btnCopyToTemplate" style="display:none;" onclick="app.copySnippetToTemplate()">Copy to Category/Folder</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="app.closeModal('snippetModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveSnippet()">Save Snippet</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1917,6 +1921,7 @@
                 document.getElementById('snippetModalTitle').innerText = "Edit Snippet";
                 document.getElementById('editSnippetIdx').value = idx;
                 document.getElementById('btnDeleteSnippet').style.display = 'block';
+                document.getElementById('btnCopyToTemplate').style.display = 'block';
 
                 mainCatSelect.value = this.data.categories.includes(s.mainCategory) ? s.mainCategory : this.data.categories[0];
                 this.updateSnippetFolderOptions();
@@ -1938,6 +1943,7 @@
                 document.getElementById('snippetModalTitle').innerText = "Create Snippet";
                 document.getElementById('editSnippetIdx').value = "";
                 document.getElementById('btnDeleteSnippet').style.display = 'none';
+                document.getElementById('btnCopyToTemplate').style.display = 'none';
 
                 let defaultCat = "General";
                 if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
@@ -2034,6 +2040,52 @@
                     this.closeModal('snippetModal');
                 }
             }
+        },
+
+        copySnippetToTemplate: function() {
+            const idxStr = document.getElementById('editSnippetIdx').value;
+            if (idxStr === "") return;
+            const idx = parseInt(idxStr);
+            const s = this.data.quickTitles[idx];
+            if(!s) return;
+
+            let targetCat = this.data.currentCategory;
+            if(targetCat === 'All' || targetCat === 'Trash') {
+                targetCat = this.data.categories.includes(s.mainCategory) ? s.mainCategory : 'General';
+            }
+
+            let targetFolderId = null;
+            if (this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                targetFolderId = this.data.currentFolderId || null;
+            } else {
+                targetFolderId = s.folderId || null;
+            }
+
+            const title = s.description ? s.description : (s.subCategory !== 'General' ? s.subCategory : 'Snippet Template');
+            const subtitle = s.subCategory !== 'General' ? s.subCategory : '';
+
+            this.data.templates.push({
+                id: Date.now(),
+                title: title,
+                subtitle: subtitle,
+                category: targetCat,
+                lang: this.data.currentLang || 'en',
+                content: s.text,
+                deleted: false,
+                isViewOnly: false,
+                color: s.color || '#ffffff',
+                folderId: targetFolderId
+            });
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                this.reorderTemplatesByColorInternal(targetCat, targetFolderId);
+            }
+
+            this.saveData();
+            this.renderTemplates();
+            this.closeModal('snippetModal');
+
+            alert(`Snippet copied to ${targetCat}${targetFolderId ? ' (Folder)' : ''} as a new template!`);
         },
 
         copyQuickTitle: function(text) {
@@ -2911,6 +2963,7 @@
                             <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
                             <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
                             <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
+                            <div class="dropdown-item" onclick="app.copyToSnippets(${t.id})">⚡ Copy to Snippets</div>
                             <div class="dropdown-item" onclick="app.moveToSnippets(${t.id})">⚡ Move to Snippets</div>
                             <div class="dropdown-divider"></div>
                             <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
@@ -3083,6 +3136,34 @@
             this.saveData();
             this.closeModal('editorModal');
             this.renderTemplates();
+        },
+
+        copyToSnippets: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            if(!confirm("Are you sure you want to copy this template to Snippets?")) return;
+
+            const mainCat = this.data.categories.includes(t.category) ? t.category : 'General';
+            const fId = t.folderId || null;
+            const subCat = t.subtitle || 'General';
+            const desc = t.title || '';
+            const txt = t.content || '';
+            let color = t.color || '#ffffff';
+
+            const existing = this.data.quickTitles.find(q => q.mainCategory === mainCat && q.subCategory === subCat);
+            if (existing && existing.color) {
+                color = existing.color;
+            }
+
+            this.data.quickTitles.push({ mainCategory: mainCat, folderId: fId, subCategory: subCat, description: desc, text: txt, color: color });
+
+            this.saveData();
+            this.renderQuickTitles();
+
+            if (!this.data.isQuickOpen) {
+                this.toggleQuickSidebar();
+            }
         },
 
         moveToSnippets: function(id) {
