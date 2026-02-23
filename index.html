@@ -2970,6 +2970,7 @@
                             <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
                             <div class="dropdown-item" onclick="app.copyToSnippets(${t.id})">⚡ Copy to Snippets</div>
                             <div class="dropdown-item" onclick="app.moveToSnippets(${t.id})">⚡ Move to Snippets</div>
+                            <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
                             <div class="dropdown-divider"></div>
                             <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
                         </div>
@@ -3116,6 +3117,21 @@
                         parentCard.classList.remove('menu-open');
                     }
                 }
+            }
+        },
+
+        copyTemplateHyperlink: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if (!t) return;
+            const linkTag = `{{link:${t.title}}}`;
+            this.copyToClipboard(linkTag);
+
+            // Menü bezárása másolás után
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.remove('show');
+                const parentCard = menu.closest('.card');
+                if(parentCard) parentCard.classList.remove('menu-open');
             }
         },
 
