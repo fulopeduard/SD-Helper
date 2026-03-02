@@ -3140,22 +3140,12 @@
 
             validPinned.forEach((t, index) => {
                 let itemsHtml = '<div class="pinned-todo-list" style="margin-bottom: 5px;">';
-                
-                // --- ÚJ RÉSZ: Megnézzük, kell-e a Generate gomb ---
-                let hasTemplateMarkers = false;
-                
                 if(t.todoItems) {
-                    // Ellenőrizzük, hogy van-e [] vagy {} a szövegben
-                    hasTemplateMarkers = t.todoItems.some(item =>
-                        (item.text.includes('[') && item.text.includes(']')) ||
-                        (item.text.includes('{') && item.text.includes('}'))
-                    );
-
                     t.todoItems.forEach((item, itemIdx) => {
                         const isChecked = item.checked ? 'checked' : '';
                         const textStyle = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: #333;';
 
-                        // A [] és {} részek eltávolítása a vizuális megjelenésből
+                        // ÚJ: A [] és {} részek eltávolítása a vizuális megjelenésből
                         const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
 
                         itemsHtml += `
@@ -3168,16 +3158,6 @@
                 }
                 itemsHtml += '</div>';
 
-                // --- ÚJ RÉSZ: Generate gomb HTML-je, ha szükséges ---
-                let generateBtnHtml = '';
-                if (hasTemplateMarkers) {
-                    generateBtnHtml = `
-                        <button class="btn btn-sm btn-primary" style="width: 100%; padding: 4px; font-size: 0.8rem; margin-top: 5px;" onclick="app.generateTodoTemplate(${t.id})">
-                            Generate template
-                        </button>
-                    `;
-                }
-
                 const borderStyle = index < validPinned.length - 1 ? 'border-bottom: 1px dashed #fbc02d; margin-bottom: 10px; padding-bottom: 8px;' : '';
 
                 contentHtml += `
@@ -3187,7 +3167,6 @@
                             <button class="btn-cat-edit" style="border:none; padding:0; font-size:1.1rem;" onclick="app.pinTodo(${t.id})" title="Unpin">✖</button>
                         </div>
                         ${itemsHtml}
-                        ${generateBtnHtml}
                     </div>
                 `;
             });
