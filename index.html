@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SD Helper v20.32</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📜</text></svg>">
     <style>
         :root {
             --primary: #0078d4;
@@ -1730,28 +1729,30 @@
         },
 
         saveData: async function() {
-            if (!this.user) return;
-            const userDocRef = doc(db, "users", this.user.uid);
+    if (!this.user) return;
+    const userDocRef = doc(db, "users", this.user.uid);
 
-            const payload = {
-                templates: this.data.templates,
-                folders: this.data.folders,
-                categories: this.data.categories,
-                customVars: this.data.customVars,
-                quickTitles: this.data.quickTitles,
-                timeSettings: this.data.timeSettings,
-                lastUpdated: new Date(),
-                currentLang: this.data.currentLang,
-                colorOrder: this.data.colorOrder,
-                settings: this.data.settings
-            };
+    const payload = {
+        templates: this.data.templates,
+        folders: this.data.folders,
+        categories: this.data.categories,
+        customVars: this.data.customVars,
+        quickTitles: this.data.quickTitles,
+        timeSettings: this.data.timeSettings,
+        lastUpdated: new Date(),
+        currentLang: this.data.currentLang,
+        colorOrder: this.data.colorOrder,
+        settings: this.data.settings
+    };
 
-            try {
-                await setDoc(userDocRef, payload);
-            } catch (e) {
-                console.error("Cloud save failed:", e);
-            }
-        },
+    try {
+        await setDoc(userDocRef, payload);
+        console.log("Sikeres mentés a felhőbe.");
+    } catch (e) {
+        console.error("Cloud save failed:", e);
+        alert("Hiba történt a felhőbe mentéskor!\nOk: " + e.message);
+    }
+},
 
         applyAppearanceSettings: function() {
             if (!this.data.settings) return;
@@ -3141,12 +3142,22 @@
 
             validPinned.forEach((t, index) => {
                 let itemsHtml = '<div class="pinned-todo-list" style="margin-bottom: 5px;">';
+                
+                // --- ÚJ RÉSZ: Megnézzük, kell-e a Generate gomb ---
+                let hasTemplateMarkers = false;
+                
                 if(t.todoItems) {
+                    // Ellenőrizzük, hogy van-e [] vagy {} a szövegben
+                    hasTemplateMarkers = t.todoItems.some(item =>
+                        (item.text.includes('[') && item.text.includes(']')) ||
+                        (item.text.includes('{') && item.text.includes('}'))
+                    );
+
                     t.todoItems.forEach((item, itemIdx) => {
                         const isChecked = item.checked ? 'checked' : '';
                         const textStyle = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: #333;';
 
-                        // ÚJ: A [] és {} részek eltávolítása a vizuális megjelenésből
+                        // A [] és {} részek eltávolítása a vizuális megjelenésből
                         const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
 
                         itemsHtml += `
@@ -3159,6 +3170,16 @@
                 }
                 itemsHtml += '</div>';
 
+                // --- ÚJ RÉSZ: Generate gomb HTML-je, ha szükséges ---
+                let generateBtnHtml = '';
+                if (hasTemplateMarkers) {
+                    generateBtnHtml = `
+                        <button class="btn btn-sm btn-primary" style="width: 100%; padding: 4px; font-size: 0.8rem; margin-top: 5px;" onclick="app.generateTodoTemplate(${t.id})">
+                            Generate template
+                        </button>
+                    `;
+                }
+
                 const borderStyle = index < validPinned.length - 1 ? 'border-bottom: 1px dashed #fbc02d; margin-bottom: 10px; padding-bottom: 8px;' : '';
 
                 contentHtml += `
@@ -3168,6 +3189,7 @@
                             <button class="btn-cat-edit" style="border:none; padding:0; font-size:1.1rem;" onclick="app.pinTodo(${t.id})" title="Unpin">✖</button>
                         </div>
                         ${itemsHtml}
+                        ${generateBtnHtml}
                     </div>
                 `;
             });
@@ -4229,28 +4251,70 @@
             this.closeModal('fillerModal');
         },
 
-        copyToClipboard: function(text) {
+        copyToClipboard: async function(text) {
             const toast = document.getElementById('toast');
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            document.body.appendChild(ta);
-            ta.select();
+            
+            // 1. Create the HTML version (preserves line breaks and creates links)
+            let htmlText = text.replace(/\n/g, '<br>');
+            
+            // Convert Markdown-style links like [HERE](https://google.com) into real HTML links
+            htmlText = htmlText.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2">$1</a>');
+
+            // 2. Create a Plain Text fallback version (removes the link formatting but keeps the URL)
+            let plainText = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1 ($2)');
+
             try {
-                document.execCommand('copy');
+                // 3. Try to use the modern Async Clipboard API (Supports Rich HTML Text)
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const htmlBlob = new Blob([htmlText], { type: 'text/html' });
+                    const textBlob = new Blob([plainText], { type: 'text/plain' });
+                    const clipboardItem = new ClipboardItem({
+                        'text/html': htmlBlob,
+                        'text/plain': textBlob
+                    });
+                    await navigator.clipboard.write([clipboardItem]);
+                } else {
+                    throw new Error("ClipboardItem API not supported");
+                }
+
+                // Show success toast
                 toast.style.display = 'block';
                 setTimeout(() => toast.style.display = 'none', 2000);
-
                 this.addToClipboardHistory(text);
-
                 if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
                     this.renderClipboardHistory();
                 }
 
             } catch (err) {
-                alert("Clipboard failed. Please copy manually.");
+                // 4. FALLBACK: If modern API is restricted (e.g. HTTP instead of HTTPS), use the hidden DIV trick
+                console.warn("Using fallback clipboard method...");
+                try {
+                    const div = document.createElement('div');
+                    div.contentEditable = true;
+                    div.innerHTML = htmlText; // Insert HTML with links
+                    div.style.position = 'fixed';
+                    div.style.left = '-9999px';
+                    document.body.appendChild(div);
+                    
+                    const range = document.createRange();
+                    range.selectNodeContents(div);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    
+                    document.execCommand('copy');
+                    document.body.removeChild(div);
+                    
+                    toast.style.display = 'block';
+                    setTimeout(() => toast.style.display = 'none', 2000);
+                    this.addToClipboardHistory(text);
+                    if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
+                        this.renderClipboardHistory();
+                    }
+                } catch (fallbackErr) {
+                    alert("Clipboard copy failed. Please check browser permissions.");
+                }
             }
-            document.body.removeChild(ta);
         },
 
         openLinkBuilder: function() {
@@ -4672,647 +4736,8 @@
             if(modalContent) {
                 modalContent.style.backgroundColor = colorHex;
             }
-        },
-
-        openEditor: function(id) {
-            document.getElementById('editorModal').style.display = 'flex';
-            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-
-            document.getElementById('variableTray').style.display = 'none';
-            document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
-
-            if (id) {
-                const t = this.data.templates.find(x => x.id === id);
-                document.getElementById('editorTitle').innerText = "Edit Template";
-                document.getElementById('editId').value = t.id;
-                document.getElementById('inputTitle').value = t.title;
-                document.getElementById('inputSubtitle').value = t.subtitle || '';
-
-                const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
-                document.getElementById('inputCategory').value = cat;
-
-                document.getElementById('inputLang').value = t.lang;
-                document.getElementById('inputContent').value = t.content;
-                document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
-
-                const color = t.color || '#ffffff';
-                document.getElementById('inputColor').value = color;
-                const swatch = document.querySelector(`.color-swatch[data-hex="${color}"]`);
-                if(swatch) swatch.classList.add('selected');
-                else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
-
-                document.querySelector('#editorModal .modal').style.backgroundColor = color;
-
-                this.updateFolderOptions('inputCategory', 'inputFolder');
-                document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
-
-            } else {
-                document.getElementById('editorTitle').innerText = "New Template";
-                document.getElementById('editId').value = "";
-                document.getElementById('inputTitle').value = "";
-                document.getElementById('inputSubtitle').value = "";
-
-                let defaultCat = "General";
-                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
-                    defaultCat = this.data.currentCategory;
-                }
-                document.getElementById('inputCategory').value = defaultCat;
-
-                document.getElementById('inputLang').value = this.data.currentLang;
-                document.getElementById('inputContent').value = "";
-                document.getElementById('inputViewOnly').checked = false;
-
-                document.getElementById('inputColor').value = '#ffffff';
-                document.querySelector('.color-swatch.none').classList.add('selected');
-
-                document.querySelector('#editorModal .modal').style.backgroundColor = '#ffffff';
-
-                this.updateFolderOptions('inputCategory', 'inputFolder');
-                document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
-            }
-
-            const subList = document.getElementById('subtitleOptions');
-            if (subList) {
-                const targetCat = document.getElementById('inputCategory').value;
-                const uniqueSubs = [...new Set(this.data.templates.filter(temp => temp.category === targetCat && temp.subtitle).map(temp => temp.subtitle))].sort();
-                subList.innerHTML = uniqueSubs.map(s => `<option value="${this.escapeHtml(s)}">`).join('');
-            }
-
-            this.toggleLinkButton();
-        },
-
-        toggleLinkButton: function() {
-            const isViewOnly = document.getElementById('inputViewOnly').checked;
-            const btn = document.getElementById('btnLinkTemplate');
-            btn.style.display = isViewOnly ? 'flex' : 'none';
-        },
-
-        toggleVarTray: function(trayId) {
-            const tray = document.getElementById(trayId);
-            const btn = trayId === 'snippetVariableTray' ? document.getElementById('btnSnippetTray') : document.getElementById('btnTray');
-            const chipsId = trayId === 'snippetVariableTray' ? 'snippetTrayChips' : 'trayChips';
-            const targetContentId = trayId === 'snippetVariableTray' ? 'snippetContent' : 'inputContent';
-
-            if (tray.style.display === 'block') {
-                tray.style.display = 'none';
-                btn.classList.remove('active');
-                return;
-            }
-
-            tray.style.display = 'block';
-            btn.classList.add('active');
-            document.getElementById(chipsId).innerHTML = '';
-
-            const sysVars = [
-                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
-                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
-                {key: 'name', label: 'Customer Name', type: 'SYS'},
-                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
-            ];
-
-            const allVars = [...sysVars, ...this.data.customVars];
-            this.renderTrayChips(allVars, chipsId, targetContentId);
-        },
-
-        filterTray: function(val, chipsId, targetContentId) {
-            const sysVars = [
-                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
-                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
-                {key: 'name', label: 'Customer Name', type: 'SYS'},
-                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
-            ];
-            const allVars = [...sysVars, ...this.data.customVars];
-
-            if(!val) {
-                this.renderTrayChips(allVars, chipsId, targetContentId);
-                return;
-            }
-            const filtered = allVars.filter(v => v.key.toLowerCase().includes(val.toLowerCase()) || v.label.toLowerCase().includes(val.toLowerCase()));
-            this.renderTrayChips(filtered, chipsId, targetContentId);
-        },
-
-        renderTrayChips: function(list, chipsId, targetContentId) {
-            const container = document.getElementById(chipsId);
-            container.innerHTML = '';
-            if(list.length === 0) {
-                container.innerHTML = '<span style="color:#888; font-size:0.8rem;">No variables found.</span>';
-                return;
-            }
-            list.forEach(v => {
-                const chip = document.createElement('div');
-                if(v.type === 'SYS') chip.className = 'var-chip system';
-                else chip.className = 'var-chip';
-
-                chip.innerHTML = `{{${this.escapeHtml(v.key)}}}<small>${this.escapeHtml(v.label)}</small>`;
-                chip.onclick = () => this.insertAtCursor(`{{${v.key}}}`, targetContentId);
-                container.appendChild(chip);
-            });
-        },
-
-        insertAtCursor: function(text, targetId = 'inputContent') {
-            const textarea = document.getElementById(targetId);
-            if (!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const val = textarea.value;
-
-            textarea.value = val.substring(0, start) + text + val.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + text.length;
-            textarea.focus();
-        },
-
-        cloneTemplate: function(id) {
-            const t = this.data.templates.find(x => x.id === id);
-            if(!t) return;
-            this.openEditor();
-            document.getElementById('editorTitle').innerText = "Clone Template";
-            document.getElementById('inputTitle').value = t.title + " (Copy)";
-            document.getElementById('inputSubtitle').value = t.subtitle || '';
-
-            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
-            document.getElementById('inputCategory').value = cat;
-
-            document.getElementById('inputLang').value = t.lang;
-            document.getElementById('inputContent').value = t.content;
-            document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
-
-            const color = t.color || '#ffffff';
-            document.getElementById('inputColor').value = color;
-            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-            const swatch = document.querySelector(`.color-swatch[data-hex="${color}"]`);
-            if(swatch) swatch.classList.add('selected');
-            else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
-
-            this.updateFolderOptions('inputCategory', 'inputFolder');
-            document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
-        },
-
-        viewTemplate: function(id) {
-            const t = this.data.templates.find(x => x.id === id);
-            if(!t) return;
-
-            let safeContent = this.escapeHtml(t.content);
-            safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
-                if(p1.trim().startsWith('link:')) return match;
-                return `<span style="font-weight:bold;">{{${p1}}}</span>`;
-            });
-            safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
-                const parts = content.split('|');
-                const tplName = parts[0].trim();
-                const displayText = parts.length > 1 ? parts[1].trim() : tplName;
-                const safeName = tplName.replace(/'/g, "\\'");
-                return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
-            });
-
-            const existingModals = document.querySelectorAll('.dynamic-view-modal');
-            const baseZIndex = 1050;
-            const newZIndex = baseZIndex + (existingModals.length * 10);
-
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay dynamic-view-modal';
-            overlay.style.zIndex = newZIndex;
-            overlay.style.display = 'flex';
-
-            overlay.innerHTML = `
-                <div class="modal" style="width: 800px; max-width: 95%;">
-                    <div class="modal-header">
-                        <span>${this.escapeHtml(t.title)}</span>
-                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
-                    </div>
-                    <div class="modal-body">
-                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary close-dynamic-btn">Close</button>
-                    </div>
-                </div>
-            `;
-
-            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
-            closeBtns.forEach(btn => {
-                btn.onclick = function() {
-                    overlay.remove();
-                };
-            });
-            overlay.onclick = function(e) {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            };
-            document.body.appendChild(overlay);
-        },
-
-        openVarsModal: function() {
-            document.getElementById('varsModal').style.display = 'flex';
-            this.renderVarsList();
-            this.resetVarForm();
-        },
-
-        renderVarsList: function() {
-            const container = document.getElementById('variableListContainer');
-            const filter = document.getElementById('varSearchInput').value.toLowerCase();
-            container.innerHTML = '';
-
-            if (this.data.customVars.length === 0) {
-                container.innerHTML = '<div style="padding:15px; color:#888; text-align:center;">No custom variables.<br>Create one on the right.</div>';
-                return;
-            }
-
-            let filteredVars = this.data.customVars.map((v, idx) => ({ ...v, originalIndex: idx }))
-                .filter(v => v.key.toLowerCase().includes(filter) || v.label.toLowerCase().includes(filter));
-
-            if (filteredVars.length === 0) {
-                container.innerHTML = '<div style="padding:15px; color:#888;">No matches found.</div>';
-                return;
-            }
-
-            filteredVars.forEach(v => {
-                let typeBadge = '';
-                if(v.type === 'text') typeBadge = 'TXT';
-                else if(v.type === 'select') typeBadge = 'SEL';
-                else if(v.type === 'radio') typeBadge = 'RAD';
-                else if(v.type === 'checklist') typeBadge = 'CHK';
-                else if(v.type === 'fixed') typeBadge = 'FIX';
-
-                const isActive = (this.editingVarIndex === v.originalIndex) ? 'active' : '';
-
-                container.innerHTML += `
-                    <div class="var-card ${isActive}" onclick="app.editVar(${v.originalIndex})">
-                        <div class="var-card-header">
-                            <span class="var-card-key">{{${this.escapeHtml(v.key)}}}</span>
-                            <span class="var-card-type">${typeBadge}</span>
-                        </div>
-                        <div class="var-card-label">${this.escapeHtml(v.label)}</div>
-                    </div>`;
-            });
-        },
-
-        filterVars: function() {
-            this.renderVarsList();
-        },
-
-        addChecklistRow: function(label = "", value = "") {
-            const container = document.getElementById('checklistRows');
-            const row = document.createElement('div');
-            row.className = 'builder-row';
-            row.innerHTML = `
-                <input type="text" class="form-control" placeholder="Label (e.g. Outlook)" value="${this.escapeHtml(label)}">
-                <textarea class="form-control" placeholder="Content (Values to copy)">${this.escapeHtml(value)}</textarea>
-                <button class="btn btn-danger btn-sm" style="height:36px;" onclick="this.parentElement.remove()">×</button>
-            `;
-            container.appendChild(row);
-        },
-
-        saveCustomVariable: function() {
-            const key = document.getElementById('newVarKey').value.trim().replace(/[{}]/g, '');
-            let label = document.getElementById('newVarLabel').value.trim();
-            const type = document.getElementById('newVarType').value;
-            const opts = document.getElementById('newVarOptions').value;
-
-            if (!key) return alert("Key required");
-
-            const existingIdx = this.data.customVars.findIndex(v => v.key === key);
-            if (existingIdx !== -1 && existingIdx !== this.editingVarIndex) {
-                return alert("Key already exists!");
-            }
-
-            if (type === 'text') {
-                if (!label) return alert("Label (Question) is required for Text Input");
-            } else {
-                if(!label) label = key;
-            }
-
-            let options = [];
-
-            if (type === 'checklist') {
-                const rows = document.querySelectorAll('.builder-row');
-                if(rows.length === 0) return alert("Please add at least one item to the checklist.");
-
-                rows.forEach(row => {
-                    const l = row.querySelector('input').value.trim();
-                    let v = row.querySelector('textarea').value;
-                    if(l) {
-                        options.push({ label: l, value: v || l });
-                    }
-                });
-                if(options.length === 0) return alert("Please fill in the checklist items.");
-
-            } else if (type === 'fixed') {
-                if (!opts) return alert("Fixed Text content required");
-                options = opts;
-            } else if (type !== 'text') {
-                if (!opts) return alert("Options required");
-                options = opts.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-            }
-
-            const newVarObj = { key, label, type, options };
-
-            if (this.editingVarIndex > -1) {
-                this.data.customVars[this.editingVarIndex] = newVarObj;
-            } else {
-                this.data.customVars.push(newVarObj);
-                this.editingVarIndex = this.data.customVars.length - 1;
-            }
-
-            this.saveData();
-            this.renderVarsList();
-
-            document.getElementById('btnDeleteVar').style.display = 'inline-block';
-            document.getElementById('btnSaveVar').innerText = "Update Variable";
-            document.getElementById('varEditorTitle').innerText = "Edit Variable";
-        },
-
-        editVar: function(idx) {
-            const v = this.data.customVars[idx];
-            this.editingVarIndex = idx;
-
-            document.getElementById('varEditorTitle').innerText = "Edit Variable";
-            document.getElementById('btnSaveVar').innerText = "Update Variable";
-            document.getElementById('btnDeleteVar').style.display = 'inline-block';
-
-            document.getElementById('newVarKey').value = v.key;
-            document.getElementById('newVarLabel').value = v.label;
-            document.getElementById('newVarType').value = v.type;
-
-            if (v.type === 'checklist') {
-                document.getElementById('checklistRows').innerHTML = '';
-                if(Array.isArray(v.options)) {
-                    v.options.forEach(opt => {
-                        this.addChecklistRow(opt.label, opt.value);
-                    });
-                }
-            } else {
-                let optsStr = "";
-                if (Array.isArray(v.options)) {
-                    optsStr = v.options.join('\n');
-                } else {
-                    optsStr = v.options || "";
-                }
-                document.getElementById('newVarOptions').value = optsStr;
-            }
-
-            this.toggleVarOptions();
-            this.renderVarsList();
-        },
-
-        deleteCurrentVar: function() {
-            if(this.editingVarIndex === -1) return;
-            if(confirm("Delete this variable?")) {
-                this.data.customVars.splice(this.editingVarIndex, 1);
-                this.saveData();
-                this.resetVarForm();
-                this.renderVarsList();
-            }
-        },
-
-        resetVarForm: function() {
-            this.editingVarIndex = -1;
-            document.getElementById('varEditorTitle').innerText = "Create New Variable";
-            document.getElementById('btnSaveVar').innerText = "Create Variable";
-            document.getElementById('btnDeleteVar').style.display = 'none';
-
-            document.getElementById('newVarKey').value = '';
-            document.getElementById('newVarLabel').value = '';
-            document.getElementById('newVarOptions').value = '';
-            document.getElementById('checklistRows').innerHTML = '';
-            document.getElementById('newVarType').value = 'text';
-
-            this.toggleVarOptions();
-            this.renderVarsList();
-        },
-
-        toggleVarOptions: function() {
-            const type = document.getElementById('newVarType').value;
-            const optContainer = document.getElementById('varOptionsContainer');
-            const builderContainer = document.getElementById('checklistBuilder');
-            const optEl = document.getElementById('newVarOptions');
-            const lblEl = document.getElementById('newVarLabel');
-
-            optContainer.style.display = 'block';
-            builderContainer.style.display = 'none';
-            optEl.disabled = false;
-            lblEl.disabled = false;
-            lblEl.placeholder = "Question (e.g. Ticket Number?)";
-
-            if (type === 'checklist') {
-                optContainer.style.display = 'none';
-                builderContainer.style.display = 'block';
-                lblEl.placeholder = "Title (e.g. Software List)";
-            } else if (type === 'text') {
-                optEl.disabled = true;
-                optEl.placeholder = 'N/A';
-            } else {
-                lblEl.disabled = true;
-                lblEl.value = '';
-                lblEl.placeholder = "Auto-generated from Key";
-                if (type === 'fixed') {
-                    optEl.placeholder = 'Enter your text (e.g. Best Regards,\nName)';
-                } else {
-                    optEl.placeholder = 'Option 1\nOption 2\nOption 3';
-                }
-            }
-        },
-
-        prepareTemplate: function(id) {
-            const t = this.data.templates.find(x => x.id === id);
-            if(!t) return;
-            this.processAndShowFiller(t.content);
-        },
-
-        processAndShowFiller: function(contentToProcess) {
-            this.tempContent = contentToProcess;
-
-            const h = new Date().getHours();
-            const s = this.data.timeSettings;
-            let str = "";
-            if (h >= s.start && h < s.end) str = (this.data.currentLang === 'de') ? "Morgen" : "Morning";
-            else if (h >= s.end && h < s.eve) str = (this.data.currentLang === 'de') ? "Tag" : "Day";
-            else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
-
-            this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
-
-            this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
-                const parts = content.split('|');
-                return parts.length > 1 ? parts[1].trim() : parts[0].trim();
-            });
-
-            let regex = /{{(.*?)}}/g;
-            let matches = [...new Set(this.tempContent.match(regex))];
-
-            if (matches && matches.length > 0) {
-                matches.forEach(m => {
-                    const key = m.replace(/[{}]/g, '').trim();
-                    const v = this.data.customVars.find(cv => cv.key === key);
-                    if (v && v.type === 'fixed') {
-                        this.tempContent = this.tempContent.split(m).join(v.options);
-                    }
-                });
-            }
-
-            matches = [...new Set(this.tempContent.match(regex))];
-
-            if (!matches || matches.length === 0) {
-                this.copyToClipboard(this.tempContent);
-                return;
-            }
-
-            const container = document.getElementById('fillerInputs');
-            container.innerHTML = '';
-
-            matches.forEach(m => {
-                const key = m.replace(/[{}]/g, '').trim();
-                const v = this.data.customVars.find(cv => cv.key === key);
-                let html = '';
-
-                if (key.toLowerCase() === 'gender') {
-                    html = `<div class="form-group"><label>Gender</label>
-                            <div class="radio-group">
-                                <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
-                                <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
-                            </div></div>`;
-                } else if (v) {
-                    html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
-
-                    if (v.type === 'checklist') {
-                        if(Array.isArray(v.options)) {
-                            v.options.forEach(opt => {
-                                html += `
-                                <div class="checklist-item">
-                                    <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
-                                    <span>${this.escapeHtml(opt.label)}</span>
-                                </div>`;
-                            });
-                        }
-                    } else if (v.type === 'text') {
-                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea>`;
-                    } else if (v.type === 'select') {
-                        html += `<select class="form-control" id="val_${key}">`;
-                        v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
-                        html += `</select>`;
-                    } else if (v.type === 'radio') {
-                        html += `<div class="radio-group">`;
-                        v.options.forEach((o, i) => html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(o)}" ${i===0?'checked':''}> ${this.escapeHtml(o)}</label>`);
-                        html += `</div>`;
-                    }
-                    html += `</div>`;
-                } else {
-                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea></div>`;
-                }
-                container.innerHTML += html;
-            });
-
-            document.getElementById('fillerModal').style.display = 'flex';
-            setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
-        },
-
-        processAndCopy: function() {
-            let txt = this.tempContent;
-            const regex = /{{(.*?)}}/g;
-            const matches = [...new Set(txt.match(regex))];
-
-            matches.forEach(m => {
-                const key = m.replace(/[{}]/g, '').trim();
-                let val = "";
-
-                if (key.toLowerCase() === 'gender') {
-                    const g = document.querySelector('input[name="val_gender"]:checked').value;
-                    if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
-                    else val = (g === 'm') ? "Mr." : "Ms.";
-                } else {
-                    const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
-
-                    if(checkboxes.length > 0) {
-                        let values = [];
-                        checkboxes.forEach(chk => values.push(chk.value));
-                        val = values.join('\n');
-                    } else {
-                        const radio = document.querySelector(`input[name="val_${key}"]:checked`);
-                        if (radio) val = radio.value;
-                        else {
-                            const el = document.getElementById(`val_${key}`);
-                            if (el) val = el.value;
-                        }
-                    }
-                }
-                txt = txt.split(m).join(val);
-            });
-            this.copyToClipboard(txt);
-            this.closeModal('fillerModal');
-        },
-
-        copyToClipboard: function(text) {
-            const toast = document.getElementById('toast');
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            document.body.appendChild(ta);
-            ta.select();
-            try {
-                document.execCommand('copy');
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 2000);
-
-                this.addToClipboardHistory(text);
-
-                if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
-                    this.renderClipboardHistory();
-                }
-
-            } catch (err) {
-                alert("Clipboard failed. Please copy manually.");
-            }
-            document.body.removeChild(ta);
-        },
-
-        openLinkBuilder: function() {
-            document.getElementById('linkNameInput').value = '';
-            document.getElementById('linkCustomInput').value = '';
-
-            const list = document.getElementById('templateOptions');
-            list.innerHTML = '';
-            this.data.templates.forEach(t => {
-                if(!t.deleted) list.innerHTML += `<option value="${this.escapeHtml(t.title)}">`;
-            });
-
-            document.getElementById('linkBuilderModal').style.display = 'flex';
-            setTimeout(() => document.getElementById('linkNameInput').focus(), 50);
-        },
-
-        generateLinkTag: function() {
-            const name = document.getElementById('linkNameInput').value.trim();
-            const custom = document.getElementById('linkCustomInput').value.trim();
-
-            if(!name) {
-                alert("Please enter a template name.");
-                return;
-            }
-
-            let tag = "";
-            if(custom) {
-                tag = `{{link:${name}|${custom}}}`;
-            } else {
-                tag = `{{link:${name}}}`;
-            }
-
-            this.insertAtCursor(tag);
-            this.closeModal('linkBuilderModal');
-        },
-
-        openDeepL: function(target) {
-            const text = document.getElementById('inputContent').value;
-            if (!text) return;
-            const sourceLang = document.getElementById('inputLang').value || 'auto';
-            window.open(`https://www.deepl.com/translator?share=generic#${sourceLang}/${target}/${encodeURIComponent(text)}`, '_blank');
-        },
-
-        openGoogleTranslate: function(target) {
-            const text = document.getElementById('inputContent').value;
-            if (!text) return;
-            window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
-        },
-
-        closeModal: function(id) { document.getElementById(id).style.display = 'none'; }
-    };
+        }
+    }; // <-- Itt záródik be az app objektum
 
     window.app = app;
 
