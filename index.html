@@ -718,9 +718,9 @@
             position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
             background-color: var(--primary); color: white; border-top-left-radius: 8px; border-bottom-left-radius: 8px;
             cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: width 0.2s; font-size: 12px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: background-color 0.2s; font-size: 12px;
         }
-        .quick-side-toggle:hover { width: 30px; }
+        .quick-side-toggle:hover { background-color: #005a9e; }
 
         .quick-sidebar {
             position: fixed; top: 0; right: 0; height: 100vh;
@@ -2517,21 +2517,22 @@
             const sidebar = document.getElementById('quickSidebar');
             const main = document.querySelector('.main');
             const toggleBtn = document.querySelector('.quick-side-toggle');
+            
+            // Pontosan a sáv beállított szélességét használjuk
             const width = this.data.quickWidth || 320;
-
             sidebar.style.width = width + 'px';
 
             if (this.data.isQuickOpen) {
                 sidebar.style.transform = 'translateX(0)';
                 main.style.marginRight = width + 'px';
                 main.style.paddingRight = '10px'; // Alapértelmezett távolság visszaállítása
-                if (toggleBtn) toggleBtn.style.display = 'none'; // Gomb elrejtése ha nyitva van a sáv
+                if (toggleBtn) toggleBtn.style.display = 'none'; // Gomb elrejtése ha nyitva van
             } else {
-                // Eltoljuk 100% + 25px-szel, hogy a sáv árnyéka és az átméretező vonal biztosan ne lógjon be a képernyőre!
-                sidebar.style.transform = 'translateX(calc(100% + 25px))';
+                // Pixelpontosan kitoljuk a képernyőről a saját szélességével + 30 pixellel a biztonság kedvéért (árnyék és resize handle miatt)
+                sidebar.style.transform = `translateX(${width + 30}px)`;
                 main.style.marginRight = '0px';
-                main.style.paddingRight = '40px'; // Helyet csinálunk a kártyák és a jobb szél között a gombnak
-                if (toggleBtn) toggleBtn.style.display = 'flex'; // Gomb mutatása ha a sáv rejtve van
+                main.style.paddingRight = '40px'; // Helyet csinálunk a kártyák és a jobb szél között a kék gombnak
+                if (toggleBtn) toggleBtn.style.display = 'flex'; // Gomb mutatása
             }
         },
 
