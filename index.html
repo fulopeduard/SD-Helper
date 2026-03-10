@@ -2516,15 +2516,22 @@
         updateQuickSidebarUI: function() {
             const sidebar = document.getElementById('quickSidebar');
             const main = document.querySelector('.main');
-            const width = this.data.quickWidth;
+            const toggleBtn = document.querySelector('.quick-side-toggle');
+            const width = this.data.quickWidth || 320;
+
+            sidebar.style.width = width + 'px';
 
             if (this.data.isQuickOpen) {
                 sidebar.style.transform = 'translateX(0)';
-                sidebar.style.width = width + 'px';
                 main.style.marginRight = width + 'px';
+                main.style.paddingRight = '10px'; // Alapértelmezett távolság visszaállítása
+                if (toggleBtn) toggleBtn.style.display = 'none'; // Gomb elrejtése ha nyitva van a sáv
             } else {
-                sidebar.style.transform = 'translateX(100%)';
-                main.style.marginRight = '0';
+                // Eltoljuk 100% + 25px-szel, hogy a sáv árnyéka és az átméretező vonal biztosan ne lógjon be a képernyőre!
+                sidebar.style.transform = 'translateX(calc(100% + 25px))';
+                main.style.marginRight = '0px';
+                main.style.paddingRight = '40px'; // Helyet csinálunk a kártyák és a jobb szél között a gombnak
+                if (toggleBtn) toggleBtn.style.display = 'flex'; // Gomb mutatása ha a sáv rejtve van
             }
         },
 
