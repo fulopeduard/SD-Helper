@@ -51,7 +51,16 @@
             flex-shrink: 0;
             z-index: 10;
             position: relative;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
+
+        .left-side-toggle {
+            position: fixed; left: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
+            background-color: var(--primary); color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px;
+            cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: width 0.2s; font-size: 12px;
+        }
+        .left-side-toggle:hover { width: 30px; }
 
         .resize-handle-left {
             position: absolute; right: 0; top: 0; bottom: 0; width: 5px;
@@ -243,6 +252,18 @@
         .sidebar-delete-btn:hover { transform: translateY(-50%) scale(1.2); background: white !important; opacity: 1 !important;}
 
         /* Login Overlay */
+		.settings-section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+        }
+        .settings-section-title:first-child {
+            margin-top: 0;
+        }
         .auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.95);
@@ -268,7 +289,7 @@
             display: flex;
             flex-direction: column;
             background-color: #d0d0e8;
-            transition: margin-right 0.1s linear;
+            transition: margin-right 0.1s linear, padding-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
 
         .header-actions {
@@ -1061,11 +1082,16 @@
             </div>
     </div>
 </div>
-<div class="quick-side-toggle" onclick="app.toggleQuickSidebar()" title="Quick Snippets">
+
+<div class="left-side-toggle" id="leftSideToggle" onclick="app.toggleLeftSidebar()" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')" style="display:none;" title="Show categories panel">
+    ▶
+</div>
+
+<div class="quick-side-toggle" onclick="app.toggleQuickSidebar()" onmouseenter="app.handleSidebarEnter('right')" onmouseleave="app.handleSidebarLeave('right')" title="Quick Snippets">
     ◀
 </div>
 
-<div class="quick-sidebar" id="quickSidebar" style="width: 320px;">
+<div class="quick-sidebar" id="quickSidebar" style="width: 320px;" onmouseenter="app.handleSidebarEnter('right')" onmouseleave="app.handleSidebarLeave('right')">
     <div class="resize-handle" id="resizeHandle"></div>
 
     <div class="quick-header">
@@ -1102,7 +1128,7 @@
     </div>
 </div>
 
-<div class="sidebar">
+<div class="sidebar" id="leftSidebar" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')">
     <div class="resize-handle-left" id="resizeHandleLeft"></div>
     <div class="app-title" id="sidebarAppTitle">🛠️ SD Helper Cloud</div>
 
@@ -1127,6 +1153,7 @@
     </div>
 
     <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+        <button class="btn btn-sm btn-secondary" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px; border: 1px solid var(--border);">◀</button>
         <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
         <button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
         <button class="btn btn-sm btn-secondary" id="settingsBtnBottom" style="display: none; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
@@ -1482,7 +1509,20 @@
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
-            <h4 style="margin-top:0;">Appearance</h4>
+            <div class="settings-section-title">Sidebars & Panels</div>
+            <div class="form-group">
+                <label class="radio-label">
+                    <input type="checkbox" id="settingAutoHide">
+                    <span style="margin-left: 5px;"><strong>Auto-hide Sidebars</strong> (Categories & Snippets automatically close when mouse leaves)</span>
+                </label>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 10px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Auto-hide delay:</label>
+                    <input type="number" id="settingAutoHideDelay" class="form-control" min="0.1" max="10" step="0.1" value="1.0" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">seconds</span>
+                </div>
+            </div>
+            
+            <div class="settings-section-title">Appearance</div>
             <div class="form-group">
                 <label class="radio-label" style="margin-bottom: 5px;">
                     <input type="checkbox" id="settingCompactMode">
@@ -1787,7 +1827,9 @@
             quickTitles: [],
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
-            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false },
+            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, autoHideSidebars: false, autoHideDelay: 1.0 },
+            leftSidebarTimer: null,
+            rightSidebarTimer: null,
             selectedIds: [],
             clipboardHistory: []
         },
@@ -2343,12 +2385,48 @@
         },
 
         // --- LEFT SIDEBAR (CATEGORIES) RESIZE ---
+        toggleLeftSidebar: function() {
+            this.data.isSidebarOpen = !this.data.isSidebarOpen;
+            localStorage.setItem('leftSidebarOpen', this.data.isSidebarOpen);
+            this.updateLeftSidebarUI();
+        },
+
+        updateLeftSidebarUI: function() {
+            const sidebar = document.querySelector('.sidebar');
+            const main = document.querySelector('.main');
+            const toggleBtn = document.getElementById('leftSideToggle');
+            
+            // Pontosan a sáv beállított szélességét használjuk (alapból 300px)
+            const width = this.data.sidebarWidth || 300;
+
+            if (this.data.isSidebarOpen) {
+                sidebar.style.marginLeft = '0px';
+                main.style.paddingLeft = '10px';
+                if(toggleBtn) toggleBtn.style.display = 'none';
+            } else {
+                // Pontosan a saját szélességével toljuk ki negatív irányba, se többel, se kevesebbel.
+                // Így a .main tartalma pontosan a képernyő bal szélénél (0px) fog kezdődni.
+                sidebar.style.marginLeft = `-${width}px`; 
+                
+                // Adunk a fő tartalomnak 40px belső margót, hogy a 24px széles kinyitó gomb
+                // kényelmesen elférjen, és ne takarja ki a kártyák szélét.
+                main.style.paddingLeft = '40px'; 
+                if(toggleBtn) toggleBtn.style.display = 'flex';
+            }
+        },
+
         initSidebarResize: function() {
             const savedWidth = localStorage.getItem('sidebarWidth');
+            const savedOpen = localStorage.getItem('leftSidebarOpen');
+
+            this.data.isSidebarOpen = savedOpen !== 'false'; // Alapból nyitva van, kivéve ha elmentettük, hogy zárva
+
             if(savedWidth) {
                 this.data.sidebarWidth = parseInt(savedWidth);
                 document.querySelector('.sidebar').style.width = this.data.sidebarWidth + 'px';
             }
+            
+            this.updateLeftSidebarUI();
 
             const handle = document.getElementById('resizeHandleLeft');
             let isResizing = false;
@@ -2378,6 +2456,39 @@
                     localStorage.setItem('sidebarWidth', this.data.sidebarWidth);
                 }
             });
+        },
+		
+		// --- AUTO-HIDE SIDEBAR LOGIC ---
+        handleSidebarEnter: function(side) {
+            if (!this.data.settings.autoHideSidebars) return;
+            
+            if (side === 'left') {
+                clearTimeout(this.data.leftSidebarTimer);
+                if (!this.data.isSidebarOpen) {
+                    this.toggleLeftSidebar();
+                }
+            } else if (side === 'right') {
+                clearTimeout(this.data.rightSidebarTimer);
+                if (!this.data.isQuickOpen) {
+                    this.toggleQuickSidebar();
+                }
+            }
+        },
+
+        handleSidebarLeave: function(side) {
+            if (!this.data.settings.autoHideSidebars) return;
+
+            const delayMs = (this.data.settings.autoHideDelay || 1.0) * 1000;
+
+            if (side === 'left') {
+                this.data.leftSidebarTimer = setTimeout(() => {
+                    if (this.data.isSidebarOpen) this.toggleLeftSidebar();
+                }, delayMs);
+            } else if (side === 'right') {
+                this.data.rightSidebarTimer = setTimeout(() => {
+                    if (this.data.isQuickOpen) this.toggleQuickSidebar();
+                }, delayMs);
+            }
         },
 
         // --- QUICK TITLES (SNIPPETS) FUNCTIONALITY ---
@@ -3284,6 +3395,8 @@
         },
 
         openSettingsModal: function() {
+			document.getElementById('settingAutoHide').checked = !!this.data.settings.autoHideSidebars;
+            document.getElementById('settingAutoHideDelay').value = this.data.settings.autoHideDelay !== undefined ? this.data.settings.autoHideDelay : 1.0;
             document.getElementById('settingAutoSort').checked = this.data.settings.autoSortColor;
             document.getElementById('settingUseColorLabel').checked = !!this.data.settings.useColorLabelAsSubtitle;
             document.getElementById('settingAutoSnippetSubCat').checked = !!this.data.settings.autoSnippetSubCat;
@@ -3330,6 +3443,8 @@
         },
 
         saveSettings: function() {
+			this.data.settings.autoHideSidebars = document.getElementById('settingAutoHide').checked;
+            this.data.settings.autoHideDelay = parseFloat(document.getElementById('settingAutoHideDelay').value) || 1.0;
             this.data.settings.autoSortColor = document.getElementById('settingAutoSort').checked;
             this.data.settings.useColorLabelAsSubtitle = document.getElementById('settingUseColorLabel').checked;
             this.data.settings.autoSnippetSubCat = document.getElementById('settingAutoSnippetSubCat').checked;
