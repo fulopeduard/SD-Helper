@@ -987,6 +987,68 @@
         background: #f3f4f6;
         border-color: #9ca3af;
     }
+	.create-dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .btn-create-plus {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.4rem;
+            width: 40px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-create-plus:hover {
+            background-color: #005a9e;
+        }
+        .create-dropdown-menu {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            display: none;
+            flex-direction: column;
+            width: 180px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .create-dropdown-menu.show {
+            display: flex;
+            animation: fadeIn 0.1s;
+        }
+        .create-dropdown-item {
+            padding: 12px 15px;
+            text-align: left;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #f3f2f1;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.95rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .create-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .create-dropdown-item:hover {
+            background-color: #e6f2ff;
+        }
     </style>
 </head>
 <body>
@@ -3149,21 +3211,49 @@
                      content += `<button class="btn btn-color-sort" style="margin-right:10px;" onclick="app.openColorModal()">🎨 Arrange via Color</button>`;
                      content += `<button class="btn btn-save-order" onclick="app.toggleRearrange()">💾 Save Order</button>`;
                  } else {
+                     // Csak ikon a Rearrange gombnál
                      if(showRearrange && cat !== 'All') {
-                        content += `<button class="btn btn-rearrange" onclick="app.toggleRearrange()">⇄ Rearrange</button>`;
+                        content += `<button class="btn btn-rearrange" onclick="app.toggleRearrange()" title="Rearrange" style="font-size: 1.2rem; padding: 4px 15px;">⇄</button>`;
                      }
+                     
+                     // Legördülő (Dropdown) menü a '+' gombhoz
+                     content += `
+                        <div class="create-dropdown-wrapper">
+                            <button class="btn-create-plus" onclick="app.toggleCreateMenu(event)" title="Create New...">+</button>
+                            <div class="create-dropdown-menu" id="headerCreateMenu">
+                     `;
+                     
                      if(cat !== 'All') {
-                        content += `<button class="btn btn-folder" id="btnNewFolder" onclick="app.createFolder()">+ New Folder</button>`;
+                        content += `<button class="create-dropdown-item" onclick="app.createFolder(); app.closeCreateMenu();">📁 New Folder</button>`;
                      }
-                     content += `<button class="btn btn-primary" onclick="app.openTodoModal()">+ New To Do</button>`;
-                     content += `<button class="btn btn-primary" style="background:#6b69d6;" onclick="app.openTicketEditor()">+ New Ticket</button>`;
-                     content += `<button class="btn btn-primary" onclick="app.openEditor()">+ New Template</button>`;
+                     content += `
+                                <button class="create-dropdown-item" onclick="app.openTodoModal(); app.closeCreateMenu();">☑️ New To Do</button>
+                                <button class="create-dropdown-item" style="color: #6b69d6; font-weight: bold;" onclick="app.openTicketEditor(); app.closeCreateMenu();">🎟️ New Ticket</button>
+                                <button class="create-dropdown-item" onclick="app.openEditor(); app.closeCreateMenu();">📄 New Template</button>
+                            </div>
+                        </div>
+                     `;
                  }
             }
             container.innerHTML = content;
         },
 
-        createFolder: function() {
+        toggleCreateMenu: function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('headerCreateMenu');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+        },
+
+        closeCreateMenu: function() {
+            const menu = document.getElementById('headerCreateMenu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
+        },
+		
+		createFolder: function() {
             const name = prompt("Folder Name:");
             if(name) {
                 const newFolder = {
@@ -5281,8 +5371,13 @@
         });
 
         window.onclick = function(event) {
+            // Bezárja a kártyák menüit
             if (!event.target.classList.contains('card-menu-btn')) {
                 document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
+            }
+            // Bezárja az új "+" gomb legördülő menüjét
+            if (!event.target.classList.contains('btn-create-plus')) {
+                document.querySelectorAll('.create-dropdown-menu').forEach(el => el.classList.remove('show'));
             }
         };
     });
