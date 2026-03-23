@@ -4399,7 +4399,11 @@
                 {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
                 {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
                 {key: 'name', label: 'Customer Name', type: 'SYS'},
-                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'},
+                {key: 'DD.MM.YY', label: 'Date (23.03.26.)', type: 'SYS'},
+                {key: 'DD.MM.YYYY', label: 'Date (23.03.2026.)', type: 'SYS'},
+                {key: 'YY.MM.DD', label: 'Date (26.03.23.)', type: 'SYS'},
+                {key: 'YYYY.MM.DD', label: 'Date (2026.03.23.)', type: 'SYS'}
             ];
 
             const allVars = [...sysVars, ...this.data.customVars];
@@ -4753,7 +4757,6 @@
 
         processAndShowFiller: function(contentToProcess) {
             this.tempContent = contentToProcess;
-
             const h = new Date().getHours();
             const s = this.data.timeSettings;
             let str = "";
@@ -4762,6 +4765,19 @@
             else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
 
             this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
+
+            // --- ÚJ RÉSZ: Dátum változók kezelése ---
+            const d = new Date();
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            const yy = String(yyyy).slice(-2);
+
+            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YYYY\s*\}\}/gi, `${dd}.${mm}.${yyyy}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
+            // --- ÚJ RÉSZ VÉGE ---
 
             this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                 const parts = content.split('|');
