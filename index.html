@@ -1049,6 +1049,19 @@
         .create-dropdown-item:hover {
             background-color: #e6f2ff;
         }
+		/* Formázási stílusok a View modal-hoz */
+		.view-content h1 { 
+			font-size: 1.6rem; margin-top: 15px; margin-bottom: 10px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 5px;
+		}
+		.view-content h2 { 
+			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: #444; 
+		}
+		.view-content hr { 
+			border: 0; border-top: 2px solid var(--border); margin: 20px 0; opacity: 0.6;
+		}
+		.view-content b { font-weight: bold; }
+		.view-content i { font-style: italic; }
+		.view-content u { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -1317,6 +1330,16 @@
                 <div class="editor-toolbar">
                     <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
                     <button class="editor-toolbar-btn" onclick="app.openLinkBuilder()" id="btnLinkTemplate" style="display:none;">🔗 Link Template</button>
+                    
+                                        <div id="formatToolbar" style="display:none; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
+                        <button class="editor-toolbar-btn" onclick="app.formatText('title')" title="Cím"><b>H1</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('subtitle')" title="Alcím"><b>H2</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('bold')" title="Vastag"><b>B</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('italic')" title="Dőlt"><i>I</i></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('underline')" title="Aláhúzott"><u>U</u></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('divider')" title="Elválasztó">―</button>
+                        <input type="color" id="textColorPicker" title="Szöveg Színe" style="width: 30px; height: 30px; border: none; cursor: pointer; padding: 0;" onchange="app.formatText('color', this.value)">
+                    </div>
                 </div>
 
                 <div class="variable-tray" id="variableTray">
@@ -4050,18 +4073,30 @@
                         mainContentHtml = itemsHtml;
                     
                     } else if (t.isTicket) {
-                        useBtn = `<div class="card-actions"><button class="card-btn use" style="width:100%; background:#6b69d6;" onclick="app.viewTicketTemplate(${t.id})">👁️ View Ticket</button></div>`;
-                        quickViewBtn = '';
-                        mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br><i>Path: ${this.escapeHtml(t.ticketSysCat || '-')}</i><br><span style="color:#888; font-size:0.85rem;">Click 'View Ticket' to copy fields.</span>`;
-                        menu = `
-                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
-                            <div class="dropdown-menu" id="menu-${t.id}">
-                                <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
-                            </div>
-                        `;
-                    } else {
+						// 1. Az alsó gombok: Copy Title és Copy Desc. 
+						// Itt a find() metódust használjuk inline, hogy a dupla/szimpla idézőjelek a szövegben ne törjék szét a HTML-t.
+						useBtn = `
+							<div class="card-actions">
+								<button class="card-btn use" style="flex: 1; background: var(--primary);" onclick="app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).title)">Copy Title</button>
+								<button class="card-btn use" style="flex: 1; background: var(--clone);" onclick="app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).content)">Copy Desc</button>
+							</div>
+						`;
+						
+						// 2. A szem ikon beállítása a jobb felső sarokba (ugyanaz a funkció, mint eddig a nagy gombé volt)
+						quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTicketTemplate(${t.id})" title="View Details">👁️</button>`;
+						
+						// 3. Frissített kártya tartalom (kivettük a felesleges "Click 'View Ticket'..." szöveget)
+						mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br>${this.escapeHtml(t.content)}`;
+						
+						menu = `
+							<button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+							<div class="dropdown-menu" id="menu-${t.id}">
+								<div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
+								<div class="dropdown-divider"></div>
+								<div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+							</div>
+						`;
+					} else {
                         let safeContent = this.escapeHtml(t.content);
                         safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                             const parts = content.split('|');
@@ -4376,7 +4411,9 @@
         toggleLinkButton: function() {
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const btn = document.getElementById('btnLinkTemplate');
+            const formatBar = document.getElementById('formatToolbar');
             btn.style.display = isViewOnly ? 'flex' : 'none';
+            if (formatBar) formatBar.style.display = isViewOnly ? 'flex' : 'none';
         },
 
         toggleVarTray: function(trayId) {
@@ -4456,6 +4493,62 @@
             textarea.selectionStart = textarea.selectionEnd = start + text.length;
             textarea.focus();
         },
+		formatText: function(type, value = null) {
+            const textarea = document.getElementById('inputContent');
+            if (!textarea) return;
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end);
+
+            let newText = "";
+            let cursorOffset = 0;
+
+            switch(type) {
+                case 'title':
+                    newText = `# ${selectedText}`;
+                    cursorOffset = 2;
+                    break;
+                case 'subtitle':
+                    newText = `## ${selectedText}`;
+                    cursorOffset = 3;
+                    break;
+                case 'bold':
+                    newText = `**${selectedText}**`;
+                    cursorOffset = 2;
+                    break;
+                case 'italic':
+                    newText = `*${selectedText}*`;
+                    cursorOffset = 1;
+                    break;
+                case 'underline':
+                    newText = `__${selectedText}__`;
+                    cursorOffset = 2;
+                    break;
+                case 'divider':
+                    newText = `\n---\n`;
+                    cursorOffset = newText.length;
+                    break;
+                case 'color':
+                    if(!value) return;
+                    newText = `[c:${value}]${selectedText}[/c]`;
+                    cursorOffset = value.length + 4; // Pld: [c:#ff0000]
+                    break;
+            }
+
+            textarea.value = text.substring(0, start) + newText + text.substring(end);
+            
+            // Ha volt kijelölés (és nem divider), megtartja kijelölve az új formázott szöveget
+            if (selectedText.length > 0 && type !== 'divider') {
+                textarea.selectionStart = start;
+                textarea.selectionEnd = start + newText.length;
+            } else {
+                // Kijelölés nélkül középre pozicionál, hogy rögtön gépelhess
+                textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+            }
+            textarea.focus();
+        },
 
         cloneTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
@@ -4484,45 +4577,72 @@
         },
 
         viewTemplate: function(id) {
-            const t = this.data.templates.find(x => x.id === id);
-            if(!t) return;
+			const t = this.data.templates.find(x => x.id === id);
+			if(!t) return;
 
-            let safeContent = this.escapeHtml(t.content);
-            safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
-                if(p1.trim().startsWith('link:')) return match;
-                return `<span style="font-weight:bold;">{{${p1}}}</span>`;
-            });
-            safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
-                const parts = content.split('|');
-                const tplName = parts[0].trim();
-                const displayText = parts.length > 1 ? parts[1].trim() : tplName;
-                const safeName = tplName.replace(/'/g, "\\'");
-                return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
-            });
+			let safeContent = this.escapeHtml(t.content);
 
-            const existingModals = document.querySelectorAll('.dynamic-view-modal');
-            const baseZIndex = 1050;
-            const newZIndex = baseZIndex + (existingModals.length * 10);
+			// --- FORMÁZÁSI LOGIKA ---
+			
+			// 1. Divider (--- egy külön sorban)
+			safeContent = safeContent.replace(/^---$/gm, '<hr>');
 
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay dynamic-view-modal';
-            overlay.style.zIndex = newZIndex;
-            overlay.style.display = 'flex';
+			// 2. Főcím (# Szöveg az elején)
+			safeContent = safeContent.replace(/^# (.*$)/gm, '<h1>$1</h1>');
 
-            overlay.innerHTML = `
-                <div class="modal" style="width: 800px; max-width: 95%;">
-                    <div class="modal-header">
-                        <span>${this.escapeHtml(t.title)}</span>
-                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
-                    </div>
-                    <div class="modal-body">
-                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary close-dynamic-btn">Close</button>
-                    </div>
-                </div>
-            `;
+			// 3. Alcím (## Szöveg az elején)
+			safeContent = safeContent.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+
+			// 4. Vastag (**szöveg**)
+			safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+			// 5. Dőlt (*szöveg*)
+			safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+			// 6. Aláhúzott (__szöveg__)
+			safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
+
+			// 7. Színes szöveg [c:#hexkód]szöveg[/c]
+			// Példa: [c:#ff0000]Piros szöveg[/c]
+			safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+
+			// --- EREDETI LOGIKA FOLYTATÁSA (Változók és Linkek) ---
+			safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+				if(p1.trim().startsWith('link:')) return match;
+				return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+			});
+
+			safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+				const parts = content.split('|');
+				const tplName = parts[0].trim();
+				const displayText = parts.length > 1 ? parts[1].trim() : tplName;
+				const safeName = tplName.replace(/'/g, "\\'");
+				return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
+			});
+
+			// A modal tartalmának generálásakor adjuk hozzá a .view-content osztályt
+			const existingModals = document.querySelectorAll('.dynamic-view-modal');
+			const baseZIndex = 1050;
+			const newZIndex = baseZIndex + (existingModals.length * 10);
+			const overlay = document.createElement('div');
+			overlay.className = 'modal-overlay dynamic-view-modal';
+			overlay.style.zIndex = newZIndex;
+			overlay.style.display = 'flex';
+
+			overlay.innerHTML = `
+				<div class="modal" style="width: 800px; max-width: 95%;">
+					<div class="modal-header">
+						<span>${this.escapeHtml(t.title)}</span>
+						<button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+					</div>
+					<div class="modal-body">
+						<div class="view-content" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-primary close-dynamic-btn">Close</button>
+					</div>
+				</div>
+			`;
 
             const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
             closeBtns.forEach(btn => {
