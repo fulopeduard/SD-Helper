@@ -1057,7 +1057,7 @@
 			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: #444; 
 		}
 		.view-content hr { 
-			border: 0; border-top: 2px solid var(--border); margin: 20px 0; opacity: 0.6;
+			border: 0; border-top: 2px solid var(--border); margin: 10px 0; opacity: 0.6;
 		}
 		.view-content b { font-weight: bold; }
 		.view-content i { font-style: italic; }
@@ -4098,6 +4098,24 @@
 						`;
 					} else {
                         let safeContent = this.escapeHtml(t.content);
+
+                        // --- FORMÁZÁS AZ ELŐNÉZETHEZ (PREVIEW) ---
+                        // 1. Divider (Felesleges sortörések elnyelésével)
+                        safeContent = safeContent.replace(/\n*^---$\n*/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                        // 2. Főcím (Sortörés elnyelésével)
+                        safeContent = safeContent.replace(/^# (.*)\n?/gm, '<div style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</div>');
+                        // 3. Alcím (Sortörés elnyelésével)
+                        safeContent = safeContent.replace(/^## (.*)\n?/gm, '<div style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</div>');
+                        // 4. Vastag
+                        safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                        // 5. Dőlt
+                        safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                        // 6. Aláhúzott
+                        safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
+                        // 7. Színes szöveg
+                        safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                        // ----------------------------------------
+
                         safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                             const parts = content.split('|');
                             const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
@@ -4527,7 +4545,7 @@
                     cursorOffset = 2;
                     break;
                 case 'divider':
-                    newText = `\n---\n`;
+                    newText = `---`;
                     cursorOffset = newText.length;
                     break;
                 case 'color':
@@ -4584,14 +4602,14 @@
 
 			// --- FORMÁZÁSI LOGIKA ---
 			
-			// 1. Divider (--- egy külön sorban)
-			safeContent = safeContent.replace(/^---$/gm, '<hr>');
+			// 1. Divider (--- egy külön sorban, felesleges sortörések elnyelésével)
+			safeContent = safeContent.replace(/\n*^---$\n*/gm, '<hr>');
 
-			// 2. Főcím (# Szöveg az elején)
-			safeContent = safeContent.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+			// 2. Főcím (Sortörés elnyelésével)
+			safeContent = safeContent.replace(/^# (.*)\n?/gm, '<h1>$1</h1>');
 
-			// 3. Alcím (## Szöveg az elején)
-			safeContent = safeContent.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+			// 3. Alcím (Sortörés elnyelésével)
+			safeContent = safeContent.replace(/^## (.*)\n?/gm, '<h2>$1</h2>');
 
 			// 4. Vastag (**szöveg**)
 			safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
