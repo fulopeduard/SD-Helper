@@ -1051,7 +1051,7 @@
         }
 		/* Formázási stílusok a View modal-hoz */
 		.view-content h1 { 
-			font-size: 1.6rem; margin-top: 15px; margin-bottom: 10px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 5px;
+			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: var(--primary);
 		}
 		.view-content h2 { 
 			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: #444; 
@@ -1331,14 +1331,21 @@
                     <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
                     <button class="editor-toolbar-btn" onclick="app.openLinkBuilder()" id="btnLinkTemplate" style="display:none;">🔗 Link Template</button>
                     
-                                        <div id="formatToolbar" style="display:none; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
+                    <div id="formatToolbar" style="display:none; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
                         <button class="editor-toolbar-btn" onclick="app.formatText('title')" title="Cím"><b>H1</b></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('subtitle')" title="Alcím"><b>H2</b></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('bold')" title="Vastag"><b>B</b></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('italic')" title="Dőlt"><i>I</i></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('underline')" title="Aláhúzott"><u>U</u></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('divider')" title="Elválasztó">―</button>
-                        <input type="color" id="textColorPicker" title="Szöveg Színe" style="width: 30px; height: 30px; border: none; cursor: pointer; padding: 0;" onchange="app.formatText('color', this.value)">
+                        
+                                                <button class="editor-toolbar-btn" style="color: #ff1010; padding: 4px 8px; border-color: #ff1010; margin-left: 5px;" onclick="app.formatText('color', '#ff1010')" title="Piros Szín"><b>A</b></button>
+                        <button class="editor-toolbar-btn" style="color: #35c53a; padding: 4px 8px; border-color: #35c53a;" onclick="app.formatText('color', '#35c53a')" title="Zöld Szín"><b>A</b></button>
+                        <button class="editor-toolbar-btn" style="color: #3e95ff; padding: 4px 8px; border-color: #3e95ff; margin-right: 5px;" onclick="app.formatText('color', '#3e95ff')" title="Kék Szín"><b>A</b></button>
+                        
+                                                <input type="color" id="textColorPicker" title="Egyéni szín kiválasztása" style="width: 28px; height: 28px; border: none; cursor: pointer; padding: 0;">
+                        
+                                                <button class="editor-toolbar-btn" style="font-weight: bold; color: var(--success); padding: 4px 8px;" onclick="app.formatText('color', document.getElementById('textColorPicker').value)" title="Szín alkalmazása a kijelölt szövegre">✓</button>
                     </div>
                 </div>
 
@@ -4100,21 +4107,20 @@
                         let safeContent = this.escapeHtml(t.content);
 
                         // --- FORMÁZÁS AZ ELŐNÉZETHEZ (PREVIEW) ---
-                        // 1. Divider (Felesleges sortörések elnyelésével)
-                        safeContent = safeContent.replace(/\n*^---$\n*/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
-                        // 2. Főcím (Sortörés elnyelésével)
-                        safeContent = safeContent.replace(/^# (.*)\n?/gm, '<div style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</div>');
-                        // 3. Alcím (Sortörés elnyelésével)
-                        safeContent = safeContent.replace(/^## (.*)\n?/gm, '<div style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</div>');
-                        // 4. Vastag
+                        // 1. Alap formázások lecserélése
+                        safeContent = safeContent.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                        safeContent = safeContent.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                        safeContent = safeContent.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                        
                         safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                        // 5. Dőlt
                         safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
-                        // 6. Aláhúzott
                         safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
-                        // 7. Színes szöveg
                         safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
-                        // ----------------------------------------
+
+                        // 2. Felesleges, "gigantikus" sortörések elnyelése a blokkok (hr, h1, h2) körül
+                        safeContent = safeContent.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                        safeContent = safeContent.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                        safeContent = safeContent.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
 
                         safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                             const parts = content.split('|');
@@ -4601,28 +4607,19 @@
 			let safeContent = this.escapeHtml(t.content);
 
 			// --- FORMÁZÁSI LOGIKA ---
-			
-			// 1. Divider (--- egy külön sorban, felesleges sortörések elnyelésével)
-			safeContent = safeContent.replace(/\n*^---$\n*/gm, '<hr>');
+			safeContent = safeContent.replace(/^---\r?$/gm, '<hr>');
+			safeContent = safeContent.replace(/^## (.*?)\r?$/gm, '<h2>$1</h2>');
+			safeContent = safeContent.replace(/^# (.*?)\r?$/gm, '<h1>$1</h1>');
 
-			// 2. Főcím (Sortörés elnyelésével)
-			safeContent = safeContent.replace(/^# (.*)\n?/gm, '<h1>$1</h1>');
-
-			// 3. Alcím (Sortörés elnyelésével)
-			safeContent = safeContent.replace(/^## (.*)\n?/gm, '<h2>$1</h2>');
-
-			// 4. Vastag (**szöveg**)
 			safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-			// 5. Dőlt (*szöveg*)
 			safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
-
-			// 6. Aláhúzott (__szöveg__)
 			safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
-
-			// 7. Színes szöveg [c:#hexkód]szöveg[/c]
-			// Példa: [c:#ff0000]Piros szöveg[/c]
 			safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+
+			// Felesleges sortörések eltávolítása, hogy ne legyen hatalmas üres hely
+			safeContent = safeContent.replace(/\n*(<hr>)\n*/gi, '$1');
+			safeContent = safeContent.replace(/\n*(<h1>.*?<\/h1>)\n*/gi, '$1');
+			safeContent = safeContent.replace(/\n*(<h2>.*?<\/h2>)\n*/gi, '$1');
 
 			// --- EREDETI LOGIKA FOLYTATÁSA (Változók és Linkek) ---
 			safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
