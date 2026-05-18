@@ -88,14 +88,17 @@
         }
 
         .lang-btn {
-            flex: 1;
             border: none;
             background: transparent;
-            padding: 8px;
+            padding: 2px 6px;
             cursor: pointer;
             border-radius: 4px;
             font-weight: bold;
             font-size: 0.85rem;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .lang-btn.active {
@@ -107,7 +110,7 @@
         .settings-btn {
             border: none;
             background: transparent;
-            padding: 8px 12px;
+            padding: 4px 8px;
             cursor: pointer;
             border-radius: 4px;
             font-size: 1.1rem;
@@ -1207,17 +1210,14 @@
     <div class="resize-handle-left" id="resizeHandleLeft"></div>
     <div class="app-title" id="sidebarAppTitle">🛠️ SD Helper Cloud</div>
 
-    <div class="lang-switcher" id="sidebarLangSwitcher">
-        <button class="lang-btn active" id="btnEn" onclick="app.setLang('en')">EN</button>
-        <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
-        <div style="width: 1px; background: rgba(0,0,0,0.1); margin: 4px 2px;" id="langSeparator"></div>
-        <button class="settings-btn" id="settingsBtnTop" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
-    </div>
-
     <div id="pinnedTodoContainer" class="pinned-todo-container"></div>
 
     <div class="cat-header">
         <h3>Categories</h3>
+        <div class="lang-switcher" id="sidebarLangSwitcher" style="margin-bottom: 0; background: transparent; padding: 0; align-items: center; gap: 2px;">
+            <button class="lang-btn active" id="btnEn" onclick="app.setLang('en')">EN</button>
+            <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
+        </div>
         <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
     </div>
 
@@ -1231,7 +1231,7 @@
         <button class="btn btn-sm btn-secondary" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px; border: 1px solid var(--border);">◀</button>
         <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
         <button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
-        <button class="btn btn-sm btn-secondary" id="settingsBtnBottom" style="display: none; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
+        <button class="btn btn-sm btn-secondary" style="display: block; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
     </div>
 </div>
 
@@ -1296,11 +1296,22 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Folder (Optional)</label>
-                <select class="form-control" id="inputFolder">
-                    <option value="">(No Folder / Root)</option>
-                </select>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Folder (Optional)</label>
+                        <select class="form-control" id="inputFolder">
+                            <option value="">(No Folder / Root)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Recommend After Use (Hold Ctrl to select)</label>
+                        <input type="text" id="searchRecommended" class="form-control" style="margin-bottom: 5px; padding: 4px; font-size: 0.85rem;" placeholder="🔍 Search template..." onkeyup="app.filterRecommended()">
+                        <select class="form-control" id="inputRecommended" multiple style="height: 65px;"></select>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -1861,7 +1872,26 @@
         </div>
     </div>
 </div>
-
+<div class="modal-overlay" id="recommendationModal" style="z-index: 1250;">
+    <div class="modal" style="width: 800px; max-width: 95%;">
+        <div class="modal-header">
+            <span>🚀 Recommended Actions</span>
+            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('recommendationModal')">Back to Main</button>
+        </div>
+        <div class="modal-body">
+            <div style="background: #e6f2ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #005a9e;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #005a9e;">Just Copied:</h4>
+                    <button class="btn btn-sm btn-primary" onclick="app.copyToClipboard(document.getElementById('recCopiedText').innerText)">📋 Copy Again</button>
+                </div>
+                <div id="recCopiedText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 100px; overflow-y: auto;"></div>
+            </div>
+            <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">You might also need:</h4>
+            <div class="grid" id="recTemplatesGrid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); padding-bottom: 10px;">
+            </div>
+        </div>
+    </div>
+</div>
 <div class="toast" id="toast">Copied to clipboard!</div>
 
 <script type="module">
@@ -4322,6 +4352,9 @@
             const color = document.getElementById('inputColor').value;
             const folderId = document.getElementById('inputFolder').value || null;
 
+            const recSelect = document.getElementById('inputRecommended');
+            const recommendedIds = Array.from(recSelect.selectedOptions).map(opt => parseInt(opt.value));
+
             if (!title || !content) { alert("Title and Content required."); return; }
 
             if (id) {
@@ -4329,14 +4362,16 @@
                 if (idx > -1) this.data.templates[idx] = {
                     ...this.data.templates[idx],
                     title, subtitle, category, lang, content, isViewOnly, color,
-                    folderId: folderId ? parseInt(folderId) : null
+                    folderId: folderId ? parseInt(folderId) : null,
+                    recommendedIds: recommendedIds
                 };
             } else {
                 this.data.templates.push({
                     id: Date.now(),
                     title, subtitle, category, lang, content,
                     deleted: false, isViewOnly, color,
-                    folderId: folderId ? parseInt(folderId) : null
+                    folderId: folderId ? parseInt(folderId) : null,
+                    recommendedIds: recommendedIds
                 });
             }
 
@@ -4356,6 +4391,17 @@
 
             document.getElementById('variableTray').style.display = 'none';
             document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
+
+            const searchRec = document.getElementById('searchRecommended');
+            if(searchRec) searchRec.value = '';
+
+            const recSelect = document.getElementById('inputRecommended');
+            recSelect.innerHTML = '';
+            this.data.templates.forEach(temp => {
+                if(!temp.deleted && temp.id !== id && !temp.isTodo && !temp.isTicket) {
+                    recSelect.innerHTML += `<option value="${temp.id}">${this.escapeHtml(temp.title)}</option>`;
+                }
+            });
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
@@ -4381,6 +4427,12 @@
 
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
+
+                if(t.recommendedIds) {
+                    Array.from(recSelect.options).forEach(opt => {
+                        if(t.recommendedIds.includes(parseInt(opt.value))) opt.selected = true;
+                    });
+                }
 
             } else {
                 document.getElementById('editorTitle').innerText = "New Template";
@@ -4887,10 +4939,11 @@
         prepareTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
-            this.processAndShowFiller(t.content);
+            this.processAndShowFiller(t.content, id);
         },
 
-        processAndShowFiller: function(contentToProcess) {
+        processAndShowFiller: function(contentToProcess, templateId = null) {
+            this.currentProcessingTemplateId = templateId;
             this.tempContent = contentToProcess;
             const h = new Date().getHours();
             const s = this.data.timeSettings;
@@ -4901,7 +4954,6 @@
 
             this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
 
-            // --- ÚJ RÉSZ: Dátum változók kezelése ---
             const d = new Date();
             const dd = String(d.getDate()).padStart(2, '0');
             const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -4912,7 +4964,6 @@
             this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
             this.tempContent = this.tempContent.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
             this.tempContent = this.tempContent.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
-            // --- ÚJ RÉSZ VÉGE ---
 
             this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                 const parts = content.split('|');
@@ -4936,6 +4987,7 @@
 
             if (!matches || matches.length === 0) {
                 this.copyToClipboard(this.tempContent);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent);
                 return;
             }
 
@@ -5021,6 +5073,58 @@
             });
             this.copyToClipboard(txt);
             this.closeModal('fillerModal');
+            this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt);
+        },
+
+        checkAndShowRecommendations: function(templateId, copiedText) {
+            if(!templateId) return;
+            const t = this.data.templates.find(x => x.id === templateId);
+            if(!t || !t.recommendedIds || t.recommendedIds.length === 0) return;
+
+            document.getElementById('recCopiedText').innerText = copiedText;
+
+            const grid = document.getElementById('recTemplatesGrid');
+            grid.innerHTML = '';
+            
+            t.recommendedIds.forEach(recId => {
+                const recT = this.data.templates.find(x => x.id === recId && !x.deleted);
+                if(recT) {
+                    let safeTitle = this.escapeHtml(recT.title);
+                    let safePreview = this.escapeHtml(recT.content).substring(0, 150) + '...';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.style.minHeight = '180px';
+                    div.style.backgroundColor = recT.color || '#ffffff';
+
+                    let btnHtml = '';
+                    if (recT.isViewOnly) {
+                        btnHtml = `<button class="card-btn use view-only" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.viewTemplate(${recT.id})">👁️ View Template</button>`;
+                    } else {
+                        btnHtml = `<button class="card-btn use" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.prepareTemplate(${recT.id})">Use Template</button>`;
+                    }
+                    
+                    div.innerHTML = `
+                        <div class="card-title">${safeTitle}</div>
+                        <div class="card-preview" style="-webkit-line-clamp: 4;">${safePreview}</div>
+                        <div class="card-actions" style="margin-top:auto;">
+                            ${btnHtml}
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                }
+            });
+
+            document.getElementById('recommendationModal').style.display = 'flex';
+        },
+
+        filterRecommended: function() {
+            const term = document.getElementById('searchRecommended').value.toLowerCase();
+            const options = document.getElementById('inputRecommended').options;
+            for (let i = 0; i < options.length; i++) {
+                const text = options[i].text.toLowerCase();
+                options[i].style.display = text.includes(term) ? '' : 'none';
+            }
         },
 
         copyToClipboard: async function(text) {
