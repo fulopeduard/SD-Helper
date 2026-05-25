@@ -1589,10 +1589,13 @@
 </div>
 
 <div class="modal-overlay" id="clipboardHistoryModal" style="z-index: 1300;">
-    <div class="modal" style="width: 90%; max-width: 1200px; height: 90vh;">
+        <div class="modal" style="width: 90%; max-width: 1200px; height: 90vh; background-color: #bcbce4;">
         <div class="modal-header">
             <span>🕒 Clipboard History</span>
-            <button class="btn btn-sm btn-danger" onclick="app.clearClipboardHistory()">Clear All</button>
+                        <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm btn-danger" onclick="app.clearClipboardHistory()">Clear All</button>
+                <button class="btn btn-sm btn-secondary" onclick="app.closeModal('clipboardHistoryModal')" title="Bezárás">✕</button>
+            </div>
         </div>
         <div class="modal-body grid" id="clipboardHistoryList" style="flex: 1; padding-bottom: 20px;">
         </div>
@@ -2091,18 +2094,18 @@
                     <div class="m42-header">
                         <div class="m42-type-icon ${typeClass}" title="${safeType}">${typeLetter}</div>
                         <div class="m42-title">${safeTitle}</div>
-                        <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeTitle.replace(/`/g, '\\`')}\`)">
-                            📋 Copy Title
-                        </button>
+                        <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeTitle.replace(/`/g, '\\`')}\`, ${t.id})">
+						📋 Copy Title
+						</button>
                     </div>
                     
                     <div class="m42-body">
                         <div class="m42-main">
                             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px;">
                                 <div class="m42-group-title" style="border:none; margin:0; padding:0;">Description / Details</div>
-                                <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeDesc.replace(/`/g, '\\`')}\`)">
-                                    📋 Copy Description
-                                </button>
+                                <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeDesc.replace(/`/g, '\\`')}\`, ${t.id})">
+								📋 Copy Description
+								</button>
                             </div>
                             <div class="m42-value">${safeDesc}</div>
                         </div>
@@ -2139,7 +2142,14 @@
             document.getElementById('ticketViewModal').style.display = 'flex';
         },
 
-        copyTicketField: function(btnElement, textToCopy) {
+        copyTicketField: function(btnElement, textToCopy, templateId = null) {
+            if (templateId) {
+                const t = this.data.templates.find(x => x.id === templateId);
+                if (t) {
+                    this.currentProcessingTitle = t.title;
+                    this.currentProcessingColor = t.color;
+                }
+            }
             this.copyToClipboard(textToCopy);
             const originalText = btnElement.innerText;
             btnElement.innerText = "✅ Copied!";
@@ -2395,12 +2405,24 @@
             localStorage.setItem('sdHelperClipboardHistory', JSON.stringify(this.data.clipboardHistory));
         },
 
-        addToClipboardHistory: function(text) {
+        addToClipboardHistory: function(text, title = null, color = null) {
             if(!text) return;
             if(!this.data.clipboardHistory) this.data.clipboardHistory = [];
 
-            this.data.clipboardHistory = this.data.clipboardHistory.filter(item => item !== text);
-            this.data.clipboardHistory.unshift(text);
+            // Megakadályozzuk a duplikációkat
+            this.data.clipboardHistory = this.data.clipboardHistory.filter(item => {
+                if (typeof item === 'string') return item !== text;
+                return item.text !== text;
+            });
+
+            // Objektumként mentjük a színt és a címet is
+            let newEntry = {
+                text: text,
+                title: title || "Copied Text",
+                color: color || "#ffffff"
+            };
+
+            this.data.clipboardHistory.unshift(newEntry);
 
             if(this.data.clipboardHistory.length > 20) {
                 this.data.clipboardHistory = this.data.clipboardHistory.slice(0, 20);
@@ -2417,42 +2439,59 @@
         renderClipboardHistory: function() {
             const container = document.getElementById('clipboardHistoryList');
             container.innerHTML = '';
+            
+            // 1. MEGOLDÁS: A kártyák ne nyúljanak ki a teljes képernyőre, ha csak 1-2 kártya van
+            container.style.alignContent = 'start';
 
             if(!this.data.clipboardHistory || this.data.clipboardHistory.length === 0) {
                 container.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1;">No history yet.</p>';
                 return;
             }
 
-            this.data.clipboardHistory.forEach((text, index) => {
+            this.data.clipboardHistory.forEach((item, index) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const titleText = typeof item === 'string' ? "Recent #" + (index + 1) : item.title;
+                const bgColor = typeof item === 'string' ? "#ffffff" : (item.color || "#ffffff");
+
                 const safeText = this.escapeHtml(text);
-                const titleText = "Recent #" + (index + 1);
+                const safeTitle = this.escapeHtml(titleText);
 
                 const div = document.createElement('div');
                 div.className = 'card';
-                div.style.minHeight = '150px';
+                div.style.minHeight = '180px';
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.backgroundColor = bgColor;
+                
+                // 2. MEGOLDÁS: A tartalom szigorúan a kártyán belül marad (biztosan nem tud kilógni a gomb)
+                div.style.overflow = 'hidden';
 
                 let quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewHistoryItem(${index})" title="Quick View" style="right: 5px;">👁️</button>`;
                 let useBtn = `
-                    <button class="card-btn use" style="flex: 1;" onclick="app.copyFromHistory(${index})">Use</button>
+                    <button class="card-btn use" style="flex: 1;" onclick="app.copyFromHistory(${index})">Copy</button>
                     <button class="card-btn view-only card-view-btn-bottom" style="flex: 1;" onclick="app.viewHistoryItem(${index})">View</button>
                 `;
 
+                // 3. MEGOLDÁS: A gombok (flex-shrink: 0) sosem nyomódnak el, az előnézet pedig (max 5 sorig) rugalmas
                 div.innerHTML = `
                         ${quickViewBtn}
-                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
-                            <div class="card-title" style="padding-right: 30px;">${titleText}</div>
-                            <div class="card-preview">${safeText}</div>
+                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default; min-height: 0;">
+                            <div class="card-title" style="padding-right: 30px; flex-shrink: 0;">${safeTitle}</div>
+                            <div class="card-preview" style="margin-bottom: 10px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; flex: 1;">${safeText}</div>
                         </div>
-                        <div class="card-actions">${useBtn}</div>
+                        <div class="card-actions" style="margin-top: auto; display: flex; gap: 8px; flex-shrink: 0;">${useBtn}</div>
                 `;
                 container.appendChild(div);
             });
         },
 
         copyFromHistory: function(index) {
-            const text = this.data.clipboardHistory[index];
-            if(text) {
-                this.copyToClipboard(text);
+            const item = this.data.clipboardHistory[index];
+            if(item) {
+                const text = typeof item === 'string' ? item : item.text;
+                const title = typeof item === 'string' ? "Copied Text" : item.title;
+                const color = typeof item === 'string' ? "#ffffff" : item.color;
+                this.copyToClipboard(text, title, color);
             }
         },
 
@@ -2465,10 +2504,13 @@
         },
 
         viewHistoryItem: function(index) {
-            const text = this.data.clipboardHistory[index];
-            if(!text) return;
+            const item = this.data.clipboardHistory[index];
+            if(!item) return;
 
+            const text = typeof item === 'string' ? item : item.text;
+            const title = typeof item === 'string' ? "Clipboard Item" : item.title;
             let safeContent = this.escapeHtml(text);
+            let safeTitle = this.escapeHtml(title);
 
             const existingModals = document.querySelectorAll('.dynamic-view-modal');
             const baseZIndex = 1500;
@@ -2482,7 +2524,7 @@
             overlay.innerHTML = `
                 <div class="modal" style="width: 800px; max-width: 95%;">
                     <div class="modal-header">
-                        <span>Clipboard Item Details</span>
+                        <span>${safeTitle}</span>
                         <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
                     </div>
                     <div class="modal-body">
@@ -2926,7 +2968,11 @@
             alert(`Snippet copied to ${targetCat}${targetFolderId ? ' (Folder)' : ''} as a new template!`);
         },
 
-        copyQuickTitle: function(text) {
+        copyQuickTitle: function(text, obj = null) {
+            if (obj) {
+                this.currentProcessingTitle = obj.description || obj.subCategory || "Quick Snippet";
+                this.currentProcessingColor = obj.color || "#ffffff";
+            }
             this.processAndShowFiller(text);
         },
 
@@ -4114,8 +4160,8 @@
 						// Itt a find() metódust használjuk inline, hogy a dupla/szimpla idézőjelek a szövegben ne törjék szét a HTML-t.
 						useBtn = `
 							<div class="card-actions">
-								<button class="card-btn use" style="flex: 1; background: var(--primary);" onclick="app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).title)">Copy Title</button>
-								<button class="card-btn use" style="flex: 1; background: var(--clone);" onclick="app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).content)">Copy Desc</button>
+								<button class="card-btn use" style="flex: 1; background: var(--primary);" onclick="app.currentProcessingTitle = app.data.templates.find(x => x.id === ${t.id}).title; app.currentProcessingColor = app.data.templates.find(x => x.id === ${t.id}).color; app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).title)">Copy Title</button>
+								<button class="card-btn use" style="flex: 1; background: var(--clone);" onclick="app.currentProcessingTitle = app.data.templates.find(x => x.id === ${t.id}).title; app.currentProcessingColor = app.data.templates.find(x => x.id === ${t.id}).color; app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).content)">Copy Desc</button>
 							</div>
 						`;
 						
@@ -4939,6 +4985,8 @@
         prepareTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
+            this.currentProcessingTitle = t.title;
+            this.currentProcessingColor = t.color;
             this.processAndShowFiller(t.content, id);
         },
 
@@ -5127,20 +5175,22 @@
             }
         },
 
-        copyToClipboard: async function(text) {
+        copyToClipboard: async function(text, overrideTitle = null, overrideColor = null) {
+            // Szín és cím átvétele a globális ideiglenes változókból, ha elérhetőek
+            let title = overrideTitle || this.currentProcessingTitle || "Copied Text";
+            let color = overrideColor || this.currentProcessingColor || "#ffffff";
+            
+            // Értékek tisztítása a következő futtatás előtt
+            this.currentProcessingTitle = null;
+            this.currentProcessingColor = null;
+
             const toast = document.getElementById('toast');
             
-            // 1. Create the HTML version (preserves line breaks and creates links)
             let htmlText = text.replace(/\n/g, '<br>');
-            
-            // Convert Markdown-style links like [HERE](https://google.com) into real HTML links
             htmlText = htmlText.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2">$1</a>');
-
-            // 2. Create a Plain Text fallback version (removes the link formatting but keeps the URL)
             let plainText = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1 ($2)');
 
             try {
-                // 3. Try to use the modern Async Clipboard API (Supports Rich HTML Text)
                 if (navigator.clipboard && window.ClipboardItem) {
                     const htmlBlob = new Blob([htmlText], { type: 'text/html' });
                     const textBlob = new Blob([plainText], { type: 'text/plain' });
@@ -5153,21 +5203,19 @@
                     throw new Error("ClipboardItem API not supported");
                 }
 
-                // Show success toast
                 toast.style.display = 'block';
                 setTimeout(() => toast.style.display = 'none', 2000);
-                this.addToClipboardHistory(text);
+                this.addToClipboardHistory(text, title, color); // Hozzáadjuk a színt és címet
                 if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
                     this.renderClipboardHistory();
                 }
 
             } catch (err) {
-                // 4. FALLBACK: If modern API is restricted (e.g. HTTP instead of HTTPS), use the hidden DIV trick
                 console.warn("Using fallback clipboard method...");
                 try {
                     const div = document.createElement('div');
                     div.contentEditable = true;
-                    div.innerHTML = htmlText; // Insert HTML with links
+                    div.innerHTML = htmlText;
                     div.style.position = 'fixed';
                     div.style.left = '-9999px';
                     document.body.appendChild(div);
@@ -5183,7 +5231,7 @@
                     
                     toast.style.display = 'block';
                     setTimeout(() => toast.style.display = 'none', 2000);
-                    this.addToClipboardHistory(text);
+                    this.addToClipboardHistory(text, title, color); // Hozzáadjuk a színt és címet
                     if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
                         this.renderClipboardHistory();
                     }
@@ -5431,6 +5479,9 @@
         generateTodoTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if (!t || !t.todoItems) return;
+
+            this.currentProcessingTitle = t.title;
+            this.currentProcessingColor = t.color;
 
             let resultLines = [];
             let hasCheckedItems = false; // Változó annak figyelésére, hogy volt-e bepipált elem
