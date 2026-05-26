@@ -1307,9 +1307,11 @@
                 </div>
                 <div class="col">
                     <div class="form-group">
-                        <label>Recommend After Use (Hold Ctrl to select)</label>
-                        <input type="text" id="searchRecommended" class="form-control" style="margin-bottom: 5px; padding: 4px; font-size: 0.85rem;" placeholder="🔍 Search template..." onkeyup="app.filterRecommended()">
-                        <select class="form-control" id="inputRecommended" multiple style="height: 65px;"></select>
+                        <label>Recommend After Use</label>
+                        <button type="button" class="form-control" style="height: auto; min-height: 36px; text-align: left; background: #fff; border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="app.openRecommendationSelectorModal()" id="btnOpenRecSelector">
+                            <span>Template javaslatok (0)</span>
+                            <span style="color: var(--primary);">✎</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1457,6 +1459,23 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('todoModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.saveTodo()">Save To-Do List</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="recommendationSelectorModal" style="z-index: 1500;">
+    <div class="modal" style="width: 700px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <span>Válassz ajánlott template-eket</span>
+            <button class="btn btn-sm btn-secondary" onclick="app.closeRecommendationSelectorModal()">✕</button>
+        </div>
+        <div style="padding: 10px 20px; border-bottom: 1px solid var(--border);">
+            <input type="text" class="form-control" id="searchRecSelector" placeholder="🔍 Keresés template név vagy tartalom alapján..." onkeyup="app.renderRecommendationSelectorList()">
+        </div>
+        <div class="modal-body" id="recSelectorList" style="flex: 1; overflow-y: auto; padding: 20px; background: #f3f2f1;">
+                    </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="app.closeRecommendationSelectorModal()">Kész</button>
         </div>
     </div>
 </div>
@@ -1936,6 +1955,7 @@
 
     const app = {
         user: null,
+		currentRecommendedIds: [],
         editingVarIndex: -1,
         dragSrcEl: null,
         data: {
@@ -4398,8 +4418,7 @@
             const color = document.getElementById('inputColor').value;
             const folderId = document.getElementById('inputFolder').value || null;
 
-            const recSelect = document.getElementById('inputRecommended');
-            const recommendedIds = Array.from(recSelect.selectedOptions).map(opt => parseInt(opt.value));
+            const recommendedIds = this.currentRecommendedIds || [];
 
             if (!title || !content) { alert("Title and Content required."); return; }
 
@@ -4438,16 +4457,7 @@
             document.getElementById('variableTray').style.display = 'none';
             document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
 
-            const searchRec = document.getElementById('searchRecommended');
-            if(searchRec) searchRec.value = '';
-
-            const recSelect = document.getElementById('inputRecommended');
-            recSelect.innerHTML = '';
-            this.data.templates.forEach(temp => {
-                if(!temp.deleted && temp.id !== id && !temp.isTodo && !temp.isTicket) {
-                    recSelect.innerHTML += `<option value="${temp.id}">${this.escapeHtml(temp.title)}</option>`;
-                }
-            });
+            
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
@@ -4474,11 +4484,8 @@
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
 
-                if(t.recommendedIds) {
-                    Array.from(recSelect.options).forEach(opt => {
-                        if(t.recommendedIds.includes(parseInt(opt.value))) opt.selected = true;
-                    });
-                }
+                this.currentRecommendedIds = t.recommendedIds ? [...t.recommendedIds] : [];
+                document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
 
             } else {
                 document.getElementById('editorTitle').innerText = "New Template";
@@ -4503,6 +4510,9 @@
 
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+				
+				this.currentRecommendedIds = [];
+                document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (0)</span><span style="color: var(--primary);">✎</span>`;
             }
 
             const subList = document.getElementById('subtitleOptions');
@@ -5173,6 +5183,112 @@
                 const text = options[i].text.toLowerCase();
                 options[i].style.display = text.includes(term) ? '' : 'none';
             }
+        },
+		
+		openRecommendationSelectorModal: function() {
+            document.getElementById('searchRecSelector').value = '';
+            this.renderRecommendationSelectorList();
+            document.getElementById('recommendationSelectorModal').style.display = 'flex';
+        },
+
+        closeRecommendationSelectorModal: function() {
+            document.getElementById('recommendationSelectorModal').style.display = 'none';
+        },
+
+        toggleRecommendedId: function(id, isChecked) {
+            if (isChecked) {
+                if (!this.currentRecommendedIds.includes(id)) {
+                    this.currentRecommendedIds.push(id);
+                }
+            } else {
+                this.currentRecommendedIds = this.currentRecommendedIds.filter(x => x !== id);
+            }
+            document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+        },
+		
+		toggleRecPreview: function(id, event) {
+            if (event) event.stopPropagation();
+            const previewDiv = document.getElementById(`rec-preview-${id}`);
+            const btn = document.getElementById(`rec-btn-${id}`);
+            if (previewDiv.style.display === 'none') {
+                previewDiv.style.display = 'block';
+                btn.innerText = '▲';
+            } else {
+                previewDiv.style.display = 'none';
+                btn.innerText = '▼';
+            }
+        },
+
+        renderRecommendationSelectorList: function() {
+            const term = document.getElementById('searchRecSelector').value.toLowerCase();
+            const listContainer = document.getElementById('recSelectorList');
+            const currentCat = document.getElementById('inputCategory').value;
+            const currentFolderId = document.getElementById('inputFolder').value ? parseInt(document.getElementById('inputFolder').value) : null;
+            const currentEditId = document.getElementById('editId').value ? parseInt(document.getElementById('editId').value) : null;
+
+            let validTemplates = this.data.templates.filter(t => !t.deleted && !t.isTodo && !t.isTicket && t.id !== currentEditId);
+
+            if (term) {
+                validTemplates = validTemplates.filter(t => t.title.toLowerCase().includes(term) || (t.content && t.content.toLowerCase().includes(term)));
+            }
+
+            // Okos rendezés (legrelevánsabbak előre)
+            validTemplates.sort((a, b) => {
+                const scoreA = (a.category === currentCat && a.folderId === currentFolderId) ? 3 : (a.category === currentCat ? 2 : 1);
+                const scoreB = (b.category === currentCat && b.folderId === currentFolderId) ? 3 : (b.category === currentCat ? 2 : 1);
+
+                if (scoreA !== scoreB) return scoreB - scoreA; 
+
+                if (a.category !== b.category) return a.category.localeCompare(b.category);
+                const fNameA = a.folderId ? (this.data.folders.find(f => f.id === a.folderId)?.name || 'Root') : 'Root';
+                const fNameB = b.folderId ? (this.data.folders.find(f => f.id === b.folderId)?.name || 'Root') : 'Root';
+                if (fNameA !== fNameB) return fNameA.localeCompare(fNameB);
+
+                return a.title.localeCompare(b.title);
+            });
+
+            let html = '';
+            let lastGroup = null;
+
+            validTemplates.forEach(t => {
+                const folderName = t.folderId ? (this.data.folders.find(f => f.id === t.folderId)?.name || 'Root') : 'Root';
+                const groupName = `${this.escapeHtml(t.category)} > 📂 ${this.escapeHtml(folderName)}`;
+                const isHighlyRelevant = (t.category === currentCat && t.folderId === currentFolderId);
+                
+                if (groupName !== lastGroup) {
+                    const groupStyle = `margin-top: 15px; padding-bottom: 5px; border-bottom: 2px solid #ddd; font-weight: bold; font-size: 0.95rem; color: ${isHighlyRelevant ? 'var(--success)' : 'var(--primary)'};`;
+                    html += `<div style="${groupStyle}">${isHighlyRelevant ? '⭐ Ebből a mappából:' : groupName}</div>`;
+                    lastGroup = groupName;
+                }
+
+                const isChecked = this.currentRecommendedIds.includes(t.id) ? 'checked' : '';
+                const safeTitle = this.escapeHtml(t.title);
+                const safePreview = this.escapeHtml(t.content || '');
+                const colorIndicator = t.color ? `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${t.color}; border:1px solid #ccc; margin-right:8px; flex-shrink:0;"></span>` : '';
+
+                // Struktúra: Fő konténer -> (Flexbox a pipának/címnek + Nyíl gomb) -> Előnézet div
+                html += `
+                    <div style="background: white; border: 1px solid var(--border); margin-top: 6px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 15px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; flex: 1; margin: 0;">
+                                <input type="checkbox" style="transform: scale(1.3); margin-right: 15px; cursor: pointer; flex-shrink:0;" value="${t.id}" ${isChecked} onchange="app.toggleRecommendedId(${t.id}, this.checked)">
+                                ${colorIndicator}
+                                <span style="font-weight: 600; font-size: 0.95rem; color: #201f1e;">${safeTitle}</span>
+                            </label>
+                            <button type="button" onclick="app.toggleRecPreview(${t.id}, event)" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #888; padding: 5px 10px; flex-shrink:0; margin-right:-10px;" id="rec-btn-${t.id}" title="Előnézet">
+                                ${isHighlyRelevant ? '▲' : '▼'}
+                            </button>
+                        </div>
+                        <div id="rec-preview-${t.id}" style="display: ${isHighlyRelevant ? 'block' : 'none'}; padding: 0 15px 12px 45px; color: #555; font-size: 0.85rem; border-top: 1px dashed #eee; margin-top: -2px; padding-top: 10px; white-space: pre-wrap; max-height: 150px; overflow-y: auto; font-family: monospace;">${safePreview}</div>
+                    </div>
+                `;
+            });
+
+            if (validTemplates.length === 0) {
+                html = '<div style="text-align: center; color: #888; padding: 20px;">Nem található template.</div>';
+            }
+
+            listContainer.innerHTML = html;
         },
 
         copyToClipboard: async function(text, overrideTitle = null, overrideColor = null) {
