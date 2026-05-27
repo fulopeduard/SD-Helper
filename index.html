@@ -1315,7 +1315,10 @@
                     </div>
                 </div>
             </div>
-
+			<div class="form-group">
+                <label>Tags (vesszővel elválasztva)</label>
+                <input type="text" class="form-control" id="inputTags" placeholder="pl. citrix, follow-up, urgent">
+            </div>
             <div class="form-group">
                 <label>Color Coding</label>
                 <div class="color-picker-container" id="editorColorSwatches">
@@ -1911,6 +1914,20 @@
             <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">You might also need:</h4>
             <div class="grid" id="recTemplatesGrid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); padding-bottom: 10px;">
             </div>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="folderTagsModal" style="z-index: 1200;">
+    <div class="modal" style="width: 400px;">
+        <div class="modal-header">Include Tags in Folder</div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem; color:#666; margin-top:0;">Válaszd ki azokat a címkéket, amelyekhez tartozó template-ek automatikusan jelenjenek meg a mappa alján.</p>
+            <div id="folderTagsList" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; border: 1px solid var(--border); padding: 10px; border-radius: 4px; background: #faf9f8;">
+                </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('folderTagsModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveFolderTags()">Save Tags</button>
         </div>
     </div>
 </div>
@@ -3354,10 +3371,15 @@
                      if(cat !== 'All') {
                         content += `<button class="create-dropdown-item" onclick="app.createFolder(); app.closeCreateMenu();">📁 New Folder</button>`;
                      }
+                     if(cat !== 'All' && cat !== 'Trash') {
+                         content += `<button class="create-dropdown-item" onclick="app.openFolderTagsModal(); app.closeCreateMenu();">🏷️ Include Tags</button>`;
+                     }
                      content += `
                                 <button class="create-dropdown-item" onclick="app.openTodoModal(); app.closeCreateMenu();">☑️ New To Do</button>
                                 <button class="create-dropdown-item" style="color: #6b69d6; font-weight: bold;" onclick="app.openTicketEditor(); app.closeCreateMenu();">🎟️ New Ticket</button>
                                 <button class="create-dropdown-item" onclick="app.openEditor(); app.closeCreateMenu();">📄 New Template</button>
+								
+
                             </div>
                         </div>
                      `;
@@ -3379,6 +3401,69 @@
             if (menu) {
                 menu.classList.remove('show');
             }
+        },
+		
+		openFolderTagsModal: function() {
+            const isFolder = !!this.data.currentFolderId;
+            let activeTags = [];
+            
+            if (isFolder) {
+                const folder = this.data.folders.find(f => f.id === this.data.currentFolderId);
+                if (!folder) return;
+                activeTags = folder.includedTags || [];
+            } else {
+                const cat = this.data.currentCategory;
+                if (cat === 'All' || cat === 'Trash') return;
+                if (!this.data.settings.categoryTags) this.data.settings.categoryTags = {};
+                activeTags = this.data.settings.categoryTags[cat] || [];
+            }
+
+            let allTags = new Set();
+            this.data.templates.forEach(t => {
+                if(t.tags && !t.deleted) {
+                    t.tags.forEach(tag => allTags.add(tag));
+                }
+            });
+            const allTagsArr = Array.from(allTags).sort();
+
+            const container = document.getElementById('folderTagsList');
+            container.innerHTML = '';
+            
+            if(allTagsArr.length === 0) {
+                container.innerHTML = '<i style="color:#888;">Nincsenek még címkék. Kérlek előbb adj címkét valamelyik template-hez!</i>';
+            } else {
+                allTagsArr.forEach(tag => {
+                    const isChecked = activeTags.includes(tag) ? 'checked' : '';
+                    container.innerHTML += `
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 4px 0; border-bottom: 1px solid #eee;">
+                            <input type="checkbox" style="transform: scale(1.2);" value="${this.escapeHtml(tag)}" ${isChecked} class="folder-tag-chk">
+                            <span style="font-weight:600; color: var(--text);">#${this.escapeHtml(tag)}</span>
+                        </label>
+                    `;
+                });
+            }
+
+            document.getElementById('folderTagsModal').style.display = 'flex';
+        },
+
+        saveFolderTags: function() {
+            const checkboxes = document.querySelectorAll('.folder-tag-chk:checked');
+            const selectedTags = Array.from(checkboxes).map(chk => chk.value);
+
+            if (this.data.currentFolderId) {
+                const folderIndex = this.data.folders.findIndex(f => f.id === this.data.currentFolderId);
+                if (folderIndex !== -1) this.data.folders[folderIndex].includedTags = selectedTags;
+            } else {
+                const cat = this.data.currentCategory;
+                if (cat !== 'All' && cat !== 'Trash') {
+                    if (!this.data.settings.categoryTags) this.data.settings.categoryTags = {};
+                    this.data.settings.categoryTags[cat] = selectedTags;
+                }
+            }
+
+            this.saveData();
+            this.closeModal('folderTagsModal');
+            this.renderTemplates();
         },
 		
 		createFolder: function() {
@@ -4088,6 +4173,12 @@
                 const bgColor = t.color || '#ffffff';
                 const isSelected = rearranging && this.data.selectedIds.includes(t.id);
                 const selectionClass = isSelected ? ' selected' : '';
+                
+                let tagsHtml = '';
+                if (t.tags && t.tags.length > 0) {
+                    const tagsList = t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
+                    tagsHtml = `<div style="margin-bottom: 8px;">${tagsList}</div>`;
+                }
 
                 const div = document.createElement('div');
                 div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
@@ -4104,6 +4195,7 @@
                     div.innerHTML = `
                         <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
                             <div class="card-title">${safeTitle}</div>
+                            ${tagsHtml}
                             <div class="card-preview">${t.isTodo ? '(To-Do List)' : this.escapeHtml(t.content)}</div>
                         </div>
                         <div class="card-actions">${btns}</div>
@@ -4260,6 +4352,7 @@
                             ${menu}
                             <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
                                 <div class="card-title">${safeTitle}</div>
+                                ${tagsHtml}
                                 <div class="card-preview">${mainContentHtml}</div>
                             </div>
                             ${useBtn}
@@ -4362,7 +4455,51 @@
             } else {
                 filtered.forEach(t => grid.appendChild(createCardNode(t)));
             }
+			if (currentCat !== 'All' && currentCat !== 'Trash' && !rearranging && !term) {
+                let activeTags = [];
+                if (currentFolderId) {
+                    const folder = this.data.folders.find(f => f.id === currentFolderId);
+                    if (folder && folder.includedTags) activeTags = folder.includedTags;
+                } else {
+                    if (this.data.settings && this.data.settings.categoryTags && this.data.settings.categoryTags[currentCat]) {
+                        activeTags = this.data.settings.categoryTags[currentCat];
+                    }
+                }
 
+                if (activeTags.length > 0) {
+                    const related = this.data.templates.filter(t => {
+                        if (t.deleted) return false;
+                        if (currentFolderId) {
+                            if (t.folderId === currentFolderId) return false;
+                        } else {
+                            if (t.category === currentCat && !t.folderId) return false;
+                        }
+                        if (!t.tags || t.tags.length === 0) return false;
+                        return t.tags.some(tag => activeTags.includes(tag));
+                    });
+
+                    if (related.length > 0) {
+                        const sep = document.createElement('div');
+                        sep.style.gridColumn = '1 / -1';
+                        sep.style.marginTop = '25px';
+                        sep.style.marginBottom = '5px';
+                        sep.style.paddingTop = '15px';
+                        sep.style.borderTop = '3px solid var(--primary)';
+                        sep.innerHTML = `
+                            <h3 style="margin: 0; color: var(--primary); display:flex; align-items:center; gap:8px;">
+                                🏷️ Kapcsolódó template-ek
+                            </h3>
+                            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+                                Tags: ${activeTags.map(tag => `<b>#${this.escapeHtml(tag)}</b>`).join(', ')}
+                            </p>
+                        `;
+                        grid.appendChild(sep);
+
+                        related.forEach(t => grid.appendChild(createCardNode(t)));
+                    }
+                }
+            }
+            
             if(saveNeededForTodos) {
                 this.saveData();
             }
@@ -4417,6 +4554,9 @@
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const color = document.getElementById('inputColor').value;
             const folderId = document.getElementById('inputFolder').value || null;
+            
+            const tagsRaw = document.getElementById('inputTags').value;
+            const tags = tagsRaw.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
 
             const recommendedIds = this.currentRecommendedIds || [];
 
@@ -4428,7 +4568,8 @@
                     ...this.data.templates[idx],
                     title, subtitle, category, lang, content, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
-                    recommendedIds: recommendedIds
+                    recommendedIds: recommendedIds,
+                    tags: tags
                 };
             } else {
                 this.data.templates.push({
@@ -4436,7 +4577,8 @@
                     title, subtitle, category, lang, content,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
-                    recommendedIds: recommendedIds
+                    recommendedIds: recommendedIds,
+                    tags: tags
                 });
             }
 
@@ -4472,6 +4614,7 @@
                 document.getElementById('inputLang').value = t.lang;
                 document.getElementById('inputContent').value = t.content;
                 document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+				document.getElementById('inputTags').value = t.tags ? t.tags.join(', ') : '';
 
                 const color = t.color || '#ffffff';
                 document.getElementById('inputColor').value = color;
@@ -4502,6 +4645,7 @@
                 document.getElementById('inputLang').value = this.data.currentLang;
                 document.getElementById('inputContent').value = "";
                 document.getElementById('inputViewOnly').checked = false;
+				document.getElementById('inputTags').value = '';
 
                 document.getElementById('inputColor').value = '#ffffff';
                 document.querySelector('.color-swatch.none').classList.add('selected');
