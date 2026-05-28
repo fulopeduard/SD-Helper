@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v178</title>
+    <title>SD Helper v182</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -3756,23 +3756,26 @@
             document.getElementById('batchMoveModal').style.display = 'flex';
         },
 
-        executeBatchMove: function() {
-            const newCat = document.getElementById('batchCategory').value;
-            const newFolderId = document.getElementById('batchFolder').value || null;
-            let updatedCount = 0;
-            this.data.templates.forEach(t => {
-                if (this.data.selectedIds.includes(t.id)) {
-                    t.category = newCat;
-                    t.folderId = newFolderId ? parseInt(newFolderId) : null;
-                    updatedCount++;
-                }
-            });
-            this.saveData();
-            this.data.selectedIds = [];
-            this.closeModal('batchMoveModal');
-            this.updateHeaderButtons(this.data.currentCategory);
-            this.renderTemplates();
-            alert(`Successfully moved ${updatedCount} templates.`);
+		executeBatchMove: function() {
+            try {
+                const newCat = document.getElementById('batchCategory').value;
+                const newFolderId = document.getElementById('batchFolder').value || null;
+                
+                this.data.templates.forEach(t => {
+                    if (this.data.selectedIds.includes(t.id)) {
+                        t.category = newCat;
+                        t.folderId = newFolderId ? parseInt(newFolderId) : null;
+                    }
+                });
+                
+                this.saveData();
+                this.data.selectedIds = [];
+                this.closeModal('batchMoveModal');
+                this.updateHeaderButtons(this.data.currentCategory);
+                this.renderTemplates();
+            } catch (error) {
+                alert("Hiba történt az áthelyezés során: " + error.message);
+            }
         },
 
         openColorModal: function() {
@@ -3962,9 +3965,9 @@
                 document.getElementById('varEditIndexNew').value = index;
                 document.getElementById('varKeyNew').value = v.key;
                 document.getElementById('varLabelNew').value = v.label;
-                document.getElementById('newVarType').value = v.type || 'text';
+                document.getElementById('newVarType').value = v.type || 'text';
 
-                if (v.type === 'checklist' || v.type === 'database') {
+                if (v.type === 'checklist' || v.type === 'database') {
                     document.getElementById('varChecklistRowsNew').innerHTML = '';
                     if(Array.isArray(v.options)) {
                         v.options.forEach(opt => this.addChecklistRowNew(opt.label, opt.value));
@@ -3976,17 +3979,17 @@
             } else {
                 document.getElementById('varEditorTitleNew').innerText = "Create New Variable";
                 document.getElementById('varEditIndexNew').value = "";
-                document.getElementById('varKeyNew').value = "";
-                document.getElementById('varLabelNew').value = "";
-                document.getElementById('newVarType').value = forcedType;
-                document.getElementById('varChecklistRowsNew').innerHTML = '';
+                document.getElementById('varKeyNew').value = "";
+                document.getElementById('varLabelNew').value = "";
+                document.getElementById('newVarType').value = forcedType;
+                document.getElementById('varChecklistRowsNew').innerHTML = '';
                 document.getElementById('varOptionsNew').value = "";
             }
             this.toggleVarOptionsNew();
         },
 
         toggleVarOptionsNew: function() {
-            const type = document.getElementById('newVarType').value;
+            const type = document.getElementById('newVarType').value;
             const optContainer = document.getElementById('varOptionsContainerNew');
             const builderContainer = document.getElementById('varChecklistBuilderNew');
             const optEl = document.getElementById('varOptionsNew');
@@ -4027,11 +4030,11 @@
         },
 
         saveVarFromModal: function() {
-            const idxStr = document.getElementById('varEditIndexNew').value;
-            const key = document.getElementById('varKeyNew').value.trim().replace(/[{}]/g, '');
-            let label = document.getElementById('varLabelNew').value.trim();
-            const type = document.getElementById('newVarType').value;
-            const opts = document.getElementById('varOptionsNew').value;
+            const idxStr = document.getElementById('varEditIndexNew').value;
+            const key = document.getElementById('varKeyNew').value.trim().replace(/[{}]/g, '');
+            let label = document.getElementById('varLabelNew').value.trim();
+            const type = document.getElementById('newVarType').value;
+            const opts = document.getElementById('varOptionsNew').value;
 
             if (!key) return alert("Key is required!");
 
@@ -4863,13 +4866,25 @@
                             if (t.category === currentCat && !t.folderId) return false;
                         }
                         if (!t.tags || t.tags.length === 0) return false;
-                        return t.tags.some(tag => activeTags.includes(tag));
-                    });
+                        return t.tags.some(tag => activeTags.includes(tag));
+                    });
 
-                    if (related.length > 0) {
-                        const sep = document.createElement('div');
-                        sep.style.gridColumn = '1 / -1';
-                        sep.style.marginTop = '25px';
+                    if (related.length > 0) {
+                        // --- HOZZÁADOTT RENDEZÉS SZÍN SZERINT ---
+                        related.sort((a, b) => {
+                            const colorA = a.color || '#ffffff';
+                            const colorB = b.color || '#ffffff';
+                            const idxA = app.data.colorOrder.findIndex(c => c.hex.toLowerCase() === colorA.toLowerCase());
+                            const idxB = app.data.colorOrder.findIndex(c => c.hex.toLowerCase() === colorB.toLowerCase());
+                            const posA = idxA === -1 ? 999999 : idxA;
+                            const posB = idxB === -1 ? 999999 : idxB;
+                            return posA - posB;
+                        });
+                        // --- RENDEZÉS VÉGE ---
+
+                        const sep = document.createElement('div');
+                        sep.style.gridColumn = '1 / -1';
+                        sep.style.marginTop = '25px';
                         sep.style.marginBottom = '5px';
                         sep.style.paddingTop = '15px';
                         sep.style.borderTop = '3px solid var(--primary)';
@@ -5611,12 +5626,13 @@
                     } else if (v.type === 'database') {
                         html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value)" style="margin-bottom: 5px;">`;
                         html += `<select class="form-control db-select" id="val_${key}" size="5" onchange="app.checkDatabaseOther('${key}')">`;
+                        // Az "Other" opciót felraktuk a lista tetejére:
+                        html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                         if(Array.isArray(v.options)) {
                             v.options.forEach(opt => {
                                 html += `<option value="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</option>`;
                             });
                         }
-                        html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                         html += `</select>`;
                         html += `<div id="db_other_container_${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
                                     <label style="font-size: 0.85rem;">New Label:</label>
@@ -5704,12 +5720,12 @@
                                     
                                     // Ha van címke, az új elemet bele is mentjük a Custom Variable-ba véglegesen
                                     const varObj = this.data.customVars.find(cv => cv.key === key);
-                                    if (varObj && newLabel) {
-                                        if (!varObj.options) varObj.options = [];
-                                        varObj.options.push({ label: newLabel, value: val });
-                                        this.saveData(); // Lementi a kibővített Database-t a Firebase-be
-                                        if (this.data.currentMode === 'variables') this.renderVariables(); // Frissíti a UI-t
-                                    }
+                                    if (varObj && newLabel) {
+                                        if (!varObj.options) varObj.options = [];
+                                        varObj.options.push({ label: newLabel, value: val });
+                                        this.saveData(); // Lementi a kibővített Database-t a Firebase-be
+                                        if (this.data.currentMode === 'variables') this.renderVariables(); // Frissíti a UI-t
+                                    }
                                 } else {
                                     val = el.value;
                                 }
