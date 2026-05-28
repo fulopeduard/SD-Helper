@@ -1,1 +1,6113 @@
-# SD-Helper
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD Helper v20.32</title>
+    <style>
+        :root {
+            --primary: #0078d4;
+            --secondary: #f3f2f1;
+            --text: #323130;
+            --border: #e1dfdd;
+            --success: #107c10;
+            --bg: #ffffff;
+            --danger: #a80000;
+            --warning: #d83b01;
+            --clone: #6b69d6;
+            --deepl: #0F2B46;
+            --view-mode: #605e5c;
+            --folder-bg: #fff9c4;
+            --folder-hover: #fff59d;
+            --folder-active: #fdd835;
+            --selected-border: #005a9e;
+            --selected-bg: #e6f2ff;
+            --sidebar-bg: #d9d9fc;
+            --card-min-height: 250px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #faf9f8;
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar Styles (Left Main Navigation) --- */
+        .sidebar {
+            width: 300px;
+            background-color: #bcbce4;
+            border-right: 1px solid var(--border);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            flex-shrink: 0;
+            z-index: 10;
+            position: relative;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .left-side-toggle {
+            position: fixed; left: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
+            background-color: var(--primary); color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px;
+            cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: width 0.2s; font-size: 12px;
+        }
+        .left-side-toggle:hover { width: 30px; }
+
+        .resize-handle-left {
+            position: absolute; right: 0; top: 0; bottom: 0; width: 5px;
+            cursor: ew-resize; background: transparent; z-index: 2001;
+        }
+        .resize-handle-left:hover { background: rgba(0,0,0,0.1); }
+
+        .app-title {
+            font-size: 1.0rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.5);
+            padding: 3px;
+            border-radius: 5px;
+        }
+
+        .lang-btn {
+            border: none;
+            background: transparent;
+            padding: 2px 6px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lang-btn.active {
+            background-color: var(--bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        .settings-btn {
+            border: none;
+            background: transparent;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .settings-btn:hover {
+            background-color: var(--bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Category Header with Edit Button */
+        .cat-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
+        }
+        .cat-header h3 { margin: 0; font-size: 1rem; }
+        .btn-cat-edit {
+            background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
+            font-size: 0.8rem; padding: 2px 6px; color: #444;
+        }
+        .btn-cat-edit:hover { background: white; }
+        .btn-cat-edit.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Category List Area */
+        .category-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background-color: #d0d0ff;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding-top: 0;
+        }
+
+        .category-list { list-style: none; padding: 0; margin: 0; }
+
+        /* Parent Category Item - Adjusted for higher density */
+        .category-item {
+            padding: 5px 8px;
+            cursor: pointer;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            color: #201f1e;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            min-height: 32px;
+            font-size: 0.9rem;
+        }
+
+        .category-item span, .folder-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            display: block;
+            flex: 1;
+        }
+
+        .category-item:nth-child(odd) { background-color: #a6e7f4; }
+        .category-item:nth-child(even) { background-color: #a0dfec; }
+        .category-item:hover { filter: brightness(0.95); }
+
+        .category-item.active {
+            background-color: var(--primary) !important;
+            color: white;
+        }
+
+        /* EDIT MODE STYLES */
+        .cat-input {
+            width: 100%; border: 1px solid #ccc; padding: 2px 4px; font-size: 0.85rem; border-radius: 3px;
+        }
+        .cat-controls {
+            display: flex; gap: 2px; margin-left: 5px;
+        }
+        .cat-btn {
+            background: rgba(255,255,255,0.6); border: 1px solid #999;
+            cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px;
+        }
+        .cat-btn:hover { background: white; }
+        .cat-btn.del { color: #c50f1f; font-weight: bold; }
+        .cat-btn.del:hover { background: #c50f1f; color: white; border-color: #c50f1f; }
+
+        /* FOLDER ITEM (Sidebar) */
+        .folder-item {
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-right: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            background-color: var(--folder-bg);
+            color: #4e342e;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: background 0.1s;
+        }
+
+        .folder-icon-tree { margin-right: 5px; color: #f9a825; font-weight: normal; }
+
+        .folder-item:hover { background-color: var(--folder-hover); }
+        .folder-item.active {
+            background-color: var(--folder-active);
+            color: black;
+            font-weight: bold;
+        }
+
+        .category-item.trash-item {
+            margin-top: 0;
+            background-color: #fde7e9 !important;
+            color: var(--danger);
+            border-top: 2px solid #ccc;
+        }
+        .category-item.trash-item.active { background-color: var(--danger) !important; color: white; }
+
+        .sidebar-delete-btn {
+            background: transparent;
+            border: none;
+            color: #c50f1f;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.1;
+            transition: opacity 0.2s, transform 0.2s;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .folder-item:hover .sidebar-delete-btn { opacity: 1; background: rgba(255,255,255,0.6); }
+        .sidebar-delete-btn:hover { transform: translateY(-50%) scale(1.2); background: white !important; opacity: 1 !important;}
+
+        /* Login Overlay */
+		.settings-section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+        }
+        .settings-section-title:first-child {
+            margin-top: 0;
+        }
+        .auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 3000;
+            flex-direction: column;
+        }
+        .auth-box {
+            background: white; padding: 30px; border-radius: 8px; width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid #ccc;
+            text-align: center;
+        }
+        .auth-box h2 { color: var(--primary); margin-top: 0; }
+        .auth-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .auth-error { color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; display: none; }
+        .toggle-auth { margin-top: 15px; font-size: 0.9rem; cursor: pointer; color: var(--primary); text-decoration: underline; }
+
+        /* --- Main Content Styles --- */
+        .main {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #d0d0e8;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), padding-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), padding-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box { flex-grow: 1; min-width: 200px; max-width: 400px; }
+
+        #headerButtons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s;
+        }
+        .btn-sm { padding: 6px 10px; font-size: 0.85rem; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #005a9e; }
+        .btn-secondary { background-color: #e1dfdd; color: var(--text); }
+        .btn-secondary:hover { background-color: #d0d0d0; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #7a0000; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-folder { background-color: #fdd835; color: #3e2723; }
+        .btn-folder:hover { background-color: #fbc02d; }
+
+        .btn-rearrange { background-color: #9e9e9e; color: white; }
+        .btn-rearrange:hover { background-color: #616161; }
+        .btn-save-order { background-color: var(--success); color: white; }
+        .btn-color-sort { background-color: #607d8b; color: white; }
+        .btn-color-sort:hover { background-color: #455a64; }
+        .btn-move-batch { background-color: var(--primary); color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Cards Grid */
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding-bottom: 50px;
+        }
+
+        .card {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s ease, box-shadow 0.2s ease, z-index 0s;
+            position: relative; display: flex; flex-direction: column;
+            min-height: var(--card-min-height);
+            z-index: 1; /* Alap z-index a megfelelő működéshez */
+        }
+
+        .card.menu-open {
+            z-index: 1000 !important; /* Lenyitott menü esetén garantáltan legfelül van */
+        }
+
+        /* Hover Preview Clone */
+        #hover-preview-clone {
+            position: fixed;
+            z-index: 9999;
+            margin: 0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: fit-content !important;
+        }
+        #hover-preview-clone.preview-active {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        }
+        #hover-preview-clone .card-preview {
+            display: block !important;
+            -webkit-line-clamp: unset !important;
+            overflow: visible !important;
+            white-space: pre-wrap !important;
+        }
+
+        /* Card Title standard setup */
+        .card-title {
+            font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; padding-right: 30px; word-break: break-word; line-height: 1.3; color: inherit; pointer-events: none;
+        }
+
+        /* Custom Title Layouts via Settings */
+        body.highlight-title-mode .card-title {
+            margin: -15px -15px 10px -15px;
+            padding: 12px 45px 12px 15px;
+            background-color: rgba(0, 0, 0, 0.06);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        body.title-separator-mode .card-title {
+            border-bottom: 2px solid rgba(0,0,0,0.15) !important;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        body.highlight-title-mode.title-separator-mode .card-title {
+            padding-bottom: 12px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(0,0,0,0.15) !important;
+        }
+
+        /* --- ZOOM TEMPLATE STYLES --- */
+        body.zoom-template-mode .card-title {
+            font-size: 1.35rem;
+        }
+        body.zoom-template-mode .card-preview {
+            font-size: 1.15rem;
+            line-height: 1.5;
+        }
+
+        /* --- COMPACT MODE STYLES --- */
+        body.compact-mode .grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+        }
+        body.compact-mode .card {
+            padding: 10px;
+        }
+        body.compact-mode .card-title {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            line-height: 1.2;
+            padding-right: 25px;
+        }
+        body.compact-mode.highlight-title-mode .card-title {
+            margin: -10px -10px 5px -10px;
+            padding: 8px 35px 8px 10px;
+        }
+        body.compact-mode.title-separator-mode .card-title {
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+        }
+        body.compact-mode.highlight-title-mode.title-separator-mode .card-title {
+            padding-bottom: 8px;
+            margin-bottom: 5px;
+        }
+
+        body.compact-mode.zoom-template-mode .card-title { font-size: 1.2rem; }
+        body.compact-mode.zoom-template-mode .card-preview { font-size: 1.05rem; }
+
+        body.compact-mode .card-actions {
+            gap: 5px;
+        }
+        body.compact-mode .card-btn {
+            padding: 6px 4px;
+            font-size: 0.8rem;
+        }
+        body.compact-mode .card-menu-btn {
+            top: 5px;
+            right: 2px;
+            font-size: 1.2rem;
+        }
+        body.compact-mode .card-view-btn {
+            top: 5px;
+            right: 25px;
+            font-size: 1.1rem;
+        }
+        body.compact-mode .dropdown-menu {
+            top: 30px;
+        }
+
+        /* Group Header Style */
+        .template-group-header {
+            grid-column: 1 / -1;
+            margin: 5px 0 -10px 0;
+            padding-bottom: 2px;
+            border-bottom: 1px solid rgba(0,0,0,0.15);
+            color: var(--primary);
+            font-size: 0.95rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        body.compact-mode .template-group-header {
+            margin: 5px 0 -5px 0;
+            font-size: 0.85rem;
+        }
+
+        .card.draggable { cursor: grab; }
+        .card.dragging { opacity: 0.4; border: 2px dashed var(--primary); transform: scale(0.95); }
+        .card.rearrange-mode {
+            border: 2px dashed #999;
+            cursor: pointer;
+        }
+        .card.rearrange-mode:hover { border-color: var(--primary); background: #f0f8ff !important; }
+
+        /* SELECTED STATE in Rearrange Mode */
+        .card.selected {
+            border: 3px solid var(--selected-border) !important;
+            background-color: var(--selected-bg) !important;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .rearrange-active .card-actions,
+        .rearrange-active .card-menu-btn,
+        .rearrange-active .card-view-btn {
+            display: none !important;
+        }
+
+        .card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 50; }
+
+        .card-preview {
+            font-size: 0.9rem; color: #605e5c; margin-bottom: 15px; overflow: hidden; text-overflow: ellipsis; flex-grow: 1;
+            display: -webkit-box; -webkit-line-clamp: 6;
+            -webkit-box-orient: vertical;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+
+        /* JAVÍTÁS: TODO kártyákhoz tartozó stílusok, kattintható checkboxok és teljes láthatóság */
+        .card.todo-card .card-preview {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+            pointer-events: auto;
+        }
+
+        .todo-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-top: 3px;
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+
+        .card-preview, .card-title { color: inherit; }
+
+        .card-actions { display: flex; gap: 8px; margin-top: auto; }
+
+        .card-btn { flex: 1; padding: 8px 5px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.6); border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-align: center; color: var(--text); transition: all 0.2s;}
+        .card-btn:hover { background: rgba(255,255,255,0.9); }
+
+        .card-btn.use { background-color: var(--primary); color: white; border: none; font-weight: bold; opacity: 1; }
+        .card-btn.use:hover { background-color: #005a9e; }
+
+        .card-btn.view-only { background-color: var(--view-mode); color: white; border: none; font-weight: bold; }
+        .card-btn.view-only:hover { background-color: #4a4846; }
+
+        .card-btn.clone { color: var(--clone); border: 1px solid var(--clone); }
+        .card-btn.restore { background-color: var(--success); color: white; border: none; }
+        .card-btn.delete-forever { background-color: var(--danger); color: white; border: none; }
+
+        /* --- CARD HEADER BUTTONS --- */
+        .card-menu-btn {
+            position: absolute; top: 10px; right: 5px;
+            background: none; border: none;
+            font-size: 1.4rem; color: rgba(0,0,0,0.5);
+            cursor: pointer; padding: 0 10px;
+            line-height: 1; z-index: 10;
+        }
+        .card-menu-btn:hover { color: var(--text); }
+
+        .card-view-btn {
+            position: absolute; top: 10px; right: 40px;
+            background: none; border: none;
+            font-size: 1.3rem; color: rgba(0,0,0,0.3);
+            cursor: pointer; padding: 0;
+            line-height: 1; z-index: 10; transition: color 0.2s;
+        }
+        .card-view-btn:hover { color: var(--primary); transform: scale(1.1); }
+
+        /* View Button Option Styles */
+        body:not(.show-view-button) .card-view-btn-bottom { display: none !important; }
+        body.show-view-button .card-view-btn-icon { display: none !important; }
+
+        .dropdown-menu {
+            position: absolute; top: 40px; right: 10px;
+            background: white; border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-radius: 4px; display: none;
+            flex-direction: column; width: 150px;
+            z-index: 100;
+        }
+        .dropdown-menu.show { display: flex; animation: fadeIn 0.1s; }
+
+        .dropdown-item {
+            padding: 10px 15px; text-align: left;
+            background: none; border: none;
+            cursor: pointer; width: 100%;
+            font-size: 0.9rem; color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .dropdown-item:hover { background-color: #f3f2f1; }
+        .dropdown-item.danger { color: var(--danger); }
+        .dropdown-item.danger:hover { background-color: #fde7e9; }
+        .dropdown-divider { border-top: 1px solid var(--border); margin: 2px 0; }
+
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white; padding: 25px; border-radius: 8px; width: 650px; max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;
+            transition: background-color 0.3s ease;
+        }
+        .modal-body { overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
+        .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        textarea.form-control { resize: vertical; min-height: 120px; font-family: monospace; }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+        .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
+        .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+
+        #fillerModal { z-index: 1100; }
+        #batchMoveModal { z-index: 1150; }
+        #linkBuilderModal { z-index: 1200; }
+        #clipboardHistoryModal { z-index: 1300; }
+        #snippetModal { z-index: 2500; }
+        #todoModal { z-index: 1400; }
+
+        .template-link {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: inherit;
+            font-size: inherit;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .template-link:hover { color: #005a9e; }
+
+        /* Color Picker Styles */
+        .color-picker-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .color-swatch {
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .color-swatch:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .color-swatch.selected { border-color: #323130; transform: scale(1.1); }
+        .color-swatch.none { background: #ffffff; border: 1px solid #ccc; position: relative; }
+        .color-swatch.none::after { content: '×'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); color: #666; font-size: 18px; font-weight: bold; }
+        input[type="color"] { width: 40px; height: 30px; border: none; background: none; cursor: pointer; padding: 0; }
+
+        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+
+        /* Mini Color Swatch for Snippets */
+        .color-swatch-mini {
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .color-swatch-mini:hover { transform: scale(1.1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .color-swatch-mini.selected { border-color: #323130; transform: scale(1.1); }
+        .color-swatch-mini.none { background: #ffffff; border: 1px solid #ccc; position: relative; }
+        .color-swatch-mini.none::after { content: '×'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); color: #666; font-size: 14px; font-weight: bold; }
+
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background-color: #323130; color: white;
+            padding: 12px 24px; border-radius: 4px; display: none; animation: fadeIn 0.3s; z-index: 4000;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- VARIABLE MANAGER --- */
+        .vars-modal-body { display: flex; height: 500px; padding: 0; overflow: hidden; }
+        .vars-sidebar { width: 280px; background: #f8f9fa; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .vars-search { padding: 10px; border-bottom: 1px solid var(--border); background: white; }
+        .vars-list-scroll { flex: 1; overflow-y: auto; padding: 5px; }
+        .var-card { padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 2px; transition: all 0.2s; }
+        .var-card:hover { background: #e1dfdd; }
+        .var-card.active { background: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .var-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .var-card-key { font-weight: bold; color: var(--primary); font-size: 0.95rem; }
+        .var-card-type { font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; background: #ddd; color: #333; }
+        .var-card-label { font-size: 0.8rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .vars-editor-area { flex: 1; padding: 20px; overflow-y: auto; background: white; display: flex; flex-direction: column; }
+        .vars-editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+
+        .builder-row { display: flex; gap: 5px; margin-bottom: 8px; align-items: flex-start; }
+        .builder-row input { flex: 1; font-size: 0.9rem; }
+        .builder-row textarea { flex: 2; font-size: 0.85rem; font-family: monospace; height: 36px; min-height: 36px; resize: vertical; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #eee; }
+
+        /* --- EDITOR TOOLBAR --- */
+        .editor-toolbar { display: flex; background: #f0f3f5; padding: 5px 8px; border: 1px solid #dbe4ea; border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .editor-toolbar-btn { background: white; border: 1px solid #ccc; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; color: #444; transition: all 0.1s; font-weight: 500; }
+        .editor-toolbar-btn:hover { background: #e1dfdd; color: black; }
+        .editor-toolbar-btn.active { background: #cce4f7; border-color: #005a9e; color: #005a9e; font-weight: bold; }
+
+        .variable-tray { background: #f8f9fa; border: 1px solid #dbe4ea; border-top: none; border-bottom: none; padding: 10px; display: none; animation: slideDown 0.2s; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tray-search { margin-bottom: 8px; }
+        .tray-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
+        .var-chip { background: #fff; border: 1px solid #0078d4; color: #0078d4; padding: 4px 10px; border-radius: 14px; cursor: pointer; font-size: 0.85rem; font-family: monospace; font-weight: 600; transition: all 0.2s; }
+        .var-chip:hover { background: #0078d4; color: white; }
+        .var-chip.system { border-color: #605e5c; color: #605e5c; background: #f3f2f1; }
+        .var-chip.system:hover { background: #605e5c; color: white; }
+        .var-chip small { opacity: 0.7; font-size: 0.75em; margin-left: 4px; font-family: sans-serif; font-weight: normal; }
+        textarea#inputContent, textarea#snippetContent { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; }
+
+        /* --- QUICK SIDEBAR STYLES --- */
+        .quick-side-toggle {
+            position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
+            background-color: var(--primary); color: white; border-top-left-radius: 8px; border-bottom-left-radius: 8px;
+            cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: background-color 0.2s; font-size: 12px;
+        }
+        .quick-side-toggle:hover { background-color: #005a9e; }
+
+        .quick-sidebar {
+            position: fixed; top: 0; right: 0; height: 100vh;
+            background-color: var(--sidebar-bg); box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 2000; transform: translateX(100%); display: flex; flex-direction: column;
+            border-left: 1px solid var(--border); transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .resize-handle {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+            cursor: ew-resize; background: transparent; z-index: 2001;
+        }
+        .resize-handle:hover { background: rgba(0,0,0,0.1); }
+
+        .quick-header {
+            padding: 15px; background-color: rgba(255,255,255,0.4); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .quick-header h3 { margin: 0; font-size: 1rem; color: var(--primary); }
+
+        .quick-content { flex: 1; overflow-y: auto; padding: 10px; }
+        .quick-list { list-style: none; padding: 0; margin: 0; }
+
+        /* Categorized Sidebar UI */
+        .quick-folder-wrapper {
+            background-color: var(--primary);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .quick-folder-header {
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-subcat-header {
+            font-size: 0.85rem; font-weight: bold; color: var(--primary);
+            margin: 10px 0 5px 0; padding-bottom: 2px; border-bottom: 1px solid rgba(0,120,212,0.3);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .quick-folder-wrapper .quick-subcat-header {
+            color: rgba(255,255,255,0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .quick-separator {
+            border-top: 2px dashed #bbb;
+            margin: 15px 0 10px 0;
+        }
+
+        .quick-item {
+            padding: 8px 10px; background: white; border: 1px solid var(--border); border-radius: 4px;
+            margin-bottom: 5px; cursor: pointer; transition: all 0.1s;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .quick-item:hover { background-color: #e6f2ff; border-color: var(--primary); transform: translateX(-2px); }
+        .quick-item-text {
+            overflow: hidden; text-overflow: ellipsis; flex: 1;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            word-break: break-word; white-space: pre-wrap; font-family: inherit; line-height: 1.3;
+        }
+
+        .quick-edit-row {
+            display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;
+            background: rgba(255,255,255,0.7); padding: 8px; border-radius: 4px; border: 1px dashed #aaa;
+        }
+        .quick-edit-input { flex: 1; padding: 5px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 3px; font-family: inherit; }
+
+        .quick-action-btn {
+            width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;
+            border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; cursor: pointer; color: #444; font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .quick-action-btn:hover { background: white; }
+        .quick-action-btn.del { color: var(--danger); }
+        .quick-action-btn.del:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* Clipboard History Styles */
+        .history-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .history-text {
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 100px;
+            overflow-y: auto;
+            color: #444;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            font-family: monospace;
+        }
+        .history-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        /* --- Pinned To-Do Sidebar Styles --- */
+        .pinned-todo-container {
+            background-color: #fff9c4; /* Figyelemfelkeltő sárgás háttér */
+            border: 1px solid #fbc02d;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none; /* Alapból rejtett, csak akkor látszik, ha van pinnelt elem */
+            flex-shrink: 0;
+            max-height: 220px; /* JAVÍTVA: Fix magasság, hogy kb 2 lista után már görgetni kelljen */
+            overflow-y: auto;
+        }
+        .pinned-todo-header {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #d83b01;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+        }
+        .pinned-todo-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #323130;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 4px;
+            word-break: break-word;
+        }
+        .pinned-todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .pinned-todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
+        .pinned-todo-item input[type="checkbox"] {
+            margin-top: 2px;
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+		.m42-ticket-container {
+        display: flex;
+        flex-direction: column;
+        background: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+    }
+    .m42-header {
+        background: #ffffff;
+        padding: 15px 20px;
+        border-bottom: 1px solid #d1d5db;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .m42-type-icon {
+        width: 36px; height: 36px;
+        border-radius: 4px;
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-weight: bold; font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .m42-type-incident { background: #e3000f; } /* M42 Red */
+    .m42-type-request { background: #0072c6; }  /* M42 Blue */
+    .m42-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0;
+        flex: 1;
+        color: #1f2937;
+    }
+    .m42-body {
+        display: flex;
+        align-items: stretch;
+    }
+    .m42-main {
+        flex: 2;
+        padding: 20px;
+        background: #ffffff;
+        min-height: 300px;
+    }
+    .m42-sidebar {
+        flex: 1;
+        background: #f3f4f6;
+        border-left: 1px solid #d1d5db;
+        padding: 20px;
+    }
+    .m42-group-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #4b5563;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        letter-spacing: 0.5px;
+    }
+    .m42-field {
+        margin-bottom: 15px;
+    }
+    .m42-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+    .m42-value {
+        font-size: 0.9rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        padding: 6px 10px;
+        border-radius: 4px;
+        min-height: 30px;
+        display: flex; align-items: center;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .m42-main .m42-value {
+        border: none;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        color: #374151;
+    }
+    .m42-copy-btn {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        color: #0078d4;
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .m42-copy-btn:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+	.create-dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .btn-create-plus {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.4rem;
+            width: 40px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-create-plus:hover {
+            background-color: #005a9e;
+        }
+        .create-dropdown-menu {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            display: none;
+            flex-direction: column;
+            width: 180px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .create-dropdown-menu.show {
+            display: flex;
+            animation: fadeIn 0.1s;
+        }
+        .create-dropdown-item {
+            padding: 12px 15px;
+            text-align: left;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #f3f2f1;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.95rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .create-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .create-dropdown-item:hover {
+            background-color: #e6f2ff;
+        }
+		/* Formázási stílusok a View modal-hoz */
+		.view-content h1 { 
+			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: var(--primary);
+		}
+		.view-content h2 { 
+			font-size: 1.3rem; margin-top: 12px; margin-bottom: 8px; color: #444; 
+		}
+		.view-content hr { 
+			border: 0; border-top: 2px solid var(--border); margin: 10px 0; opacity: 0.6;
+		}
+		.view-content b { font-weight: bold; }
+		.view-content i { font-style: italic; }
+		.view-content u { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="modal-overlay" id="ticketEditorModal">
+    <div class="modal" style="width: 700px;">
+        <div class="modal-header"><span id="ticketEditorTitle">Create Ticket Template</span></div>
+        <div class="modal-body">
+            <input type="hidden" id="ticketEditId">
+
+            <div class="row">
+                <div class="col"><div class="form-group"><label>App Category</label><select class="form-control" id="ticketAppCategory" onchange="app.updateFolderOptions('ticketAppCategory', 'ticketAppFolder')"></select></div></div>
+                <div class="col"><div class="form-group"><label>App Folder</label><select class="form-control" id="ticketAppFolder"><option value="">(Root)</option></select></div></div>
+            </div>
+
+            <div class="form-group" style="background: #f0f3f5; padding: 10px; border-radius: 6px;">
+                <label>Color Coding</label>
+                <div class="color-picker-container" id="ticketColorSwatches">
+                    <input type="hidden" id="ticketColor" value="#ffffff">
+                    <div class="color-swatch none selected" onclick="app.selectTicketColor('#ffffff', this)" title="None"></div>
+                    <div class="color-swatch" data-name="Red" data-hex="#ffcdd2" style="background:#ffcdd2" onclick="app.selectTicketColor('#ffcdd2', this)" title="Red"></div>
+                    <div class="color-swatch" data-name="Yellow" data-hex="#fff9c4" style="background:#fff9c4" onclick="app.selectTicketColor('#fff9c4', this)" title="Yellow"></div>
+                    <div class="color-swatch" data-name="Green" data-hex="#c8e6c9" style="background:#c8e6c9" onclick="app.selectTicketColor('#c8e6c9', this)" title="Green"></div>
+                    <div class="color-swatch" data-name="Blue" data-hex="#bbdefb" style="background:#bbdefb" onclick="app.selectTicketColor('#bbdefb', this)" title="Blue"></div>
+                    <div class="color-swatch" data-name="Purple" data-hex="#e1bee7" style="background:#e1bee7" onclick="app.selectTicketColor('#e1bee7', this)" title="Purple"></div>
+                    <div class="color-swatch" data-name="Orange" data-hex="#ffe0b2" style="background:#ffe0b2" onclick="app.selectTicketColor('#ffe0b2', this)" title="Orange"></div>
+                    <div class="color-swatch" data-name="Teal" data-hex="#b2dfdb" style="background:#b2dfdb" onclick="app.selectTicketColor('#b2dfdb', this)" title="Teal"></div>
+                    <div class="color-swatch" data-name="Pink" data-hex="#f8bbd0" style="background:#f8bbd0" onclick="app.selectTicketColor('#f8bbd0', this)" title="Pink"></div>
+                    <div class="color-swatch" data-name="Grey" data-hex="#cfd8dc" style="background:#cfd8dc" onclick="app.selectTicketColor('#cfd8dc', this)" title="Grey"></div>
+
+                    <div style="border-left: 1px solid #ccc; padding-left: 10px; display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.85rem;">Custom:</span>
+                        <input type="color" id="ticketCustomColorPicker" onchange="app.selectTicketColor(this.value, null)">
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="margin: 15px 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Ticket Details (Visualizer)</h4>
+            
+            <div class="row">
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label>Ticket Type</label>
+                        <select class="form-control" id="ticketType">
+                            <option value="Incident">Incident</option>
+                            <option value="Request">Request</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>System Category / Path (Visual only)</label>
+                        <input type="text" class="form-control" id="ticketSysCat" placeholder="e.g. Software > MS Office > Outlook">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group"><label>Username / Caller</label><input type="text" class="form-control" id="ticketCaller" placeholder="e.g. John Doe"></div>
+                </div>
+                <div class="col">
+                    <div class="form-group"><label>Affected Users</label><input type="text" class="form-control" id="ticketAffected" placeholder="e.g. 1 / Multiple / Department"></div>
+                </div>
+                <div class="col">
+                    <div class="form-group"><label>Urgency</label><input type="text" class="form-control" id="ticketUrgency" placeholder="e.g. High / Medium / Low"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Ticket Title (Short Description)</label>
+                <input type="text" class="form-control" id="ticketTitleText" placeholder="e.g. Outlook is not receiving emails">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Ticket Description</label>
+                <textarea class="form-control" id="ticketDescText" placeholder="Detailed description of the issue..." style="min-height: 150px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('ticketEditorModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveTicketTemplate()">Save Ticket Template</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="ticketViewModal" style="z-index: 1050;">
+    <div class="modal" style="width: 800px; max-width: 95%;">
+        <div class="modal-header">
+            <span>Ticket Visualizer</span>
+            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('ticketViewModal')">Close</button>
+        </div>
+        <div class="modal-body" id="ticketViewContainer">
+            </div>
+    </div>
+</div>
+
+<div class="left-side-toggle" id="leftSideToggle" onclick="app.toggleLeftSidebar()" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')" style="display:none;" title="Show categories panel">
+    ▶
+</div>
+
+<div class="quick-side-toggle" onclick="app.toggleQuickSidebar()" onmouseenter="app.handleSidebarEnter('right')" onmouseleave="app.handleSidebarLeave('right')" title="Quick Snippets">
+    ◀
+</div>
+
+<div class="quick-sidebar" id="quickSidebar" style="width: 320px;" onmouseenter="app.handleSidebarEnter('right')" onmouseleave="app.handleSidebarLeave('right')">
+    <div class="resize-handle" id="resizeHandle"></div>
+
+    <div class="quick-header">
+        <h3 id="quickSidebarTitle">⚡ Quick Snippets</h3>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-sm btn-primary" onclick="app.openSnippetModal()" title="New Snippet">+</button>
+            <button class="btn-sm btn-secondary" onclick="app.toggleQuickSidebar()">✕</button>
+        </div>
+    </div>
+    <div class="quick-content">
+        <div id="quickListContainer">
+            <ul class="quick-list" id="quickList"></ul>
+        </div>
+    </div>
+</div>
+
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-box" id="loginBox">
+        <h2>🔑 Login</h2>
+        <div class="auth-error" id="authError">Invalid email or password.</div>
+        <input type="email" id="loginEmail" class="auth-input" placeholder="Email Address">
+        <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+        <button class="btn btn-primary" style="width:100%" onclick="app.login()">Sign In</button>
+        <div class="toggle-auth" onclick="app.toggleAuthMode('register')">No account? Register here</div>
+    </div>
+
+    <div class="auth-box" id="registerBox" style="display:none;">
+        <h2>📝 Register</h2>
+        <div class="auth-error" id="regError">Error creating account.</div>
+        <input type="email" id="regEmail" class="auth-input" placeholder="Email Address">
+        <input type="password" id="regPassword" class="auth-input" placeholder="Password (min 6 chars)">
+        <button class="btn btn-success" style="width:100%" onclick="app.register()">Create Account</button>
+        <div class="toggle-auth" onclick="app.toggleAuthMode('login')">Back to Login</div>
+    </div>
+</div>
+
+<div class="sidebar" id="leftSidebar" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')">
+    <div class="resize-handle-left" id="resizeHandleLeft"></div>
+    <div class="app-title" id="sidebarAppTitle">🛠️ SD Helper Cloud</div>
+
+    <div id="pinnedTodoContainer" class="pinned-todo-container"></div>
+
+    <div class="cat-header">
+        <h3>Categories</h3>
+        <div class="lang-switcher" id="sidebarLangSwitcher" style="margin-bottom: 0; background: transparent; padding: 0; align-items: center; gap: 2px;">
+            <button class="lang-btn active" id="btnEn" onclick="app.setLang('en')">EN</button>
+            <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
+        </div>
+        <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
+    </div>
+
+    <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()">
+
+    <div class="category-container">
+        <ul class="category-list" id="categoryList"></ul>
+    </div>
+
+    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+        <button class="btn btn-sm btn-secondary" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px; border: 1px solid var(--border);">◀</button>
+        <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
+        <button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
+        <button class="btn btn-sm btn-secondary" style="display: block; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="header-actions">
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <h2 id="currentCategoryTitle" style="margin:0;">All Templates</h2>
+            <div id="headerButtons"></div>
+        </div>
+        
+        <div class="search-box" style="margin-left: auto;">
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search templates..." onkeyup="app.renderTemplates()">
+        </div>
+    </div>
+
+    <div class="grid" id="templateGrid"></div>
+</div>
+
+<div class="modal-overlay" id="editorModal">
+    <div class="modal">
+        <div class="modal-header"><span id="editorTitle">Create Template</span></div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>Template Name</label>
+                        <input type="text" class="form-control" id="inputTitle" placeholder="Template Title">
+                    </div>
+                </div>
+                <div class="col" style="flex: 1.5;">
+                    <div class="form-group">
+                        <label>Subtitle (Optional Group)</label>
+                        <input type="text" list="subtitleOptions" class="form-control" id="inputSubtitle" placeholder="e.g. Teams messages">
+                        <datalist id="subtitleOptions"></datalist>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select class="form-control" id="inputLang">
+                            <option value="en">English</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="form-control" id="inputCategory" onchange="app.updateFolderOptions('inputCategory', 'inputFolder')"></select>
+                    </div>
+                </div>
+                <div class="col" style="display: flex; align-items: center; padding-top: 15px;">
+                    <label class="radio-label">
+                        <input type="checkbox" id="inputViewOnly" onchange="app.handleViewOnlyToggle()">
+                        <span style="margin-left: 5px; font-weight: bold;">View Only</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Folder (Optional)</label>
+                        <select class="form-control" id="inputFolder">
+                            <option value="">(No Folder / Root)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Recommend After Use</label>
+                        <button type="button" class="form-control" style="height: auto; min-height: 36px; text-align: left; background: #fff; border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="app.openRecommendationSelectorModal()" id="btnOpenRecSelector">
+                            <span>Template javaslatok (0)</span>
+                            <span style="color: var(--primary);">✎</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+			<div class="form-group">
+                <label>Tags (vesszővel elválasztva)</label>
+                <input type="text" class="form-control" id="inputTags" placeholder="pl. citrix, follow-up, urgent">
+            </div>
+            <div class="form-group">
+                <label>Color Coding</label>
+                <div class="color-picker-container" id="editorColorSwatches">
+                    <input type="hidden" id="inputColor" value="#ffffff">
+                    <div class="color-swatch none selected" onclick="app.selectColor('#ffffff', this)" title="None"></div>
+                    <div class="color-swatch" data-name="Red" data-hex="#ffcdd2" style="background:#ffcdd2" onclick="app.selectColor('#ffcdd2', this)" title="Red"></div>
+                    <div class="color-swatch" data-name="Yellow" data-hex="#fff9c4" style="background:#fff9c4" onclick="app.selectColor('#fff9c4', this)" title="Yellow"></div>
+                    <div class="color-swatch" data-name="Green" data-hex="#c8e6c9" style="background:#c8e6c9" onclick="app.selectColor('#c8e6c9', this)" title="Green"></div>
+                    <div class="color-swatch" data-name="Blue" data-hex="#bbdefb" style="background:#bbdefb" onclick="app.selectColor('#bbdefb', this)" title="Blue"></div>
+                    <div class="color-swatch" data-name="Purple" data-hex="#e1bee7" style="background:#e1bee7" onclick="app.selectColor('#e1bee7', this)" title="Purple"></div>
+                    <div class="color-swatch" data-name="Orange" data-hex="#ffe0b2" style="background:#ffe0b2" onclick="app.selectColor('#ffe0b2', this)" title="Orange"></div>
+                    <div class="color-swatch" data-name="Teal" data-hex="#b2dfdb" style="background:#b2dfdb" onclick="app.selectColor('#b2dfdb', this)" title="Teal"></div>
+                    <div class="color-swatch" data-name="Pink" data-hex="#f8bbd0" style="background:#f8bbd0" onclick="app.selectColor('#f8bbd0', this)" title="Pink"></div>
+                    <div class="color-swatch" data-name="Grey" data-hex="#cfd8dc" style="background:#cfd8dc" onclick="app.selectColor('#cfd8dc', this)" title="Grey"></div>
+
+                    <div style="border-left: 1px solid #ccc; padding-left: 10px; display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.85rem;">Custom:</span>
+                        <input type="color" id="customColorPicker" onchange="app.selectColor(this.value, null)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Content</label>
+                <div class="editor-toolbar">
+                    <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
+                    <button class="editor-toolbar-btn" onclick="app.openLinkBuilder()" id="btnLinkTemplate" style="display:none;">🔗 Link Template</button>
+                    
+                    <div id="formatToolbar" style="display:none; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
+                        <button class="editor-toolbar-btn" onclick="app.formatText('title')" title="Cím"><b>H1</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('subtitle')" title="Alcím"><b>H2</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('bold')" title="Vastag"><b>B</b></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('italic')" title="Dőlt"><i>I</i></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('underline')" title="Aláhúzott"><u>U</u></button>
+                        <button class="editor-toolbar-btn" onclick="app.formatText('divider')" title="Elválasztó">―</button>
+                        
+                                                <button class="editor-toolbar-btn" style="color: #ff1010; padding: 4px 8px; border-color: #ff1010; margin-left: 5px;" onclick="app.formatText('color', '#ff1010')" title="Piros Szín"><b>A</b></button>
+                        <button class="editor-toolbar-btn" style="color: #35c53a; padding: 4px 8px; border-color: #35c53a;" onclick="app.formatText('color', '#35c53a')" title="Zöld Szín"><b>A</b></button>
+                        <button class="editor-toolbar-btn" style="color: #3e95ff; padding: 4px 8px; border-color: #3e95ff; margin-right: 5px;" onclick="app.formatText('color', '#3e95ff')" title="Kék Szín"><b>A</b></button>
+                        
+                                                <input type="color" id="textColorPicker" title="Egyéni szín kiválasztása" style="width: 28px; height: 28px; border: none; cursor: pointer; padding: 0;">
+                        
+                                                <button class="editor-toolbar-btn" style="font-weight: bold; color: var(--success); padding: 4px 8px;" onclick="app.formatText('color', document.getElementById('textColorPicker').value)" title="Szín alkalmazása a kijelölt szövegre">✓</button>
+                    </div>
+                </div>
+
+                <div class="variable-tray" id="variableTray">
+                    <div class="tray-search">
+                        <input type="text" class="form-control" style="padding:4px;" placeholder="Search variables..." onkeyup="app.filterTray(this.value, 'trayChips', 'inputContent')">
+                    </div>
+                    <div class="tray-chips" id="trayChips"></div>
+                </div>
+
+                <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..." style="min-height: 200px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('editorModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveTemplate()">Save Template</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="todoModal">
+    <div class="modal">
+        <div class="modal-header"><span id="todoTitle">Create To-Do List</span></div>
+        <div class="modal-body">
+            <input type="hidden" id="todoEditId">
+
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>List Name</label>
+                        <input type="text" class="form-control" id="todoInputTitle" placeholder="e.g. Daily Check">
+                    </div>
+                </div>
+                <div class="col" style="flex: 1.5;">
+                    <div class="form-group">
+                        <label>Subtitle (Optional Group)</label>
+                        <input type="text" list="todoSubtitleOptions" class="form-control" id="todoInputSubtitle" placeholder="e.g. Morning Routine">
+                        <datalist id="todoSubtitleOptions"></datalist>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="form-control" id="todoInputCategory" onchange="app.updateFolderOptions('todoInputCategory', 'todoInputFolder')"></select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Folder (Optional)</label>
+                        <select class="form-control" id="todoInputFolder">
+                            <option value="">(No Folder / Root)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Color Coding</label>
+                <div class="color-picker-container" id="todoColorSwatches">
+                    <input type="hidden" id="todoInputColor" value="#ffffff">
+                    <div class="color-swatch none selected" onclick="app.selectTodoColor('#ffffff', this)" title="None"></div>
+                    <div class="color-swatch" data-name="Red" data-hex="#ffcdd2" style="background:#ffcdd2" onclick="app.selectTodoColor('#ffcdd2', this)" title="Red"></div>
+                    <div class="color-swatch" data-name="Yellow" data-hex="#fff9c4" style="background:#fff9c4" onclick="app.selectTodoColor('#fff9c4', this)" title="Yellow"></div>
+                    <div class="color-swatch" data-name="Green" data-hex="#c8e6c9" style="background:#c8e6c9" onclick="app.selectTodoColor('#c8e6c9', this)" title="Green"></div>
+                    <div class="color-swatch" data-name="Blue" data-hex="#bbdefb" style="background:#bbdefb" onclick="app.selectTodoColor('#bbdefb', this)" title="Blue"></div>
+                    <div class="color-swatch" data-name="Purple" data-hex="#e1bee7" style="background:#e1bee7" onclick="app.selectTodoColor('#e1bee7', this)" title="Purple"></div>
+                    <div class="color-swatch" data-name="Orange" data-hex="#ffe0b2" style="background:#ffe0b2" onclick="app.selectTodoColor('#ffe0b2', this)" title="Orange"></div>
+                    <div class="color-swatch" data-name="Teal" data-hex="#b2dfdb" style="background:#b2dfdb" onclick="app.selectTodoColor('#b2dfdb', this)" title="Teal"></div>
+                    <div class="color-swatch" data-name="Pink" data-hex="#f8bbd0" style="background:#f8bbd0" onclick="app.selectTodoColor('#f8bbd0', this)" title="Pink"></div>
+                    <div class="color-swatch" data-name="Grey" data-hex="#cfd8dc" style="background:#cfd8dc" onclick="app.selectTodoColor('#cfd8dc', this)" title="Grey"></div>
+
+                    <div style="border-left: 1px solid #ccc; padding-left: 10px; display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.85rem;">Custom:</span>
+                        <input type="color" id="todoCustomColorPicker" onchange="app.selectTodoColor(this.value, null)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="background: #f0f3f5; padding: 10px; border-radius: 4px; border: 1px solid #dbe4ea;">
+                <label class="radio-label" style="margin-bottom: 0;">
+                    <input type="checkbox" id="todoDailyReset">
+                    <span style="margin-left: 5px;"><strong>Repeat Daily</strong> (Clears checked items automatically the next day)</span>
+                </label>
+                <label class="radio-label" style="margin-top: 8px; margin-bottom: 0;">
+                    <input type="checkbox" id="todoAutoReset">
+                    <span style="margin-left: 5px;"><strong>Auto-Reset</strong> (Clears all items instantly when every task is checked)</span>
+                </label>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Tasks (Each line is a separate task)</label>
+                <textarea class="form-control" id="todoInputContent" placeholder="Task 1&#10;Task 2&#10;Task 3" style="min-height: 150px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('todoModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveTodo()">Save To-Do List</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="recommendationSelectorModal" style="z-index: 1500;">
+    <div class="modal" style="width: 700px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <span>Válassz ajánlott template-eket</span>
+            <button class="btn btn-sm btn-secondary" onclick="app.closeRecommendationSelectorModal()">✕</button>
+        </div>
+        <div style="padding: 10px 20px; border-bottom: 1px solid var(--border);">
+            <input type="text" class="form-control" id="searchRecSelector" placeholder="🔍 Keresés template név vagy tartalom alapján..." onkeyup="app.renderRecommendationSelectorList()">
+        </div>
+        <div class="modal-body" id="recSelectorList" style="flex: 1; overflow-y: auto; padding: 20px; background: #f3f2f1;">
+                    </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="app.closeRecommendationSelectorModal()">Kész</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="snippetModal">
+    <div class="modal" style="width: 600px;">
+        <div class="modal-header"><span id="snippetModalTitle">Create Snippet</span></div>
+        <div class="modal-body">
+            <input type="hidden" id="editSnippetIdx">
+
+            <div class="row">
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="form-control" id="snippetMainCat" onchange="app.updateSnippetFolderOptions()"></select>
+                    </div>
+                </div>
+                <div class="col" style="flex: 1.5;">
+                    <div class="form-group">
+                        <label>Sub-category (Group)</label>
+                        <input type="text" list="snippetSubCatList" class="form-control" id="snippetSubCat" placeholder="e.g. Teams" oninput="app.checkSnippetSubCatColor()">
+                        <datalist id="snippetSubCatList"></datalist>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Folder (Optional)</label>
+                <select class="form-control" id="snippetFolder">
+                    <option value="">(No Folder / Root)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Description (Optional)</label>
+                <input type="text" class="form-control" id="snippetDesc" placeholder="e.g. Feedback request">
+            </div>
+
+            <div class="form-group">
+                <label>Color Coding (Applies to all in Sub-category)</label>
+                <div class="color-picker-container" id="snippetColorSwatches">
+                    <input type="hidden" id="snippetColor" value="#ffffff">
+                    <div class="color-swatch-mini none selected" data-hex="#ffffff" onclick="app.selectSnippetColor('#ffffff', this)" style="background:#ffffff; border:1px solid #ccc;" title="None"></div>
+                    <div class="color-swatch-mini" data-hex="#ffcdd2" onclick="app.selectSnippetColor('#ffcdd2', this)" style="background:#ffcdd2;" title="Red"></div>
+                    <div class="color-swatch-mini" data-hex="#fff9c4" onclick="app.selectSnippetColor('#fff9c4', this)" style="background:#fff9c4;" title="Yellow"></div>
+                    <div class="color-swatch-mini" data-hex="#c8e6c9" onclick="app.selectSnippetColor('#c8e6c9', this)" style="background:#c8e6c9;" title="Green"></div>
+                    <div class="color-swatch-mini" data-hex="#bbdefb" onclick="app.selectSnippetColor('#bbdefb', this)" style="background:#bbdefb;" title="Blue"></div>
+                    <div class="color-swatch-mini" data-hex="#e1bee7" onclick="app.selectSnippetColor('#e1bee7', this)" style="background:#e1bee7;" title="Purple"></div>
+                    <div class="color-swatch-mini" data-hex="#ffe0b2" onclick="app.selectSnippetColor('#ffe0b2', this)" style="background:#ffe0b2;" title="Orange"></div>
+                    <div class="color-swatch-mini" data-hex="#b2dfdb" onclick="app.selectSnippetColor('#b2dfdb', this)" style="background:#b2dfdb;" title="Teal"></div>
+                    <div class="color-swatch-mini" data-hex="#f8bbd0" onclick="app.selectSnippetColor('#f8bbd0', this)" style="background:#f8bbd0;" title="Pink"></div>
+                    <div class="color-swatch-mini" data-hex="#cfd8dc" onclick="app.selectSnippetColor('#cfd8dc', this)" style="background:#cfd8dc;" title="Grey"></div>
+
+                    <div style="border-left: 1px solid #ccc; padding-left: 10px; display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.85rem;">Custom:</span>
+                        <input type="color" id="snippetCustomColorPicker" onchange="app.selectSnippetColor(this.value, null)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Content</label>
+                <div class="editor-toolbar">
+                    <button class="editor-toolbar-btn" onclick="app.toggleVarTray('snippetVariableTray')" id="btnSnippetTray">📦 Variables</button>
+                </div>
+
+                <div class="variable-tray" id="snippetVariableTray">
+                    <div class="tray-search">
+                        <input type="text" class="form-control" style="padding:4px;" placeholder="Search variables..." onkeyup="app.filterTray(this.value, 'snippetTrayChips', 'snippetContent')">
+                    </div>
+                    <div class="tray-chips" id="snippetTrayChips"></div>
+                </div>
+
+                <textarea class="form-control" id="snippetContent" placeholder="Snippet text / content..." style="min-height: 150px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-danger" id="btnDeleteSnippet" style="display:none;" onclick="app.deleteSnippetFromModal()">Delete</button>
+                <button class="btn btn-success" id="btnCopyToTemplate" style="display:none;" onclick="app.copySnippetToTemplate()">Copy to Category/Folder</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="app.closeModal('snippetModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveSnippet()">Save Snippet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="batchMoveModal">
+    <div class="modal" style="width: 450px;">
+        <div class="modal-header">Move Selected Items</div>
+        <div class="modal-body">
+            <p id="batchMoveCountText" style="margin-bottom:15px; color:#666;">Moving 0 items...</p>
+            <div class="form-group">
+                <label>Destination Category</label>
+                <select class="form-control" id="batchCategory" onchange="app.updateFolderOptions('batchCategory', 'batchFolder')"></select>
+            </div>
+            <div class="form-group">
+                <label>Destination Folder</label>
+                <select class="form-control" id="batchFolder">
+                    <option value="">(No Folder / Root)</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('batchMoveModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.executeBatchMove()">Move</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="colorOrderModal">
+    <div class="modal" style="width: 400px;">
+        <div class="modal-header">Arrange via Color</div>
+        <div class="modal-body">
+            <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                Drag buttons (Up/Down) to set priority.
+                Top colors will appear first.
+            </p>
+            <div id="colorOrderList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.saveDefaultColorOrder()">Set as Default</button>
+            <div style="flex:1"></div>
+            <button class="btn btn-secondary" onclick="app.closeModal('colorOrderModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.applyColorSort()">Apply Sort</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="clipboardHistoryModal" style="z-index: 1300;">
+        <div class="modal" style="width: 90%; max-width: 1200px; height: 90vh; background-color: #bcbce4;">
+        <div class="modal-header">
+            <span>🕒 Clipboard History</span>
+                        <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm btn-danger" onclick="app.clearClipboardHistory()">Clear All</button>
+                <button class="btn btn-sm btn-secondary" onclick="app.closeModal('clipboardHistoryModal')" title="Bezárás">✕</button>
+            </div>
+        </div>
+        <div class="modal-body grid" id="clipboardHistoryList" style="flex: 1; padding-bottom: 20px;">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('clipboardHistoryModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal" style="width: 500px;">
+        <div class="modal-header">Settings</div>
+        <div class="modal-body">
+            <h4 style="margin-top:0;">Account</h4>
+            <div style="display:flex; justify-content: space-between; align-items: center; background: #f3f2f1; padding: 10px; border-radius: 4px;">
+                <span id="userEmailDisplay" style="font-weight: 600; color: var(--primary);">Loading...</span>
+                <button class="btn btn-sm btn-danger" onclick="app.logout()">Sign Out</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <div class="settings-section-title">Sidebars & Panels</div>
+            <div class="form-group">
+                <label class="radio-label">
+                    <input type="checkbox" id="settingAutoHide">
+                    <span style="margin-left: 5px;"><strong>Auto-hide Sidebars</strong> (Categories & Snippets automatically close when mouse leaves)</span>
+                </label>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 10px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Auto-hide delay:</label>
+                    <input type="number" id="settingAutoHideDelay" class="form-control" min="0.1" max="10" step="0.1" value="1.0" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">seconds</span>
+                </div>
+            </div>
+            
+            <div class="settings-section-title">Appearance</div>
+            <div class="form-group">
+                <label class="radio-label" style="margin-bottom: 5px;">
+                    <input type="checkbox" id="settingCompactMode">
+                    <span style="margin-left: 5px;"><strong>Compact Mode</strong> (Smaller cards, denser grid)</span>
+                </label>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 10px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Card Minimum Height:</label>
+                    <input type="number" id="settingCardMinHeight" class="form-control" min="100" max="800" step="10" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">px</span>
+                </div>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingZoomTemplate">
+                    <span style="margin-left: 5px;"><strong>Big text</strong> (Larger text in template cards)</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingHighlightTitle">
+                    <span style="margin-left: 5px;"><strong>Highlight Title</strong> (Darker background for template titles)</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingTitleSeparator">
+                    <span style="margin-left: 5px;"><strong>Title Separator</strong> (Add a subtle line under the template title)</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingHoverPreview">
+                    <span style="margin-left: 5px;"><strong>Hover preview</strong> (Magnify template on hover to see more content)</span>
+                </label>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 5px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Hover preview delay:</label>
+                    <input type="number" id="settingHoverDelay" class="form-control" min="0" max="10" step="0.1" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">seconds</span>
+                </div>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingShowViewButton">
+                    <span style="margin-left: 5px;"><strong>View button next to Use</strong> (Replaces the eye icon)</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingShowTitle">
+                    <span style="margin-left: 5px;">Show "SD Helper Cloud" title</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="settingShowLang">
+                    <span style="margin-left: 5px;">Show EN/DE language switcher</span>
+                </label>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Default Colors</h4>
+            <div class="row" style="margin-bottom: 15px;">
+                <div class="col">
+                    <label style="font-size:0.8rem">Default To-Do Color</label>
+                    <select id="settingDefaultTodoColor" class="form-control">
+                        <option value="#ffffff">White (None)</option>
+                        <option value="#ffcdd2">Red</option>
+                        <option value="#fff9c4">Yellow</option>
+                        <option value="#c8e6c9">Green</option>
+                        <option value="#bbdefb">Blue</option>
+                        <option value="#e1bee7">Purple</option>
+                        <option value="#ffe0b2">Orange</option>
+                        <option value="#b2dfdb">Teal</option>
+                        <option value="#f8bbd0">Pink</option>
+                        <option value="#cfd8dc">Grey</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label style="font-size:0.8rem">Default View-Only Color</label>
+                    <select id="settingDefaultViewOnlyColor" class="form-control">
+                        <option value="#ffffff">White (None)</option>
+                        <option value="#ffcdd2">Red</option>
+                        <option value="#fff9c4">Yellow</option>
+                        <option value="#c8e6c9">Green</option>
+                        <option value="#bbdefb">Blue</option>
+                        <option value="#e1bee7">Purple</option>
+                        <option value="#ffe0b2">Orange</option>
+                        <option value="#b2dfdb">Teal</option>
+                        <option value="#f8bbd0">Pink</option>
+                        <option value="#cfd8dc">Grey</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>General</h4>
+            <div class="form-group">
+                <label class="radio-label">
+                    <input type="checkbox" id="settingAutoSort">
+                    <span style="margin-left: 5px;"><strong>Auto sort by color</strong></span>
+                </label>
+                <label class="radio-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="settingUseColorLabel">
+                    <span style="margin-left: 5px;"><strong>Use color labels as subtitles</strong> (Custom subtitles override this)</span>
+                </label>
+                <label class="radio-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="settingAutoSnippetSubCat">
+                    <span style="margin-left: 5px;"><strong>Automatic snippet sub-category based on color</strong> (Uses color label if sub-category is empty)</span>
+                </label>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Color Labels</h4>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Customize the meaning of each color (shown as tooltip in the editor).</p>
+            <div id="settingsColorLabelsContainer" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Time Logic (0-23)</h4>
+            <div class="row" style="margin-bottom: 15px;">
+                <div class="col">
+                    <label style="font-size:0.8rem">Morning Start</label>
+                    <input type="number" id="timeStart" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+                <div class="col">
+                    <label style="font-size:0.8rem">Day Start</label>
+                    <input type="number" id="timeEnd" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+                <div class="col">
+                    <label style="font-size:0.8rem">Evening Start</label>
+                    <input type="number" id="timeEve" class="form-control" min="0" max="23" style="text-align:center">
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <h4>Variables</h4>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Manage custom variables for your templates.</p>
+            <button class="btn btn-secondary" style="width:100%" onclick="app.openVarsModal()">Manage Variables</button>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('settingsModal')">Close</button>
+            <button class="btn btn-primary" onclick="app.saveSettings()">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="varsModal">
+    <div class="modal" style="width: 900px; max-width:95%;">
+        <div class="modal-header">Variable Manager</div>
+        <div class="modal-body vars-modal-body">
+
+            <div class="vars-sidebar">
+                <div class="vars-search">
+                    <input type="text" class="form-control" placeholder="🔍 Search variables..." id="varSearchInput" onkeyup="app.filterVars()">
+                </div>
+                <div class="vars-list-scroll" id="variableListContainer">
+                </div>
+            </div>
+
+            <div class="vars-editor-area">
+                <div class="vars-editor-header">
+                    <h4 style="margin:0;" id="varEditorTitle">Create New Variable</h4>
+                    <div>
+                        <button class="btn btn-sm btn-secondary" onclick="app.resetVarForm()">+ New</button>
+                        <button class="btn btn-sm btn-danger" id="btnDeleteVar" style="display:none;" onclick="app.deleteCurrentVar()">Delete</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label>Key (e.g. urgency)</label>
+                        <input type="text" class="form-control" id="newVarKey">
+                    </div>
+                    <div class="col">
+                        <label>Label (Question)</label>
+                        <input type="text" class="form-control" id="newVarLabel" placeholder="Question (e.g. Ticket Number?)">
+                    </div>
+                </div>
+                <div class="row" style="margin-top:10px;">
+                    <div class="col">
+                        <label>Type</label>
+                        <select class="form-control" id="newVarType" onchange="app.toggleVarOptions()">
+                            <option value="text">Text Input</option>
+                            <option value="select">Dropdown</option>
+                            <option value="radio">Radio Buttons</option>
+                            <option value="checklist">Checklist (Multi-select)</option>
+                            <option value="fixed">Fixed Text (Constant)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;" id="varOptionsContainer">
+                    <label>Options / Content</label>
+                    <textarea class="form-control" id="newVarOptions" rows="6" disabled placeholder="N/A"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px; display:none;" id="checklistBuilder">
+                    <label>Checklist Items (Label vs Content)</label>
+                    <p style="font-size:0.8rem; color:#666; margin-bottom:5px;">If 'Content' is empty, Label will be used as content.</p>
+                    <div id="checklistRows"></div>
+                    <button class="btn btn-sm btn-secondary" style="margin-top:5px;" onclick="app.addChecklistRow()">+ Add Item</button>
+                </div>
+
+                <div style="margin-top: 20px; text-align:right;">
+                    <button class="btn btn-primary" id="btnSaveVar" onclick="app.saveCustomVariable()">Create Variable</button>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('varsModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="linkBuilderModal">
+    <div class="modal" style="width: 400px;">
+        <div class="modal-header">Link Generator</div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Template name</label>
+                <input type="text" list="templateOptions" class="form-control" id="linkNameInput" placeholder="Enter template name...">
+                <datalist id="templateOptions"></datalist>
+            </div>
+            <div class="form-group">
+                <label>Custom label (Optional)</label>
+                <input type="text" class="form-control" id="linkCustomInput" placeholder="Optional label text...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('linkBuilderModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.generateLinkTag()">Insert</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="fillerModal">
+    <div class="modal">
+        <div class="modal-header">Fill Details</div>
+        <div class="modal-body" id="fillerInputs"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('fillerModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.processAndCopy()">Copy</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="recommendationModal" style="z-index: 1250;">
+    <div class="modal" style="width: 800px; max-width: 95%;">
+        <div class="modal-header">
+            <span>🚀 Recommended Actions</span>
+            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('recommendationModal')">Back to Main</button>
+        </div>
+        <div class="modal-body">
+            <div style="background: #e6f2ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #005a9e;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #005a9e;">Just Copied:</h4>
+                    <button class="btn btn-sm btn-primary" onclick="app.copyToClipboard(document.getElementById('recCopiedText').innerText)">📋 Copy Again</button>
+                </div>
+                <div id="recCopiedText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 100px; overflow-y: auto;"></div>
+            </div>
+            <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">You might also need:</h4>
+            <div class="grid" id="recTemplatesGrid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); padding-bottom: 10px;">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="folderTagsModal" style="z-index: 1200;">
+    <div class="modal" style="width: 400px;">
+        <div class="modal-header">Include Tags in Folder</div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem; color:#666; margin-top:0;">Válaszd ki azokat a címkéket, amelyekhez tartozó template-ek automatikusan jelenjenek meg a mappa alján.</p>
+            <div id="folderTagsList" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; border: 1px solid var(--border); padding: 10px; border-radius: 4px; background: #faf9f8;">
+                </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('folderTagsModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveFolderTags()">Save Tags</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDQS7aWi2csB39FVo2Rw6ooGaWW1UpeoRY",
+        authDomain: "sdhelper-fe410.firebaseapp.com",
+        projectId: "sdhelper-fe410",
+        storageBucket: "sdhelper-fe410.firebasestorage.app",
+        messagingSenderId: "330491544880",
+        appId: "1:330491544880:web:10d366068a8703507674f5"
+    };
+
+    let auth, db;
+    try {
+        const firebaseApp = initializeApp(firebaseConfig);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+    } catch (error) {
+        console.error("Firebase Init Error.", error);
+        alert("Firebase config error.");
+    }
+
+    const DEFAULT_COLOR_ORDER = [
+        { name: "Grey", hex: "#cfd8dc" },
+        { name: "Green", hex: "#c8e6c9" },
+        { name: "Purple", hex: "#e1bee7" },
+        { name: "Blue", hex: "#bbdefb" },
+        { name: "Red", hex: "#ffcdd2" },
+        { name: "Teal", hex: "#b2dfdb" },
+        { name: "Pink", hex: "#f8bbd0" },
+        { name: "Orange", hex: "#ffe0b2" },
+        { name: "Yellow", hex: "#fff9c4" },
+        { name: "White", hex: "#ffffff" }
+    ];
+
+    const app = {
+        user: null,
+		currentRecommendedIds: [],
+        editingVarIndex: -1,
+        dragSrcEl: null,
+        data: {
+            currentLang: 'en',
+            currentCategory: 'All',
+            currentFolderId: null,
+            isRearranging: false,
+            isCategoryEditing: false,
+            isQuickOpen: false,
+            quickWidth: 320,
+            sidebarWidth: 300,
+            templates: [],
+            categories: ['General', 'Teams', 'Ticket Description', 'Email Reply'],
+            folders: [],
+            customVars: [],
+            quickTitles: [],
+            timeSettings: { start: 6, end: 11, eve: 17 },
+            colorOrder: [],
+            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, autoHideSidebars: false, autoHideDelay: 1.0 },
+            leftSidebarTimer: null,
+            rightSidebarTimer: null,
+            selectedIds: [],
+            clipboardHistory: []
+        },
+		
+		openTicketEditor: function(id) {
+            document.getElementById('ticketEditorModal').style.display = 'flex';
+            document.querySelectorAll('#ticketColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+
+            const catSelect = document.getElementById('ticketAppCategory');
+            catSelect.innerHTML = '';
+            this.data.categories.forEach(cat => {
+                catSelect.innerHTML += `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
+            });
+
+            if (id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(!t) return;
+                document.getElementById('ticketEditorTitle').innerText = "Edit Ticket Template";
+                document.getElementById('ticketEditId').value = t.id;
+                catSelect.value = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                this.updateFolderOptions('ticketAppCategory', 'ticketAppFolder');
+                document.getElementById('ticketAppFolder').value = t.folderId ? t.folderId : "";
+                
+                const color = t.color || '#ffffff';
+                document.getElementById('ticketColor').value = color;
+                const swatch = document.querySelector(`#ticketColorSwatches .color-swatch[data-hex="${color}"]`);
+                if(swatch) swatch.classList.add('selected'); else document.querySelector('#ticketColorSwatches .color-swatch.none').classList.add('selected');
+                document.querySelector('#ticketEditorModal .modal').style.backgroundColor = color;
+
+                document.getElementById('ticketType').value = t.ticketType || 'Incident';
+                document.getElementById('ticketSysCat').value = t.ticketSysCat || '';
+                document.getElementById('ticketCaller').value = t.ticketCaller || '';
+                document.getElementById('ticketAffected').value = t.ticketAffected || '';
+                document.getElementById('ticketUrgency').value = t.ticketUrgency || '';
+                document.getElementById('ticketTitleText').value = t.title || '';
+                document.getElementById('ticketDescText').value = t.content || '';
+            } else {
+                document.getElementById('ticketEditorTitle').innerText = "New Ticket Template";
+                document.getElementById('ticketEditId').value = "";
+                let defaultCat = "General";
+                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') defaultCat = this.data.currentCategory;
+                catSelect.value = defaultCat;
+                this.updateFolderOptions('ticketAppCategory', 'ticketAppFolder');
+                document.getElementById('ticketAppFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+                
+                document.getElementById('ticketColor').value = '#ffffff';
+                document.querySelector('#ticketColorSwatches .color-swatch.none').classList.add('selected');
+                document.querySelector('#ticketEditorModal .modal').style.backgroundColor = '#ffffff';
+
+                document.getElementById('ticketType').value = 'Incident';
+                document.getElementById('ticketSysCat').value = '';
+                document.getElementById('ticketCaller').value = '';
+                document.getElementById('ticketAffected').value = '';
+                document.getElementById('ticketUrgency').value = '';
+                document.getElementById('ticketTitleText').value = '';
+                document.getElementById('ticketDescText').value = '';
+            }
+        },
+
+        selectTicketColor: function(colorHex, element) {
+            document.getElementById('ticketColor').value = colorHex;
+            document.querySelectorAll('#ticketColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            if(element) {
+                element.classList.add('selected');
+            } else {
+                const swatch = document.querySelector(`#ticketColorSwatches .color-swatch[data-hex="${colorHex}"]`);
+                if(swatch) swatch.classList.add('selected');
+                const customPicker = document.getElementById('ticketCustomColorPicker');
+                if(customPicker) customPicker.value = colorHex;
+            }
+            document.querySelector('#ticketEditorModal .modal').style.backgroundColor = colorHex;
+        },
+
+        saveTicketTemplate: function() {
+            const id = document.getElementById('ticketEditId').value;
+            const category = document.getElementById('ticketAppCategory').value;
+            const folderId = document.getElementById('ticketAppFolder').value || null;
+            const color = document.getElementById('ticketColor').value;
+            
+            const ticketType = document.getElementById('ticketType').value;
+            const ticketSysCat = document.getElementById('ticketSysCat').value.trim();
+            const ticketCaller = document.getElementById('ticketCaller').value.trim();
+            const ticketAffected = document.getElementById('ticketAffected').value.trim();
+            const ticketUrgency = document.getElementById('ticketUrgency').value.trim();
+            const title = document.getElementById('ticketTitleText').value.trim();
+            const content = document.getElementById('ticketDescText').value;
+
+            if (!title) { alert("Ticket Title is required."); return; }
+
+            const templateObj = {
+                title: title, content: content, subtitle: 'Ticket Templates',
+                category: category, color: color, folderId: folderId ? parseInt(folderId) : null,
+                isTicket: true, ticketType: ticketType, ticketSysCat: ticketSysCat,
+                ticketCaller: ticketCaller, ticketAffected: ticketAffected, ticketUrgency: ticketUrgency,
+                deleted: false, lang: this.data.currentLang
+            };
+
+            if (id) {
+                const idx = this.data.templates.findIndex(t => t.id == id);
+                if (idx > -1) this.data.templates[idx] = { ...this.data.templates[idx], ...templateObj };
+            } else {
+                this.data.templates.push({ id: Date.now(), ...templateObj });
+            }
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                this.reorderTemplatesByColorInternal(category, folderId ? parseInt(folderId) : null);
+            }
+            this.saveData();
+            this.closeModal('ticketEditorModal');
+            this.renderTemplates();
+        },
+
+        viewTicketTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            
+            const isInc = t.ticketType === 'Incident';
+            const typeLetter = isInc ? 'IN' : 'SR';
+            const typeClass = isInc ? 'm42-type-incident' : 'm42-type-request';
+            
+            const safeTitle = this.escapeHtml(t.title);
+            const safeDesc = this.escapeHtml(t.content);
+            const safeType = this.escapeHtml(t.ticketType || 'Incident');
+            const safeCat = this.escapeHtml(t.ticketSysCat || '-');
+            const safeCaller = this.escapeHtml(t.ticketCaller || '-');
+            const safeAffected = this.escapeHtml(t.ticketAffected || '-');
+            const safeUrgency = this.escapeHtml(t.ticketUrgency || '-');
+
+            // Hogy a modális ablak széltől-szélig érjen, mint egy igazi alkalmazás
+            const viewContainer = document.getElementById('ticketViewContainer');
+            viewContainer.style.padding = '0'; 
+
+            const html = `
+                <div class="m42-ticket-container">
+                    <div class="m42-header">
+                        <div class="m42-type-icon ${typeClass}" title="${safeType}">${typeLetter}</div>
+                        <div class="m42-title">${safeTitle}</div>
+                        <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeTitle.replace(/`/g, '\\`')}\`, ${t.id})">
+						📋 Copy Title
+						</button>
+                    </div>
+                    
+                    <div class="m42-body">
+                        <div class="m42-main">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px;">
+                                <div class="m42-group-title" style="border:none; margin:0; padding:0;">Description / Details</div>
+                                <button class="m42-copy-btn" onclick="app.copyTicketField(this, \`${safeDesc.replace(/`/g, '\\`')}\`, ${t.id})">
+								📋 Copy Description
+								</button>
+                            </div>
+                            <div class="m42-value">${safeDesc}</div>
+                        </div>
+                        
+                        <div class="m42-sidebar">
+                            <div class="m42-group-title">Properties</div>
+                            
+                            <div class="m42-field">
+                                <div class="m42-label">TICKET TYPE</div>
+                                <div class="m42-value" style="font-weight:bold; color: ${isInc ? '#dc2626' : '#2563eb'};">${safeType}</div>
+                            </div>
+                            <div class="m42-field">
+                                <div class="m42-label">USER / CALLER</div>
+                                <div class="m42-value">👤 ${safeCaller}</div>
+                            </div>
+                            <div class="m42-field">
+                                <div class="m42-label">CATEGORY / PATH</div>
+                                <div class="m42-value" style="font-family: monospace; font-size:0.8rem;">${safeCat}</div>
+                            </div>
+                            <div class="m42-field">
+                                <div class="m42-label">AFFECTED USERS</div>
+                                <div class="m42-value">👥 ${safeAffected}</div>
+                            </div>
+                            <div class="m42-field">
+                                <div class="m42-label">URGENCY</div>
+                                <div class="m42-value">${safeUrgency}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            viewContainer.innerHTML = html;
+            document.getElementById('ticketViewModal').style.display = 'flex';
+        },
+
+        copyTicketField: function(btnElement, textToCopy, templateId = null) {
+            if (templateId) {
+                const t = this.data.templates.find(x => x.id === templateId);
+                if (t) {
+                    this.currentProcessingTitle = t.title;
+                    this.currentProcessingColor = t.color;
+                }
+            }
+            this.copyToClipboard(textToCopy);
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "✅ Copied!";
+            btnElement.style.background = "#d1fae5";
+            btnElement.style.color = "#065f46";
+            setTimeout(() => {
+                btnElement.innerText = originalText;
+                btnElement.style.background = "";
+                btnElement.style.color = "";
+            }, 2000);
+        },
+        // === TICKET TEMPLATE LOGIC END ===
+		
+
+        initAuth: function() {
+            if(!auth) return;
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    this.user = user;
+                    document.getElementById('authOverlay').style.display = 'none';
+                    const emailDisplay = document.getElementById('userEmailDisplay');
+                    if(emailDisplay) emailDisplay.innerText = user.email;
+                    this.loadUserData();
+                } else {
+                    this.user = null;
+                    document.getElementById('authOverlay').style.display = 'flex';
+                    const emailDisplay = document.getElementById('userEmailDisplay');
+                    if(emailDisplay) emailDisplay.innerText = "Not Logged In";
+
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false };
+                    this.applyAppearanceSettings();
+
+                    this.data.templates = [];
+                    this.renderTemplates();
+                }
+            });
+        },
+
+        toggleAuthMode: function(mode) {
+            document.getElementById('loginBox').style.display = (mode === 'login') ? 'block' : 'none';
+            document.getElementById('registerBox').style.display = (mode === 'register') ? 'block' : 'none';
+            document.getElementById('authError').style.display = 'none';
+            document.getElementById('regError').style.display = 'none';
+        },
+
+        login: async function() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                const errDiv = document.getElementById('authError');
+                errDiv.innerText = error.message;
+                errDiv.style.display = 'block';
+            }
+        },
+
+        register: async function() {
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPassword').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                const errDiv = document.getElementById('regError');
+                errDiv.innerText = error.message;
+                errDiv.style.display = 'block';
+            }
+        },
+
+        logout: function() {
+            signOut(auth);
+            this.closeModal('settingsModal');
+        },
+
+        loadUserData: async function() {
+            if (!this.user) return;
+            const userDocRef = doc(db, "users", this.user.uid);
+
+            try {
+                const docSnap = await getDoc(userDocRef);
+
+                if (docSnap.exists()) {
+                    const savedData = docSnap.data();
+                    this.data.templates = savedData.templates || [];
+                    this.data.folders = savedData.folders || [];
+                    this.data.categories = savedData.categories || ['General'];
+                    this.data.customVars = savedData.customVars || [];
+
+                    let loadedQuick = savedData.quickTitles || [];
+                    this.data.quickTitles = loadedQuick.map(item => {
+                        if (typeof item === 'string') {
+                            return { mainCategory: 'General', folderId: null, subCategory: 'General', description: '', text: item, color: '#ffffff' };
+                        }
+                        return {
+                            mainCategory: item.mainCategory || item.category || 'General',
+                            folderId: item.folderId || null,
+                            subCategory: item.subCategory || 'General',
+                            description: item.description !== undefined ? item.description : (item.title === 'Snippet' ? '' : (item.title || '')),
+                            text: item.text || '',
+                            color: item.color || '#ffffff'
+                        };
+                    });
+
+                    if(savedData.timeSettings) this.data.timeSettings = savedData.timeSettings;
+                    if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
+                    this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
+
+                    if(savedData.settings) {
+                        this.data.settings = savedData.settings;
+                        if(!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
+                        if(this.data.settings.showAppTitle === undefined) this.data.settings.showAppTitle = true;
+                        if(this.data.settings.showLangSwitcher === undefined) this.data.settings.showLangSwitcher = true;
+                        if(this.data.settings.cardMinHeight === undefined) this.data.settings.cardMinHeight = 250;
+                        if(this.data.settings.compactMode === undefined) this.data.settings.compactMode = false;
+                        if(this.data.settings.useColorLabelAsSubtitle === undefined) this.data.settings.useColorLabelAsSubtitle = false;
+                        if(this.data.settings.zoomTemplate === undefined) this.data.settings.zoomTemplate = false;
+                        if(this.data.settings.hoverPreview === undefined) this.data.settings.hoverPreview = false;
+                        if(this.data.settings.hoverDelay === undefined) this.data.settings.hoverDelay = 1.0;
+                        if(this.data.settings.autoSnippetSubCat === undefined) this.data.settings.autoSnippetSubCat = false;
+                        if(this.data.settings.highlightTitle === undefined) this.data.settings.highlightTitle = false;
+                        if(this.data.settings.titleSeparator === undefined) this.data.settings.titleSeparator = false;
+                        if(this.data.settings.showViewButton === undefined) this.data.settings.showViewButton = false;
+                    }
+                } else {
+                    this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
+                    this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false };
+                    this.saveData();
+                }
+
+                document.getElementById('timeStart').value = this.data.timeSettings.start;
+                document.getElementById('timeEnd').value = this.data.timeSettings.end;
+                document.getElementById('timeEve').value = this.data.timeSettings.eve;
+
+                this.renderCategories();
+                this.renderTemplates();
+                this.renderQuickTitles();
+                this.updateLangUI();
+                this.updateEditorColorSwatches();
+                this.applyAppearanceSettings();
+                this.renderPinnedTodo();
+
+            } catch (error) {
+                console.error("Error loading doc:", error);
+            }
+        },
+
+        saveData: async function() {
+    if (!this.user) return;
+    const userDocRef = doc(db, "users", this.user.uid);
+
+    const payload = {
+        templates: this.data.templates,
+        folders: this.data.folders,
+        categories: this.data.categories,
+        customVars: this.data.customVars,
+        quickTitles: this.data.quickTitles,
+        timeSettings: this.data.timeSettings,
+        lastUpdated: new Date(),
+        currentLang: this.data.currentLang,
+        colorOrder: this.data.colorOrder,
+        settings: this.data.settings
+    };
+
+    try {
+        await setDoc(userDocRef, payload);
+        console.log("Sikeres mentés a felhőbe.");
+    } catch (e) {
+        console.error("Cloud save failed:", e);
+        alert("Hiba történt a felhőbe mentéskor!\nOk: " + e.message);
+    }
+},
+
+        applyAppearanceSettings: function() {
+            if (!this.data.settings) return;
+
+            const titleEl = document.getElementById('sidebarAppTitle');
+            const langSwitcher = document.getElementById('sidebarLangSwitcher');
+            const bottomSettingsBtn = document.getElementById('settingsBtnBottom');
+
+            const showTitle = this.data.settings.showAppTitle !== false;
+            const showLang = this.data.settings.showLangSwitcher !== false;
+
+            if (titleEl) titleEl.style.display = showTitle ? 'flex' : 'none';
+            if (langSwitcher) langSwitcher.style.display = showLang ? 'flex' : 'none';
+            if (bottomSettingsBtn) bottomSettingsBtn.style.display = showLang ? 'none' : 'block';
+
+            const minHeight = this.data.settings.cardMinHeight || 250;
+            document.documentElement.style.setProperty('--card-min-height', minHeight + 'px');
+
+            if (this.data.settings.compactMode) {
+                document.body.classList.add('compact-mode');
+            } else {
+                document.body.classList.remove('compact-mode');
+            }
+
+            if (this.data.settings.zoomTemplate) {
+                document.body.classList.add('zoom-template-mode');
+            } else {
+                document.body.classList.remove('zoom-template-mode');
+            }
+
+            if (this.data.settings.highlightTitle) {
+                document.body.classList.add('highlight-title-mode');
+            } else {
+                document.body.classList.remove('highlight-title-mode');
+            }
+
+            if (this.data.settings.titleSeparator) {
+                document.body.classList.add('title-separator-mode');
+            } else {
+                document.body.classList.remove('title-separator-mode');
+            }
+
+            if (this.data.settings.hoverPreview) {
+                document.body.classList.add('hover-preview-mode');
+            } else {
+                document.body.classList.remove('hover-preview-mode');
+            }
+
+            if (this.data.settings.showViewButton) {
+                document.body.classList.add('show-view-button');
+            } else {
+                document.body.classList.remove('show-view-button');
+            }
+        },
+
+        updateEditorColorSwatches: function() {
+            document.querySelectorAll('#editorModal .color-swatch[data-hex], #snippetModal .color-swatch-mini[data-hex], #todoModal .color-swatch[data-hex], #ticketEditorModal .color-swatch[data-hex]').forEach(el => {
+                const hex = el.getAttribute('data-hex');
+                const name = el.getAttribute('data-name');
+                const customLabel = this.data.settings.colorLabels && this.data.settings.colorLabels[hex] ? this.data.settings.colorLabels[hex] : '';
+                const title = customLabel ? `${name} (${customLabel})` : name;
+                el.setAttribute('title', title);
+            });
+        },
+
+        // --- CLIPBOARD HISTORY (LOCAL STORAGE ONLY) ---
+        initClipboardHistory: function() {
+            const history = localStorage.getItem('sdHelperClipboardHistory');
+            if (history) {
+                try {
+                    this.data.clipboardHistory = JSON.parse(history);
+                } catch(e) {
+                    this.data.clipboardHistory = [];
+                }
+            } else {
+                this.data.clipboardHistory = [];
+            }
+        },
+
+        saveClipboardHistory: function() {
+            localStorage.setItem('sdHelperClipboardHistory', JSON.stringify(this.data.clipboardHistory));
+        },
+
+        addToClipboardHistory: function(text, title = null, color = null) {
+            if(!text) return;
+            if(!this.data.clipboardHistory) this.data.clipboardHistory = [];
+
+            // Megakadályozzuk a duplikációkat
+            this.data.clipboardHistory = this.data.clipboardHistory.filter(item => {
+                if (typeof item === 'string') return item !== text;
+                return item.text !== text;
+            });
+
+            // Objektumként mentjük a színt és a címet is
+            let newEntry = {
+                text: text,
+                title: title || "Copied Text",
+                color: color || "#ffffff"
+            };
+
+            this.data.clipboardHistory.unshift(newEntry);
+
+            if(this.data.clipboardHistory.length > 20) {
+                this.data.clipboardHistory = this.data.clipboardHistory.slice(0, 20);
+            }
+
+            this.saveClipboardHistory();
+        },
+
+        openClipboardHistoryModal: function() {
+            this.renderClipboardHistory();
+            document.getElementById('clipboardHistoryModal').style.display = 'flex';
+        },
+
+        renderClipboardHistory: function() {
+            const container = document.getElementById('clipboardHistoryList');
+            container.innerHTML = '';
+            
+            // 1. MEGOLDÁS: A kártyák ne nyúljanak ki a teljes képernyőre, ha csak 1-2 kártya van
+            container.style.alignContent = 'start';
+
+            if(!this.data.clipboardHistory || this.data.clipboardHistory.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1;">No history yet.</p>';
+                return;
+            }
+
+            this.data.clipboardHistory.forEach((item, index) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const titleText = typeof item === 'string' ? "Recent #" + (index + 1) : item.title;
+                const bgColor = typeof item === 'string' ? "#ffffff" : (item.color || "#ffffff");
+
+                const safeText = this.escapeHtml(text);
+                const safeTitle = this.escapeHtml(titleText);
+
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.style.minHeight = '180px';
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.backgroundColor = bgColor;
+                
+                // 2. MEGOLDÁS: A tartalom szigorúan a kártyán belül marad (biztosan nem tud kilógni a gomb)
+                div.style.overflow = 'hidden';
+
+                let quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewHistoryItem(${index})" title="Quick View" style="right: 5px;">👁️</button>`;
+                let useBtn = `
+                    <button class="card-btn use" style="flex: 1;" onclick="app.copyFromHistory(${index})">Copy</button>
+                    <button class="card-btn view-only card-view-btn-bottom" style="flex: 1;" onclick="app.viewHistoryItem(${index})">View</button>
+                `;
+
+                // 3. MEGOLDÁS: A gombok (flex-shrink: 0) sosem nyomódnak el, az előnézet pedig (max 5 sorig) rugalmas
+                div.innerHTML = `
+                        ${quickViewBtn}
+                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default; min-height: 0;">
+                            <div class="card-title" style="padding-right: 30px; flex-shrink: 0;">${safeTitle}</div>
+                            <div class="card-preview" style="margin-bottom: 10px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; flex: 1;">${safeText}</div>
+                        </div>
+                        <div class="card-actions" style="margin-top: auto; display: flex; gap: 8px; flex-shrink: 0;">${useBtn}</div>
+                `;
+                container.appendChild(div);
+            });
+        },
+
+        copyFromHistory: function(index) {
+            const item = this.data.clipboardHistory[index];
+            if(item) {
+                const text = typeof item === 'string' ? item : item.text;
+                const title = typeof item === 'string' ? "Copied Text" : item.title;
+                const color = typeof item === 'string' ? "#ffffff" : item.color;
+                this.copyToClipboard(text, title, color);
+            }
+        },
+
+        clearClipboardHistory: function() {
+            if(confirm('Are you sure you want to clear your clipboard history?')) {
+                this.data.clipboardHistory = [];
+                this.saveClipboardHistory();
+                this.renderClipboardHistory();
+            }
+        },
+
+        viewHistoryItem: function(index) {
+            const item = this.data.clipboardHistory[index];
+            if(!item) return;
+
+            const text = typeof item === 'string' ? item : item.text;
+            const title = typeof item === 'string' ? "Clipboard Item" : item.title;
+            let safeContent = this.escapeHtml(text);
+            let safeTitle = this.escapeHtml(title);
+
+            const existingModals = document.querySelectorAll('.dynamic-view-modal');
+            const baseZIndex = 1500;
+            const newZIndex = baseZIndex + (existingModals.length * 10);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay dynamic-view-modal';
+            overlay.style.zIndex = newZIndex;
+            overlay.style.display = 'flex';
+
+            overlay.innerHTML = `
+                <div class="modal" style="width: 800px; max-width: 95%;">
+                    <div class="modal-header">
+                        <span>${safeTitle}</span>
+                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary close-dynamic-btn">Close</button>
+                    </div>
+                </div>
+            `;
+
+            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
+            closeBtns.forEach(btn => {
+                btn.onclick = function() {
+                    overlay.remove();
+                };
+            });
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            };
+            document.body.appendChild(overlay);
+        },
+
+        // --- LEFT SIDEBAR (CATEGORIES) RESIZE ---
+        toggleLeftSidebar: function() {
+            this.data.isSidebarOpen = !this.data.isSidebarOpen;
+            localStorage.setItem('leftSidebarOpen', this.data.isSidebarOpen);
+            this.updateLeftSidebarUI();
+        },
+
+        updateLeftSidebarUI: function() {
+            const sidebar = document.querySelector('.sidebar');
+            const main = document.querySelector('.main');
+            const toggleBtn = document.getElementById('leftSideToggle');
+            
+            // Pontosan a sáv beállított szélességét használjuk (alapból 300px)
+            const width = this.data.sidebarWidth || 300;
+
+            if (this.data.isSidebarOpen) {
+                sidebar.style.marginLeft = '0px';
+                main.style.paddingLeft = '10px';
+                if(toggleBtn) toggleBtn.style.display = 'none';
+            } else {
+                // Pontosan a saját szélességével toljuk ki negatív irányba, se többel, se kevesebbel.
+                // Így a .main tartalma pontosan a képernyő bal szélénél (0px) fog kezdődni.
+                sidebar.style.marginLeft = `-${width}px`; 
+                
+                // Adunk a fő tartalomnak 40px belső margót, hogy a 24px széles kinyitó gomb
+                // kényelmesen elférjen, és ne takarja ki a kártyák szélét.
+                main.style.paddingLeft = '40px'; 
+                if(toggleBtn) toggleBtn.style.display = 'flex';
+            }
+        },
+
+        initSidebarResize: function() {
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            const savedOpen = localStorage.getItem('leftSidebarOpen');
+
+            this.data.isSidebarOpen = savedOpen !== 'false'; // Alapból nyitva van, kivéve ha elmentettük, hogy zárva
+
+            if(savedWidth) {
+                this.data.sidebarWidth = parseInt(savedWidth);
+                document.querySelector('.sidebar').style.width = this.data.sidebarWidth + 'px';
+            }
+            
+            this.updateLeftSidebarUI();
+
+            const handle = document.getElementById('resizeHandleLeft');
+            let isResizing = false;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+                document.querySelector('.sidebar').style.transition = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                let newWidth = e.clientX;
+                if (newWidth < 200) newWidth = 200;
+                if (newWidth > 600) newWidth = 600;
+
+                this.data.sidebarWidth = newWidth;
+                document.querySelector('.sidebar').style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                    document.body.style.userSelect = '';
+                    localStorage.setItem('sidebarWidth', this.data.sidebarWidth);
+                }
+            });
+        },
+		
+		// --- AUTO-HIDE SIDEBAR LOGIC ---
+        handleSidebarEnter: function(side) {
+            if (!this.data.settings.autoHideSidebars) return;
+            
+            if (side === 'left') {
+                clearTimeout(this.data.leftSidebarTimer);
+                if (!this.data.isSidebarOpen) {
+                    this.toggleLeftSidebar();
+                }
+            } else if (side === 'right') {
+                clearTimeout(this.data.rightSidebarTimer);
+                if (!this.data.isQuickOpen) {
+                    this.toggleQuickSidebar();
+                }
+            }
+        },
+
+        handleSidebarLeave: function(side) {
+            if (!this.data.settings.autoHideSidebars) return;
+
+            const delayMs = (this.data.settings.autoHideDelay || 1.0) * 1000;
+
+            if (side === 'left') {
+                this.data.leftSidebarTimer = setTimeout(() => {
+                    if (this.data.isSidebarOpen) this.toggleLeftSidebar();
+                }, delayMs);
+            } else if (side === 'right') {
+                this.data.rightSidebarTimer = setTimeout(() => {
+                    if (this.data.isQuickOpen) this.toggleQuickSidebar();
+                }, delayMs);
+            }
+        },
+
+        // --- QUICK TITLES (SNIPPETS) FUNCTIONALITY ---
+        initQuickSidebar: function() {
+            const savedOpen = localStorage.getItem('quickSidebarOpen');
+            const savedWidth = localStorage.getItem('quickSidebarWidth');
+
+            if(savedOpen !== null) {
+                this.data.isQuickOpen = (savedOpen === 'true');
+            }
+            if(savedWidth) {
+                this.data.quickWidth = parseInt(savedWidth);
+            }
+
+            this.updateQuickSidebarUI();
+            this.initResizeHandle();
+        },
+
+        toggleQuickSidebar: function() {
+            this.data.isQuickOpen = !this.data.isQuickOpen;
+            localStorage.setItem('quickSidebarOpen', this.data.isQuickOpen);
+            this.updateQuickSidebarUI();
+        },
+
+        updateQuickSidebarUI: function() {
+            const sidebar = document.getElementById('quickSidebar');
+            const main = document.querySelector('.main');
+            const toggleBtn = document.querySelector('.quick-side-toggle');
+            
+            // Pontosan a sáv beállított szélességét használjuk
+            const width = this.data.quickWidth || 320;
+            sidebar.style.width = width + 'px';
+
+            if (this.data.isQuickOpen) {
+                sidebar.style.transform = 'translateX(0)';
+                main.style.marginRight = width + 'px';
+                main.style.paddingRight = '10px'; // Alapértelmezett távolság visszaállítása
+                if (toggleBtn) toggleBtn.style.display = 'none'; // Gomb elrejtése ha nyitva van
+            } else {
+                // Pixelpontosan kitoljuk a képernyőről a saját szélességével + 30 pixellel a biztonság kedvéért (árnyék és resize handle miatt)
+                sidebar.style.transform = `translateX(${width + 30}px)`;
+                main.style.marginRight = '0px';
+                main.style.paddingRight = '40px'; // Helyet csinálunk a kártyák és a jobb szél között a kék gombnak
+                if (toggleBtn) toggleBtn.style.display = 'flex'; // Gomb mutatása
+            }
+        },
+
+        initResizeHandle: function() {
+            const handle = document.getElementById('resizeHandle');
+            let isResizing = false;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+                document.getElementById('quickSidebar').style.transition = 'none';
+                document.querySelector('.main').style.transition = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                let newWidth = window.innerWidth - e.clientX;
+
+                if (newWidth < 250) newWidth = 250;
+                if (newWidth > 800) newWidth = 800;
+
+                this.data.quickWidth = newWidth;
+
+                const sidebar = document.getElementById('quickSidebar');
+                const main = document.querySelector('.main');
+                sidebar.style.width = newWidth + 'px';
+                main.style.marginRight = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                    document.body.style.userSelect = '';
+
+                    document.getElementById('quickSidebar').style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
+                    document.querySelector('.main').style.transition = 'margin-right 0.1s linear';
+
+                    localStorage.setItem('quickSidebarWidth', this.data.quickWidth);
+                }
+            });
+        },
+
+        updateSnippetFolderOptions: function() {
+            const cat = document.getElementById('snippetMainCat').value;
+            const folderSelect = document.getElementById('snippetFolder');
+            if(!folderSelect) return;
+            const currentSelection = folderSelect.value;
+
+            folderSelect.innerHTML = '<option value="">(No Folder / Root)</option>';
+
+            const buildOptions = (parentId, prefix) => {
+                const children = this.data.folders.filter(f => {
+                    const isCat = f.category === cat;
+                    const isActive = !f.deleted;
+                    let isParent = false;
+                    if (parentId === null) isParent = !f.parentFolderId;
+                    else isParent = f.parentFolderId === parentId;
+                    return isCat && isActive && isParent;
+                });
+
+                children.sort((a, b) => a.name.localeCompare(b.name));
+
+                children.forEach(f => {
+                    folderSelect.innerHTML += `<option value="${f.id}">${prefix}📂 ${this.escapeHtml(f.name)}</option>`;
+                    buildOptions(f.id, prefix + "&nbsp;&nbsp;&nbsp;");
+                });
+            };
+
+            buildOptions(null, "");
+
+            if (currentSelection) {
+                const exists = Array.from(folderSelect.options).some(o => o.value === currentSelection);
+                if (exists) {
+                    folderSelect.value = currentSelection;
+                }
+            }
+        },
+
+        openSnippetModal: function(idx) {
+            document.getElementById('snippetModal').style.display = 'flex';
+            document.querySelectorAll('#snippetColorSwatches .color-swatch-mini').forEach(el => el.classList.remove('selected'));
+            document.getElementById('snippetVariableTray').style.display = 'none';
+            document.getElementById('btnSnippetTray').classList.remove('active');
+
+            const mainCatSelect = document.getElementById('snippetMainCat');
+            mainCatSelect.innerHTML = '';
+            this.data.categories.forEach(c => {
+                mainCatSelect.innerHTML += `<option value="${this.escapeHtml(c)}">${this.escapeHtml(c)}</option>`;
+            });
+
+            const subCatDatalist = document.getElementById('snippetSubCatList');
+            const uniqueSubCats = [...new Set(this.data.quickTitles.map(q => q.subCategory))].sort();
+            subCatDatalist.innerHTML = uniqueSubCats.map(c => `<option value="${this.escapeHtml(c)}">`).join('');
+
+            if (idx !== undefined && idx !== null && idx !== "") {
+                const s = this.data.quickTitles[idx];
+                document.getElementById('snippetModalTitle').innerText = "Edit Snippet";
+                document.getElementById('editSnippetIdx').value = idx;
+                document.getElementById('btnDeleteSnippet').style.display = 'block';
+                document.getElementById('btnCopyToTemplate').style.display = 'block';
+
+                mainCatSelect.value = this.data.categories.includes(s.mainCategory) ? s.mainCategory : this.data.categories[0];
+                this.updateSnippetFolderOptions();
+                document.getElementById('snippetFolder').value = s.folderId ? s.folderId : "";
+
+                document.getElementById('snippetSubCat').value = s.subCategory || '';
+                document.getElementById('snippetDesc').value = s.description || '';
+                document.getElementById('snippetContent').value = s.text || '';
+
+                const color = s.color || '#ffffff';
+                document.getElementById('snippetColor').value = color;
+                const swatch = document.querySelector(`#snippetColorSwatches .color-swatch-mini[data-hex="${color}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else {
+                    document.getElementById('snippetCustomColorPicker').value = color;
+                }
+
+            } else {
+                document.getElementById('snippetModalTitle').innerText = "Create Snippet";
+                document.getElementById('editSnippetIdx').value = "";
+                document.getElementById('btnDeleteSnippet').style.display = 'none';
+                document.getElementById('btnCopyToTemplate').style.display = 'none';
+
+                let defaultCat = "General";
+                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                    defaultCat = this.data.currentCategory;
+                }
+                mainCatSelect.value = defaultCat;
+                this.updateSnippetFolderOptions();
+                document.getElementById('snippetFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+
+                document.getElementById('snippetSubCat').value = "";
+                document.getElementById('snippetDesc').value = "";
+                document.getElementById('snippetContent').value = "";
+
+                document.getElementById('snippetColor').value = '#ffffff';
+                document.querySelector('#snippetColorSwatches .color-swatch-mini.none').classList.add('selected');
+            }
+        },
+
+        selectSnippetColor: function(colorHex, element) {
+            document.getElementById('snippetColor').value = colorHex;
+            document.querySelectorAll('#snippetColorSwatches .color-swatch-mini').forEach(el => el.classList.remove('selected'));
+            if(element) {
+                element.classList.add('selected');
+            } else {
+                const swatch = document.querySelector(`#snippetColorSwatches .color-swatch-mini[data-hex="${colorHex}"]`);
+                if(swatch) swatch.classList.add('selected');
+                document.getElementById('snippetCustomColorPicker').value = colorHex;
+            }
+        },
+
+        checkSnippetSubCatColor: function() {
+            const mainCat = document.getElementById('snippetMainCat').value;
+            const subCat = document.getElementById('snippetSubCat').value.trim();
+            const existing = this.data.quickTitles.find(q => q.mainCategory === mainCat && q.subCategory === subCat);
+
+            if (existing && existing.color) {
+                this.selectSnippetColor(existing.color, null);
+            }
+        },
+
+        saveSnippet: function() {
+            const idxStr = document.getElementById('editSnippetIdx').value;
+
+            let mainCat = document.getElementById('snippetMainCat').value;
+            const folderIdVal = document.getElementById('snippetFolder').value;
+            const fId = folderIdVal ? parseInt(folderIdVal) : null;
+            let subCat = document.getElementById('snippetSubCat').value.trim();
+            const desc = document.getElementById('snippetDesc').value.trim();
+            const txt = document.getElementById('snippetContent').value;
+            const color = document.getElementById('snippetColor').value || '#ffffff';
+
+            if(!txt.trim()) {
+                alert("Snippet content cannot be empty.");
+                return;
+            }
+
+            if (!subCat && this.data.settings.autoSnippetSubCat) {
+                const hex = color.toLowerCase();
+                const cLabel = this.data.settings.colorLabels && this.data.settings.colorLabels[hex];
+                if (cLabel && cLabel.trim() !== '') {
+                    subCat = cLabel.trim();
+                }
+            }
+            if (!subCat) subCat = 'General';
+
+            const snippetObj = { mainCategory: mainCat, folderId: fId, subCategory: subCat, description: desc, text: txt, color: color };
+
+            this.data.quickTitles.forEach(q => {
+                if (q.mainCategory === mainCat && q.subCategory === subCat) {
+                    q.color = color;
+                }
+            });
+
+            if (idxStr !== "") {
+                const idx = parseInt(idxStr);
+                this.data.quickTitles[idx] = snippetObj;
+            } else {
+                this.data.quickTitles.push(snippetObj);
+            }
+
+            this.saveData();
+            this.renderQuickTitles();
+            this.closeModal('snippetModal');
+        },
+
+        deleteSnippetFromModal: function() {
+            const idxStr = document.getElementById('editSnippetIdx').value;
+            if (idxStr !== "") {
+                const idx = parseInt(idxStr);
+                if(confirm("Delete this snippet?")) {
+                    this.data.quickTitles.splice(idx, 1);
+                    this.saveData();
+                    this.renderQuickTitles();
+                    this.closeModal('snippetModal');
+                }
+            }
+        },
+
+        copySnippetToTemplate: function() {
+            const idxStr = document.getElementById('editSnippetIdx').value;
+            if (idxStr === "") return;
+            const idx = parseInt(idxStr);
+            const s = this.data.quickTitles[idx];
+            if(!s) return;
+
+            let targetCat = this.data.currentCategory;
+            if(targetCat === 'All' || targetCat === 'Trash') {
+                targetCat = this.data.categories.includes(s.mainCategory) ? s.mainCategory : 'General';
+            }
+
+            let targetFolderId = null;
+            if (this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                targetFolderId = this.data.currentFolderId || null;
+            } else {
+                targetFolderId = s.folderId || null;
+            }
+
+            const title = s.description ? s.description : (s.subCategory !== 'General' ? s.subCategory : 'Snippet Template');
+            const subtitle = s.subCategory !== 'General' ? s.subCategory : '';
+
+            this.data.templates.push({
+                id: Date.now(),
+                title: title,
+                subtitle: subtitle,
+                category: targetCat,
+                lang: this.data.currentLang || 'en',
+                content: s.text,
+                deleted: false,
+                isViewOnly: false,
+                color: s.color || '#ffffff',
+                folderId: targetFolderId
+            });
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                this.reorderTemplatesByColorInternal(targetCat, targetFolderId);
+            }
+
+            this.saveData();
+            this.renderTemplates();
+            this.closeModal('snippetModal');
+
+            alert(`Snippet copied to ${targetCat}${targetFolderId ? ' (Folder)' : ''} as a new template!`);
+        },
+
+        copyQuickTitle: function(text, obj = null) {
+            if (obj) {
+                this.currentProcessingTitle = obj.description || obj.subCategory || "Quick Snippet";
+                this.currentProcessingColor = obj.color || "#ffffff";
+            }
+            this.processAndShowFiller(text);
+        },
+
+        renderQuickTitles: function() {
+            const list = document.getElementById('quickList');
+            const currentMainCat = this.data.currentCategory;
+            const currentFolderId = this.data.currentFolderId;
+
+            const titleEl = document.getElementById('quickSidebarTitle');
+            if (currentMainCat === 'All') titleEl.innerText = "⚡ All Snippets";
+            else if (currentMainCat === 'Trash') titleEl.innerText = "⚡ Snippets (Trash)";
+            else titleEl.innerText = `⚡ Snippets (${currentMainCat})`;
+
+            list.innerHTML = '';
+
+            let mappedSnippets = this.data.quickTitles.map((item, originalIndex) => ({ ...item, originalIndex }));
+            let filteredSnippets = mappedSnippets;
+
+            if (currentMainCat !== 'All' && currentMainCat !== 'Trash') {
+                filteredSnippets = mappedSnippets.filter(q => q.mainCategory === currentMainCat);
+            }
+
+            if (filteredSnippets.length === 0) {
+                list.innerHTML = '<li style="padding:10px; text-align:center; color:#888; font-size:0.9rem;">No snippets saved here yet.</li>';
+                return;
+            }
+
+            const renderGroup = (snippetsArray, containerNode) => {
+                const grouped = {};
+                snippetsArray.forEach((item) => {
+                    const key = (currentMainCat === 'All' || currentMainCat === 'Trash')
+                                ? `[${item.mainCategory}] ${item.subCategory}`
+                                : item.subCategory;
+
+                    if(!grouped[key]) grouped[key] = [];
+                    grouped[key].push(item);
+                });
+
+                Object.keys(grouped).sort().forEach(groupName => {
+                    let catHeader = document.createElement('div');
+                    catHeader.className = 'quick-subcat-header';
+                    catHeader.innerText = groupName;
+                    containerNode.appendChild(catHeader);
+
+                    grouped[groupName].forEach(obj => {
+                        let li = document.createElement('li');
+                        li.className = 'quick-item';
+                        li.style.borderLeft = `4px solid ${obj.color || '#cccccc'}`;
+
+                        li.onclick = () => app.copyQuickTitle(obj.text);
+                        li.oncontextmenu = (e) => {
+                            e.preventDefault();
+                            app.openSnippetModal(obj.originalIndex);
+                        };
+
+                        const safeDesc = this.escapeHtml(obj.description || '');
+                        const safeTxt = this.escapeHtml(obj.text);
+
+                        let descElement = '';
+                        if (safeDesc) {
+                            descElement = `<span style="font-weight:bold; font-size:0.95rem; color:#333; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${safeDesc}">${safeDesc}</span>`;
+                        }
+
+                        li.innerHTML = `
+                            <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+                                ${descElement}
+                                <span class="quick-item-text" style="font-size:0.8rem; color:#666;" title="${safeTxt}">${safeTxt}</span>
+                            </div>
+                            <span style="color:#aaa; font-size:0.8rem; flex-shrink:0; margin-left:5px; padding-top:4px;">📋</span>
+                        `;
+                        containerNode.appendChild(li);
+                    });
+                });
+            };
+
+            if (currentFolderId && currentMainCat !== 'All' && currentMainCat !== 'Trash') {
+                const folderSnippets = filteredSnippets.filter(q => q.folderId === currentFolderId);
+                const otherSnippets = filteredSnippets.filter(q => q.folderId !== currentFolderId);
+
+                if (folderSnippets.length > 0) {
+                    let wrapperDiv = document.createElement('div');
+                    wrapperDiv.className = 'quick-folder-wrapper';
+
+                    let folderHeader = document.createElement('div');
+                    folderHeader.className = 'quick-folder-header';
+                    folderHeader.innerText = "📁 In this folder";
+                    wrapperDiv.appendChild(folderHeader);
+
+                    renderGroup(folderSnippets, wrapperDiv);
+                    list.appendChild(wrapperDiv);
+                }
+
+                if (folderSnippets.length > 0 && otherSnippets.length > 0) {
+                    let sep = document.createElement('div');
+                    sep.className = 'quick-separator';
+                    list.appendChild(sep);
+                }
+
+                if (otherSnippets.length > 0) {
+                    renderGroup(otherSnippets, list);
+                }
+            } else {
+                renderGroup(filteredSnippets, list);
+            }
+        },
+
+        saveTimeSettings: function() {
+            this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
+            this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
+            this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
+            this.saveData();
+        },
+
+        escapeHtml: function(text) {
+            if (typeof text !== 'string') return text;
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        },
+
+        setLang: function(lang) {
+            this.data.currentLang = lang;
+            this.updateLangUI();
+            this.renderTemplates();
+            this.saveData();
+        },
+
+        updateLangUI: function() {
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if (this.data.currentLang === 'en') document.getElementById('btnEn').classList.add('active');
+            else document.getElementById('btnDe').classList.add('active');
+        },
+
+        toggleCategoryEditMode: function() {
+            this.data.isCategoryEditing = !this.data.isCategoryEditing;
+            const btn = document.getElementById('btnCatEdit');
+            if(this.data.isCategoryEditing) {
+                btn.classList.add('active');
+                btn.innerText = "✓ Done";
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = "✎ Edit";
+                this.saveData();
+            }
+            this.renderCategories();
+        },
+
+        moveCategory: function(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= this.data.categories.length) return;
+            const temp = this.data.categories[newIndex];
+            this.data.categories[newIndex] = this.data.categories[index];
+            this.data.categories[index] = temp;
+            this.renderCategories();
+        },
+
+        renameCategory: function(index, newName) {
+            const oldName = this.data.categories[index];
+            if (!newName || newName === oldName) return;
+            if (this.data.categories.includes(newName)) {
+                alert("Category name already exists!");
+                this.renderCategories();
+                return;
+            }
+
+            this.data.categories[index] = newName;
+
+            this.data.templates.forEach(t => { if (t.category === oldName) t.category = newName; });
+            this.data.folders.forEach(f => { if (f.category === oldName) f.category = newName; });
+            this.data.quickTitles.forEach(q => { if (q.mainCategory === oldName) q.mainCategory = newName; });
+
+            if (this.data.currentCategory === oldName) {
+                this.data.currentCategory = newName;
+                document.getElementById('currentCategoryTitle').innerText = newName;
+            }
+            this.renderCategories();
+            this.renderQuickTitles();
+        },
+
+        renderCategories: function() {
+            const list = document.getElementById('categoryList');
+            const current = this.data.currentCategory;
+            const currentFolder = this.data.currentFolderId;
+            const editing = this.data.isCategoryEditing;
+            const searchInput = document.getElementById('catSearchInput');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+            let html = '';
+
+            if ("all templates".includes(searchTerm)) {
+                html += `<li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')"><span>All Templates</span></li>`;
+            }
+
+            const doesFolderMatch = (folderId) => {
+                const folder = this.data.folders.find(f => f.id === folderId);
+                if (!folder) return false;
+                if (folder.name.toLowerCase().includes(searchTerm)) return true;
+                const children = this.data.folders.filter(f => f.parentFolderId === folderId && !f.deleted);
+                return children.some(child => doesFolderMatch(child.id));
+            };
+
+            this.data.categories.forEach((cat, index) => {
+                const safeCat = this.escapeHtml(cat);
+                const isActiveCat = (current === cat);
+                const catMatches = searchTerm && cat.toLowerCase().includes(searchTerm);
+
+                const rootFolders = this.data.folders.filter(f => f.category === cat && !f.deleted && !f.parentFolderId);
+                const hasMatchingFolder = searchTerm ? rootFolders.some(f => doesFolderMatch(f.id)) : false;
+
+                if (searchTerm && !catMatches && !hasMatchingFolder) return;
+
+                if (editing) {
+                    html += `
+                        <li class="category-item" style="cursor:default; background-color: #f0f0f0;">
+                            <input type="text" class="cat-input" value="${safeCat}" onchange="app.renameCategory(${index}, this.value)">
+                            <div class="cat-controls">
+                                <button class="cat-btn" onclick="app.moveCategory(${index}, -1)">↑</button>
+                                <button class="cat-btn" onclick="app.moveCategory(${index}, 1)">↓</button>
+                                <button class="cat-btn del" onclick="app.deleteCategory(event, '${safeCat}')">×</button>
+                            </div>
+                        </li>`;
+                } else {
+                    html += `
+                        <li class="category-item ${isActiveCat && !currentFolder ? 'active' : ''}" onclick="app.selectCategory('${safeCat}')" title="${safeCat}">
+                            <span>${safeCat}</span>
+                        </li>`;
+
+                    if (isActiveCat || (searchTerm && (hasMatchingFolder || catMatches))) {
+                        rootFolders.forEach(f => {
+                           if (!searchTerm || catMatches || doesFolderMatch(f.id)) {
+                               html += this.renderFolderTree(cat, f.id, 0, currentFolder, searchTerm, catMatches);
+                           }
+                        });
+                    }
+                }
+            });
+
+            if ("trash".includes(searchTerm) || "🗑️ trash".includes(searchTerm)) {
+                html += `<li class="category-item trash-item ${current === 'Trash' ? 'active' : ''}" onclick="app.selectCategory('Trash')"><span>🗑️ Trash</span></li>`;
+            }
+            list.innerHTML = html;
+
+            const select = document.getElementById('inputCategory');
+            const batchSelect = document.getElementById('batchCategory');
+            const todoSelect = document.getElementById('todoInputCategory'); // Ezt hozzáadtuk
+
+            if(select && batchSelect) {
+                const currentSelectVal = select.value;
+                const currentBatchVal = batchSelect.value;
+                const currentTodoVal = todoSelect ? todoSelect.value : ''; // Ezt hozzáadtuk
+
+                select.innerHTML = '';
+                batchSelect.innerHTML = '';
+                if(todoSelect) todoSelect.innerHTML = ''; // Ezt hozzáadtuk
+
+                this.data.categories.forEach(cat => {
+                    const opt = `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
+                    select.innerHTML += opt;
+                    batchSelect.innerHTML += opt;
+                    if(todoSelect) todoSelect.innerHTML += opt; // Ezt hozzáadtuk
+                });
+
+                if(currentSelectVal) select.value = currentSelectVal;
+                if(currentBatchVal) batchSelect.value = currentBatchVal;
+                if(currentTodoVal && todoSelect) todoSelect.value = currentTodoVal; // Ezt hozzáadtuk
+            }
+        },
+
+        renderFolderTree: function(cat, parentId, level, activeId, searchTerm = '', catMatches = false) {
+            const folder = this.data.folders.find(f => f.id === parentId);
+            if(!folder) return '';
+
+            const isFolderActive = (activeId === folder.id);
+            const padding = 30 + (level * 20);
+
+            const folderMatches = searchTerm !== '' && folder.name.toLowerCase().includes(searchTerm);
+
+            const doesDescendantMatch = (fid) => {
+                const children = this.data.folders.filter(f => f.parentFolderId === fid && !f.deleted);
+                if (children.some(c => c.name.toLowerCase().includes(searchTerm))) return true;
+                return children.some(c => doesDescendantMatch(c.id));
+            };
+
+            const hasMatchingDescendant = searchTerm !== '' && doesDescendantMatch(folder.id);
+
+            let html = '';
+
+            if (searchTerm === '' || folderMatches || hasMatchingDescendant || catMatches) {
+                html += `
+                    <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
+                        <span><i class="folder-icon-tree">└</i> ${this.escapeHtml(folder.name)}</span>
+                        <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
+                    </li>`;
+
+                const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
+                children.forEach(child => {
+                    html += this.renderFolderTree(cat, child.id, level + 1, activeId, searchTerm, catMatches);
+                });
+            }
+
+            return html;
+        },
+
+        selectCategory: function(cat) {
+            if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return;
+            this.data.currentCategory = cat;
+            this.data.currentFolderId = null;
+            this.updateHeaderButtons(cat);
+            this.renderCategories();
+            this.renderTemplates();
+            this.renderQuickTitles();
+        },
+
+        selectFolder: function(folderId, catName) {
+            this.data.currentCategory = catName;
+            this.data.currentFolderId = folderId;
+            this.updateHeaderButtons(catName);
+            this.renderCategories();
+            this.renderTemplates();
+            this.renderQuickTitles();
+        },
+
+        updateHeaderButtons: function(cat) {
+            const titleEl = document.getElementById('currentCategoryTitle');
+            const container = document.getElementById('headerButtons');
+            let content = '';
+
+            if (this.data.currentFolderId) {
+                const folder = this.data.folders.find(f => f.id === this.data.currentFolderId);
+                titleEl.innerText = folder ? `${cat} / ${folder.name}` : cat;
+            } else {
+                if (cat === 'All') titleEl.innerText = "All Templates";
+                else if (cat === 'Trash') titleEl.innerText = "Trash";
+                else titleEl.innerText = cat;
+            }
+
+            if (cat === 'Trash') {
+                 content = `<button class="btn btn-danger" onclick="app.emptyTrash()">Empty Trash</button>`;
+            } else {
+                 const showRearrange = (this.data.templates.filter(t => !t.deleted).length > 1);
+
+                 if (this.data.isRearranging) {
+                     if (this.data.selectedIds.length > 0) {
+                         content += `<button class="btn btn-move-batch" style="margin-right:10px;" onclick="app.openBatchMoveModal()">📦 Move ${this.data.selectedIds.length} Items</button>`;
+                     }
+                     content += `<button class="btn btn-color-sort" style="margin-right:10px;" onclick="app.openColorModal()">🎨 Arrange via Color</button>`;
+                     content += `<button class="btn btn-save-order" onclick="app.toggleRearrange()">💾 Save Order</button>`;
+                 } else {
+                     // Csak ikon a Rearrange gombnál
+                     if(showRearrange && cat !== 'All') {
+                        content += `<button class="btn btn-rearrange" onclick="app.toggleRearrange()" title="Rearrange" style="font-size: 1.2rem; padding: 4px 15px;">⇄</button>`;
+                     }
+                     
+                     // Legördülő (Dropdown) menü a '+' gombhoz
+                     content += `
+                        <div class="create-dropdown-wrapper">
+                            <button class="btn-create-plus" onclick="app.toggleCreateMenu(event)" title="Create New...">+</button>
+                            <div class="create-dropdown-menu" id="headerCreateMenu">
+                     `;
+                     
+                     if(cat !== 'All') {
+                        content += `<button class="create-dropdown-item" onclick="app.createFolder(); app.closeCreateMenu();">📁 New Folder</button>`;
+                     }
+                     if(cat !== 'All' && cat !== 'Trash') {
+                         content += `<button class="create-dropdown-item" onclick="app.openFolderTagsModal(); app.closeCreateMenu();">🏷️ Include Tags</button>`;
+                     }
+                     content += `
+                                <button class="create-dropdown-item" onclick="app.openTodoModal(); app.closeCreateMenu();">☑️ New To Do</button>
+                                <button class="create-dropdown-item" style="color: #6b69d6; font-weight: bold;" onclick="app.openTicketEditor(); app.closeCreateMenu();">🎟️ New Ticket</button>
+                                <button class="create-dropdown-item" onclick="app.openEditor(); app.closeCreateMenu();">📄 New Template</button>
+								
+
+                            </div>
+                        </div>
+                     `;
+                 }
+            }
+            container.innerHTML = content;
+        },
+
+        toggleCreateMenu: function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('headerCreateMenu');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+        },
+
+        closeCreateMenu: function() {
+            const menu = document.getElementById('headerCreateMenu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
+        },
+		
+		openFolderTagsModal: function() {
+            const isFolder = !!this.data.currentFolderId;
+            let activeTags = [];
+            
+            if (isFolder) {
+                const folder = this.data.folders.find(f => f.id === this.data.currentFolderId);
+                if (!folder) return;
+                activeTags = folder.includedTags || [];
+            } else {
+                const cat = this.data.currentCategory;
+                if (cat === 'All' || cat === 'Trash') return;
+                if (!this.data.settings.categoryTags) this.data.settings.categoryTags = {};
+                activeTags = this.data.settings.categoryTags[cat] || [];
+            }
+
+            let allTags = new Set();
+            this.data.templates.forEach(t => {
+                if(t.tags && !t.deleted) {
+                    t.tags.forEach(tag => allTags.add(tag));
+                }
+            });
+            const allTagsArr = Array.from(allTags).sort();
+
+            const container = document.getElementById('folderTagsList');
+            container.innerHTML = '';
+            
+            if(allTagsArr.length === 0) {
+                container.innerHTML = '<i style="color:#888;">Nincsenek még címkék. Kérlek előbb adj címkét valamelyik template-hez!</i>';
+            } else {
+                allTagsArr.forEach(tag => {
+                    const isChecked = activeTags.includes(tag) ? 'checked' : '';
+                    container.innerHTML += `
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 4px 0; border-bottom: 1px solid #eee;">
+                            <input type="checkbox" style="transform: scale(1.2);" value="${this.escapeHtml(tag)}" ${isChecked} class="folder-tag-chk">
+                            <span style="font-weight:600; color: var(--text);">#${this.escapeHtml(tag)}</span>
+                        </label>
+                    `;
+                });
+            }
+
+            document.getElementById('folderTagsModal').style.display = 'flex';
+        },
+
+        saveFolderTags: function() {
+            const checkboxes = document.querySelectorAll('.folder-tag-chk:checked');
+            const selectedTags = Array.from(checkboxes).map(chk => chk.value);
+
+            if (this.data.currentFolderId) {
+                const folderIndex = this.data.folders.findIndex(f => f.id === this.data.currentFolderId);
+                if (folderIndex !== -1) this.data.folders[folderIndex].includedTags = selectedTags;
+            } else {
+                const cat = this.data.currentCategory;
+                if (cat !== 'All' && cat !== 'Trash') {
+                    if (!this.data.settings.categoryTags) this.data.settings.categoryTags = {};
+                    this.data.settings.categoryTags[cat] = selectedTags;
+                }
+            }
+
+            this.saveData();
+            this.closeModal('folderTagsModal');
+            this.renderTemplates();
+        },
+		
+		createFolder: function() {
+            const name = prompt("Folder Name:");
+            if(name) {
+                const newFolder = {
+                    id: Date.now(),
+                    name: name,
+                    category: this.data.currentCategory,
+                    parentFolderId: this.data.currentFolderId || null,
+                    deleted: false
+                };
+                this.data.folders.push(newFolder);
+                this.saveData();
+                this.renderCategories();
+                this.renderTemplates();
+            }
+        },
+
+        deleteFolder: function(e, id) {
+            e.stopPropagation();
+            if(!confirm("Move Folder to Trash?")) return;
+            const idx = this.data.folders.findIndex(f => f.id === id);
+            if(idx > -1) {
+                this.data.folders[idx].deleted = true;
+                this.deleteFolderRecursive(id);
+                if(this.data.currentFolderId === id) {
+                    this.data.currentFolderId = null;
+                }
+                this.saveData();
+                this.renderCategories();
+                this.renderTemplates();
+            }
+        },
+
+        deleteFolderRecursive: function(parentId) {
+            const children = this.data.folders.filter(f => f.parentFolderId === parentId);
+            children.forEach(child => {
+                child.deleted = true;
+                this.deleteFolderRecursive(child.id);
+            });
+        },
+
+        restoreFolder: function(id) {
+            const idx = this.data.folders.findIndex(f => f.id === id);
+            if(idx > -1) {
+                this.data.folders[idx].deleted = false;
+                this.saveData();
+                this.renderCategories();
+                this.renderTemplates();
+            }
+        },
+
+        deleteFolderForever: function(id) {
+             if(!confirm("Permanently Delete Folder? Template inside will be effectively lost unless reassigned.")) return;
+             this.data.folders = this.data.folders.filter(f => f.id !== id);
+             this.data.templates.forEach(t => {
+                 if(t.folderId === id) t.folderId = null;
+             });
+             this.saveData();
+             this.renderTemplates();
+        },
+
+        updateFolderOptions: function(catSelectId = 'inputCategory', folderSelectId = 'inputFolder') {
+            const cat = document.getElementById(catSelectId).value;
+            const folderSelect = document.getElementById(folderSelectId);
+            const currentSelection = folderSelect.value;
+
+            folderSelect.innerHTML = '<option value="">(No Folder / Root)</option>';
+
+            const buildOptions = (parentId, prefix) => {
+                const children = this.data.folders.filter(f => {
+                    const isCat = f.category === cat;
+                    const isActive = !f.deleted;
+                    let isParent = false;
+                    if (parentId === null) isParent = !f.parentFolderId;
+                    else isParent = f.parentFolderId === parentId;
+                    return isCat && isActive && isParent;
+                });
+
+                children.sort((a, b) => a.name.localeCompare(b.name));
+
+                children.forEach(f => {
+                    folderSelect.innerHTML += `<option value="${f.id}">${prefix}📂 ${this.escapeHtml(f.name)}</option>`;
+                    buildOptions(f.id, prefix + "&nbsp;&nbsp;&nbsp;");
+                });
+            };
+
+            buildOptions(null, "");
+
+            if (currentSelection) {
+                const exists = Array.from(folderSelect.options).some(o => o.value === currentSelection);
+                if (exists) {
+                    folderSelect.value = currentSelection;
+                }
+            }
+        },
+
+        toggleRearrange: function() {
+            if(this.data.isRearranging) {
+                this.saveNewOrder();
+                this.data.selectedIds = [];
+            }
+            this.data.isRearranging = !this.data.isRearranging;
+            this.updateHeaderButtons(this.data.currentCategory);
+            this.renderTemplates();
+        },
+
+        toggleSelection: function(e, id) {
+            if (!this.data.isRearranging) return;
+            if (e.ctrlKey || e.metaKey) {
+                const index = this.data.selectedIds.indexOf(id);
+                if (index > -1) {
+                    this.data.selectedIds.splice(index, 1);
+                } else {
+                    this.data.selectedIds.push(id);
+                }
+            } else {
+                this.data.selectedIds = [id];
+            }
+            this.updateHeaderButtons(this.data.currentCategory);
+            this.renderTemplates();
+        },
+
+        saveNewOrder: function() {
+            const grid = document.getElementById('templateGrid');
+            const cards = Array.from(grid.children);
+
+            cards.forEach((card, index) => {
+                const id = parseInt(card.getAttribute('data-id'));
+                if(id) {
+                    const template = this.data.templates.find(t => t.id === id);
+                    if(template) {
+                        template.orderIndex = index;
+                    }
+                }
+            });
+            this.saveData();
+        },
+		moveSingleTemplate: function(id) {
+            this.data.selectedIds = [id];
+            this.openBatchMoveModal();
+            // Címsor átírása, hogy logikus legyen egy elemnél
+            document.getElementById('batchMoveCountText').innerText = `Moving 1 template...`;
+            
+            // Bezárjuk a lenyíló menüt áthelyezés előtt
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.remove('show');
+                const parentCard = menu.closest('.card');
+                if (parentCard) parentCard.classList.remove('menu-open');
+            }
+        },
+
+        cloneTicket: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            
+            this.openTicketEditor();
+            document.getElementById('ticketEditorTitle').innerText = "Clone Ticket Template";
+            document.getElementById('ticketEditId').value = ""; // Üres ID = újként fog mentődni
+            
+            document.getElementById('ticketTitleText').value = t.title + " (Copy)";
+            document.getElementById('ticketDescText').value = t.content;
+            
+            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+            document.getElementById('ticketAppCategory').value = cat;
+            
+            const color = t.color || '#ffffff';
+            document.getElementById('ticketColor').value = color;
+            document.querySelectorAll('#ticketColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            const swatch = document.querySelector(`#ticketColorSwatches .color-swatch[data-hex="${color}"]`);
+            if(swatch) swatch.classList.add('selected');
+            else document.querySelector('#ticketColorSwatches .color-swatch.none').classList.add('selected');
+            document.querySelector('#ticketEditorModal .modal').style.backgroundColor = color;
+            
+            document.getElementById('ticketType').value = t.ticketType || 'Incident';
+            document.getElementById('ticketSysCat').value = t.ticketSysCat || '';
+            document.getElementById('ticketCaller').value = t.ticketCaller || '';
+            document.getElementById('ticketAffected').value = t.ticketAffected || '';
+            document.getElementById('ticketUrgency').value = t.ticketUrgency || '';
+            
+            this.updateFolderOptions('ticketAppCategory', 'ticketAppFolder');
+            document.getElementById('ticketAppFolder').value = t.folderId ? t.folderId : "";
+        },
+        openBatchMoveModal: function() {
+            if (this.data.selectedIds.length === 0) return;
+            document.getElementById('batchMoveCountText').innerText = `Moving ${this.data.selectedIds.length} items...`;
+            let defaultCat = "General";
+            if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                defaultCat = this.data.currentCategory;
+            }
+            document.getElementById('batchCategory').value = defaultCat;
+            this.updateFolderOptions('batchCategory', 'batchFolder');
+            document.getElementById('batchMoveModal').style.display = 'flex';
+        },
+
+        executeBatchMove: function() {
+            const newCat = document.getElementById('batchCategory').value;
+            const newFolderId = document.getElementById('batchFolder').value || null;
+            let updatedCount = 0;
+            this.data.templates.forEach(t => {
+                if (this.data.selectedIds.includes(t.id)) {
+                    t.category = newCat;
+                    t.folderId = newFolderId ? parseInt(newFolderId) : null;
+                    updatedCount++;
+                }
+            });
+            this.saveData();
+            this.data.selectedIds = [];
+            this.closeModal('batchMoveModal');
+            this.updateHeaderButtons(this.data.currentCategory);
+            this.renderTemplates();
+            alert(`Successfully moved ${updatedCount} templates.`);
+        },
+
+        openColorModal: function() {
+            document.getElementById('colorOrderModal').style.display = 'flex';
+            this.renderColorOrderList();
+        },
+
+        renderColorOrderList: function() {
+            const container = document.getElementById('colorOrderList');
+            container.innerHTML = '';
+            this.data.colorOrder.forEach((color, idx) => {
+                container.innerHTML += `
+                    <div class="color-order-item">
+                        <div style="display:flex; align-items:center;">
+                            <span class="color-swatch-mini" style="background:${color.hex}"></span>
+                            <span>${color.name}</span>
+                        </div>
+                        <div class="color-controls">
+                            <button onclick="app.moveColor(${idx}, -1)">↑</button>
+                            <button onclick="app.moveColor(${idx}, 1)">↓</button>
+                        </div>
+                    </div>
+                `;
+            });
+        },
+
+        moveColor: function(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= this.data.colorOrder.length) return;
+            const temp = this.data.colorOrder[newIdx];
+            this.data.colorOrder[newIdx] = this.data.colorOrder[idx];
+            this.data.colorOrder[idx] = temp;
+            this.renderColorOrderList();
+        },
+
+        saveDefaultColorOrder: function() {
+            this.saveData();
+            alert("Default color order saved!");
+        },
+
+        applyColorSort: function() {
+            const currentCat = this.data.currentCategory;
+            const currentFolderId = this.data.currentFolderId;
+            this.reorderTemplatesByColorInternal(currentCat, currentFolderId);
+            this.renderTemplates();
+            this.closeModal('colorOrderModal');
+        },
+
+        reorderTemplatesByColorInternal: function(category, folderId) {
+            let relevantTemplates = this.data.templates.filter(t => {
+                if(t.deleted) return false;
+                if(category !== 'All' && t.category !== category) return false;
+                if(category !== 'All' && folderId && t.folderId !== folderId) return false;
+                if(category !== 'All' && !folderId && t.folderId) return false;
+                return true;
+            });
+
+            relevantTemplates.sort((a, b) => {
+                const colorA = a.color || '#ffffff';
+                const colorB = b.color || '#ffffff';
+                const idxA = this.data.colorOrder.findIndex(c => c.hex === colorA);
+                const idxB = this.data.colorOrder.findIndex(c => c.hex === colorB);
+                const posA = idxA === -1 ? 999 : idxA;
+                const posB = idxB === -1 ? 999 : idxB;
+                return posA - posB;
+            });
+
+            relevantTemplates.forEach((t, index) => {
+                t.orderIndex = index;
+            });
+        },
+
+        openSettingsModal: function() {
+			document.getElementById('settingAutoHide').checked = !!this.data.settings.autoHideSidebars;
+            document.getElementById('settingAutoHideDelay').value = this.data.settings.autoHideDelay !== undefined ? this.data.settings.autoHideDelay : 1.0;
+            document.getElementById('settingAutoSort').checked = this.data.settings.autoSortColor;
+            document.getElementById('settingUseColorLabel').checked = !!this.data.settings.useColorLabelAsSubtitle;
+            document.getElementById('settingAutoSnippetSubCat').checked = !!this.data.settings.autoSnippetSubCat;
+            document.getElementById('settingShowTitle').checked = this.data.settings.showAppTitle !== false;
+            document.getElementById('settingShowLang').checked = this.data.settings.showLangSwitcher !== false;
+            document.getElementById('settingCompactMode').checked = !!this.data.settings.compactMode;
+            document.getElementById('settingZoomTemplate').checked = !!this.data.settings.zoomTemplate;
+            document.getElementById('settingHighlightTitle').checked = !!this.data.settings.highlightTitle;
+            document.getElementById('settingTitleSeparator').checked = !!this.data.settings.titleSeparator;
+            document.getElementById('settingHoverPreview').checked = !!this.data.settings.hoverPreview;
+            document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
+            document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
+            document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
+
+            document.getElementById('settingDefaultTodoColor').value = this.data.settings.defaultTodoColor || '#ffffff';
+            document.getElementById('settingDefaultViewOnlyColor').value = this.data.settings.defaultViewOnlyColor || '#ffffff';
+
+            document.getElementById('timeStart').value = this.data.timeSettings.start;
+            document.getElementById('timeEnd').value = this.data.timeSettings.end;
+            document.getElementById('timeEve').value = this.data.timeSettings.eve;
+
+            const container = document.getElementById('settingsColorLabelsContainer');
+            container.innerHTML = '';
+            const baseColors = [
+                {hex: '#ffcdd2', name: 'Red'}, {hex: '#fff9c4', name: 'Yellow'}, {hex: '#c8e6c9', name: 'Green'},
+                {hex: '#bbdefb', name: 'Blue'}, {hex: '#e1bee7', name: 'Purple'}, {hex: '#ffe0b2', name: 'Orange'},
+                {hex: '#b2dfdb', name: 'Teal'}, {hex: '#f8bbd0', name: 'Pink'}, {hex: '#cfd8dc', name: 'Grey'}
+            ];
+
+            if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
+
+            baseColors.forEach(c => {
+                const val = this.data.settings.colorLabels[c.hex] || '';
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="background:${c.hex}; width:20px; height:20px; border-radius:50%; border:1px solid #ccc; flex-shrink:0;"></div>
+                        <span style="font-size:0.85rem; width:45px; display:inline-block;">${c.name}</span>
+                        <input type="text" class="form-control" style="padding:4px; font-size:0.85rem; flex:1;" data-hex="${c.hex}" placeholder="Label (optional)" value="${this.escapeHtml(val)}">
+                    </div>
+                `;
+            });
+
+            document.getElementById('settingsModal').style.display = 'flex';
+        },
+
+        saveSettings: function() {
+			this.data.settings.autoHideSidebars = document.getElementById('settingAutoHide').checked;
+            this.data.settings.autoHideDelay = parseFloat(document.getElementById('settingAutoHideDelay').value) || 1.0;
+            this.data.settings.autoSortColor = document.getElementById('settingAutoSort').checked;
+            this.data.settings.useColorLabelAsSubtitle = document.getElementById('settingUseColorLabel').checked;
+            this.data.settings.autoSnippetSubCat = document.getElementById('settingAutoSnippetSubCat').checked;
+            this.data.settings.showAppTitle = document.getElementById('settingShowTitle').checked;
+            this.data.settings.showLangSwitcher = document.getElementById('settingShowLang').checked;
+            this.data.settings.compactMode = document.getElementById('settingCompactMode').checked;
+            this.data.settings.zoomTemplate = document.getElementById('settingZoomTemplate').checked;
+            this.data.settings.highlightTitle = document.getElementById('settingHighlightTitle').checked;
+            this.data.settings.titleSeparator = document.getElementById('settingTitleSeparator').checked;
+            this.data.settings.hoverPreview = document.getElementById('settingHoverPreview').checked;
+            this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
+            this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
+            this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
+
+            this.data.settings.defaultTodoColor = document.getElementById('settingDefaultTodoColor').value;
+            this.data.settings.defaultViewOnlyColor = document.getElementById('settingDefaultViewOnlyColor').value;
+
+            this.data.timeSettings.start = parseInt(document.getElementById('timeStart').value) || 6;
+            this.data.timeSettings.end = parseInt(document.getElementById('timeEnd').value) || 11;
+            this.data.timeSettings.eve = parseInt(document.getElementById('timeEve').value) || 17;
+
+            if (!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
+            document.querySelectorAll('#settingsColorLabelsContainer input').forEach(input => {
+                const hex = input.getAttribute('data-hex');
+                this.data.settings.colorLabels[hex] = input.value.trim();
+            });
+
+            this.applyAppearanceSettings();
+            this.updateEditorColorSwatches();
+            this.saveData();
+            this.closeModal('settingsModal');
+            this.renderTemplates();
+        },
+
+        showPreviewClone: function(originalDiv) {
+            this.hidePreviewClone();
+            const rect = originalDiv.getBoundingClientRect();
+            const clone = originalDiv.cloneNode(true);
+            clone.id = 'hover-preview-clone';
+
+            clone.style.position = 'fixed';
+            clone.style.top = rect.top + 'px';
+            clone.style.left = rect.left + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.minHeight = rect.height + 'px';
+            clone.style.height = 'auto';
+            clone.style.zIndex = '9999';
+            clone.style.margin = '0';
+            clone.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+            clone.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)';
+
+            clone.addEventListener('mouseleave', () => {
+                app.hidePreviewClone();
+            });
+            clone.addEventListener('click', () => {
+                setTimeout(() => app.hidePreviewClone(), 50);
+            });
+
+            document.body.appendChild(clone);
+
+            requestAnimationFrame(() => {
+                clone.classList.add('preview-active');
+            });
+        },
+
+        hidePreviewClone: function() {
+            const clone = document.getElementById('hover-preview-clone');
+            if (clone) clone.remove();
+        },
+
+        findAndUseTemplate: function(templateName) {
+            const target = this.data.templates.find(t =>
+                !t.deleted && t.title.toLowerCase() === templateName.toLowerCase()
+            );
+
+            if (target) {
+                if (target.isViewOnly) {
+                    this.viewTemplate(target.id);
+                } else {
+                    this.prepareTemplate(target.id);
+                }
+            } else {
+                alert(`Template not found: "${templateName}"`);
+            }
+        },
+
+        handleDragStart: function(e) {
+            this.hidePreviewClone();
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+            e.target.classList.add('dragging');
+            this.dragSrcEl = e.target;
+        },
+
+        handleDragOver: function(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        },
+
+        handleDragEnter: function(e) {
+            const target = e.target.closest('.card');
+            if(target) target.classList.add('over');
+        },
+
+        handleDragLeave: function(e) {
+            const target = e.target.closest('.card');
+            if(target) target.classList.remove('over');
+        },
+
+        handleDrop: function(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            let targetCard = e.target.closest('.card');
+            if (this.dragSrcEl !== targetCard && targetCard) {
+                const grid = document.getElementById('templateGrid');
+                const cards = Array.from(grid.children);
+                const srcIndex = cards.indexOf(this.dragSrcEl);
+                const targetIndex = cards.indexOf(targetCard);
+                if (srcIndex < targetIndex) {
+                    targetCard.after(this.dragSrcEl);
+                } else {
+                    targetCard.before(this.dragSrcEl);
+                }
+            }
+            return false;
+        },
+
+        handleDragEnd: function(e) {
+            const grid = document.getElementById('templateGrid');
+            Array.from(grid.children).forEach(function (col) {
+                col.classList.remove('over');
+                col.classList.remove('dragging');
+            });
+        },
+        pinTodo: function(id) {
+            if (!this.data.settings) this.data.settings = {};
+
+            // Kompatibilitás a régi (1 db-os) rendszerrel: átalakítjuk tömbbé
+            if (!Array.isArray(this.data.settings.pinnedTodoIds)) {
+                if (this.data.settings.pinnedTodoId) {
+                    this.data.settings.pinnedTodoIds = [this.data.settings.pinnedTodoId];
+                } else {
+                    this.data.settings.pinnedTodoIds = [];
+                }
+                delete this.data.settings.pinnedTodoId; // Régi változó törlése
+            }
+
+            const index = this.data.settings.pinnedTodoIds.indexOf(id);
+
+            if (index > -1) {
+                // Ha már benne van, levesszük (unpin)
+                this.data.settings.pinnedTodoIds.splice(index, 1);
+            } else {
+                // NINCS LIMIT: Bármennyit hozzáadhatunk
+                this.data.settings.pinnedTodoIds.push(id);
+            }
+
+            this.saveData();
+            this.renderPinnedTodo();
+            this.renderTemplates();
+        },
+
+        renderPinnedTodo: function() {
+            const container = document.getElementById('pinnedTodoContainer');
+            if (!this.data.settings || !Array.isArray(this.data.settings.pinnedTodoIds) || this.data.settings.pinnedTodoIds.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // Csak az érvényes, nem törölt To-Do kártyákat gyűjtjük ki
+            let validPinned = [];
+            let needsSave = false;
+
+            this.data.settings.pinnedTodoIds.forEach(id => {
+                const t = this.data.templates.find(x => x.id === id && !x.deleted && x.isTodo);
+                if (t) {
+                    validPinned.push(t);
+                } else {
+                    needsSave = true; // Ha olyat talál, ami törölve lett, jelezzük a tisztítást
+                }
+            });
+
+            if (needsSave) {
+                this.data.settings.pinnedTodoIds = validPinned.map(t => t.id);
+                this.saveData();
+            }
+
+            if (validPinned.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            let contentHtml = `
+                <div class="pinned-todo-header">
+                    <span>📌 Pinned To-Dos (${validPinned.length})</span>
+                </div>
+            `;
+
+            validPinned.forEach((t, index) => {
+                let itemsHtml = '<div class="pinned-todo-list" style="margin-bottom: 5px;">';
+                
+                // --- ÚJ RÉSZ: Megnézzük, kell-e a Generate gomb ---
+                let hasTemplateMarkers = false;
+                
+                if(t.todoItems) {
+                    // Ellenőrizzük, hogy van-e [] vagy {} a szövegben
+                    hasTemplateMarkers = t.todoItems.some(item =>
+                        (item.text.includes('[') && item.text.includes(']')) ||
+                        (item.text.includes('{') && item.text.includes('}'))
+                    );
+
+                    t.todoItems.forEach((item, itemIdx) => {
+                        const isChecked = item.checked ? 'checked' : '';
+                        const textStyle = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: #333;';
+
+                        // A [] és {} részek eltávolítása a vizuális megjelenésből
+                        const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
+
+                        itemsHtml += `
+                            <div class="pinned-todo-item" onclick="app.toggleTodoItem(event, ${t.id}, ${itemIdx})">
+                                <input type="checkbox" ${isChecked} onclick="event.stopPropagation(); app.toggleTodoItem(event, ${t.id}, ${itemIdx})">
+                                <span style="${textStyle}; cursor:pointer;">${displayText}</span>
+                            </div>
+                        `;
+                    });
+                }
+                itemsHtml += '</div>';
+
+                // --- ÚJ RÉSZ: Generate gomb HTML-je, ha szükséges ---
+                let generateBtnHtml = '';
+                if (hasTemplateMarkers) {
+                    generateBtnHtml = `
+                        <button class="btn btn-sm btn-primary" style="width: 100%; padding: 4px; font-size: 0.8rem; margin-top: 5px;" onclick="app.generateTodoTemplate(${t.id})">
+                            Generate template
+                        </button>
+                    `;
+                }
+
+                const borderStyle = index < validPinned.length - 1 ? 'border-bottom: 1px dashed #fbc02d; margin-bottom: 10px; padding-bottom: 8px;' : '';
+
+                contentHtml += `
+                    <div style="${borderStyle}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div class="pinned-todo-title" style="margin-bottom: 0; border: none; padding: 0; font-size: 0.95rem;">${this.escapeHtml(t.title)}</div>
+                            <button class="btn-cat-edit" style="border:none; padding:0; font-size:1.1rem;" onclick="app.pinTodo(${t.id})" title="Unpin">✖</button>
+                        </div>
+                        ${itemsHtml}
+                        ${generateBtnHtml}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = contentHtml;
+        },
+
+        viewTodo: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            let safeContent = '<ul style="list-style-type: none; padding-left: 0; margin-top: 5px;">';
+            if(t.todoItems) {
+                t.todoItems.forEach(item => {
+                    const checkedIcon = item.checked ? '☑' : '☐';
+                    const style = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: #333;';
+
+                    // ÚJ: A [] és {} részek eltávolítása a vizuális megjelenésből
+                    const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
+
+                    safeContent += `<li style="${style}; margin-bottom: 6px; font-size: 1.05rem;">${checkedIcon} ${displayText}</li>`;
+                });
+            }
+            safeContent += '</ul>';
+
+            const existingModals = document.querySelectorAll('.dynamic-view-modal');
+            const baseZIndex = 1050;
+            const newZIndex = baseZIndex + (existingModals.length * 10);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay dynamic-view-modal';
+            overlay.style.zIndex = newZIndex;
+            overlay.style.display = 'flex';
+
+            overlay.innerHTML = `
+                <div class="modal" style="width: 600px; max-width: 95%;">
+                    <div class="modal-header">
+                        <span>${this.escapeHtml(t.title)} (To-Do List)</span>
+                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <div>${safeContent}</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary close-dynamic-btn">Close</button>
+                    </div>
+                </div>
+            `;
+
+            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
+            closeBtns.forEach(btn => { btn.onclick = function() { overlay.remove(); }; });
+            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+            document.body.appendChild(overlay);
+        },
+
+        cloneTodo: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            // Megnyitjuk a To-Do modalt, ami mindent alaphelyzetbe állít
+            this.openTodoModal();
+
+            // Felülírjuk az értékeket a másolni kívánt lista adataival
+            document.getElementById('todoTitle').innerText = "Clone To-Do List";
+            document.getElementById('todoEditId').value = ""; // Üres ID = újként fog mentődni
+            document.getElementById('todoInputTitle').value = t.title + " (Copy)";
+            document.getElementById('todoInputSubtitle').value = t.subtitle || '';
+
+            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+            document.getElementById('todoInputCategory').value = cat;
+
+            const color = t.color || '#ffffff';
+            document.getElementById('todoInputColor').value = color;
+            document.querySelectorAll('#todoColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            const swatch = document.querySelector(`#todoColorSwatches .color-swatch[data-hex="${color}"]`);
+            if(swatch) swatch.classList.add('selected');
+            else if(color === '#ffffff') document.querySelector('#todoColorSwatches .color-swatch.none').classList.add('selected');
+
+            document.querySelector('#todoModal .modal').style.backgroundColor = color;
+
+            document.getElementById('todoDailyReset').checked = !!t.todoDailyReset;
+            document.getElementById('todoAutoReset').checked = !!t.todoAutoReset;
+
+            this.updateFolderOptions('todoInputCategory', 'todoInputFolder');
+            document.getElementById('todoInputFolder').value = t.folderId ? t.folderId : "";
+
+            if(t.todoItems) {
+                // A .map() kiszedi a szövegeket és új sorokkal összeköti a textarea számára
+                document.getElementById('todoInputContent').value = t.todoItems.map(item => item.text).join('\n');
+            }
+        },
+
+        renderTemplates: function() {
+            this.hidePreviewClone();
+            const grid = document.getElementById('templateGrid');
+            const searchEl = document.getElementById('searchInput');
+            const term = searchEl ? searchEl.value.toLowerCase() : "";
+            const isTrash = (this.data.currentCategory === 'Trash');
+            const currentCat = this.data.currentCategory;
+            const currentFolderId = this.data.currentFolderId;
+            const rearranging = this.data.isRearranging;
+
+            if(rearranging) grid.classList.add('rearrange-active');
+            else grid.classList.remove('rearrange-active');
+
+            grid.innerHTML = '';
+
+            let saveNeededForTodos = false;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (isTrash && !term) {
+                const deletedFolders = this.data.folders.filter(f => f.deleted);
+                deletedFolders.forEach(f => {
+                     const html = `
+                        <div class="card folder-card" style="border-color:#a80000; background:#fde7e9;">
+                            <div class="card-title"><span class="folder-icon">📂</span> ${this.escapeHtml(f.name)} (Folder)</div>
+                            <div class="card-preview">Contains templates from ${this.escapeHtml(f.category)}</div>
+                            <div class="card-actions">
+                                <button class="card-btn restore" onclick="app.restoreFolder(${f.id})">Restore Folder</button>
+                                <button class="card-btn delete-forever" onclick="app.deleteFolderForever(${f.id})">Delete Forever</button>
+                            </div>
+                        </div>`;
+                     grid.innerHTML += html;
+                });
+            }
+
+            let filtered = this.data.templates.filter(t => {
+                if (isTrash) return t.deleted;
+                if (t.deleted) return false;
+                if (term) {
+                    if (!t.title.toLowerCase().includes(term) && !(t.content && t.content.toLowerCase().includes(term))) return false;
+                    return true;
+                }
+                if (t.isTodo || t.lang === this.data.currentLang) {
+                    if (currentCat !== 'All') {
+                        if (t.category !== currentCat) return false;
+                        if (currentFolderId) {
+                            return t.folderId === currentFolderId;
+                        } else {
+                            return !t.folderId;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            filtered.sort((a, b) => {
+                const orderA = (a.orderIndex !== undefined) ? a.orderIndex : 999999;
+                const orderB = (b.orderIndex !== undefined) ? b.orderIndex : 999999;
+                return orderA - orderB;
+            });
+
+            if (filtered.length === 0 && !grid.innerHTML) {
+                grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No items found.</p>';
+                return;
+            }
+
+            const createCardNode = (t) => {
+                const safeTitle = this.escapeHtml(t.title);
+                const bgColor = t.color || '#ffffff';
+                const isSelected = rearranging && this.data.selectedIds.includes(t.id);
+                const selectionClass = isSelected ? ' selected' : '';
+                
+                let tagsHtml = '';
+                if (t.tags && t.tags.length > 0) {
+                    const tagsList = t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
+                    tagsHtml = `<div style="margin-bottom: 8px;">${tagsList}</div>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
+                if(t.isTodo) div.classList.add('todo-card');
+                if(rearranging) div.draggable = true;
+                div.style.backgroundColor = bgColor;
+                div.setAttribute('data-id', t.id);
+                if(rearranging) div.setAttribute('onclick', `app.toggleSelection(event, ${t.id})`);
+
+                if (t.deleted) {
+                    const btns = `<button class="card-btn restore" onclick="app.restoreTemplate(${t.id})">Restore</button>
+                                  <button class="card-btn delete-forever" onclick="app.deleteForever(${t.id})">Delete Forever</button>`;
+
+                    div.innerHTML = `
+                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
+                            <div class="card-title">${safeTitle}</div>
+                            ${tagsHtml}
+                            <div class="card-preview">${t.isTodo ? '(To-Do List)' : this.escapeHtml(t.content)}</div>
+                        </div>
+                        <div class="card-actions">${btns}</div>
+                    `;
+                } else {
+                    let menu = '';
+                    let useBtn = '';
+                    let quickViewBtn = '';
+                    let mainContentHtml = '';
+
+                    if (t.isTodo) {
+                        if (t.todoDailyReset && t.lastResetDate !== today && !isTrash) {
+                            t.todoItems.forEach(item => item.checked = false);
+                            t.lastResetDate = today;
+                            saveNeededForTodos = true;
+                        }
+
+                        let itemsHtml = '<div class="todo-list-container">';
+                        if(t.todoItems) {
+                            t.todoItems.forEach((item, itemIdx) => {
+                                const isChecked = item.checked ? 'checked' : '';
+                                const textStyle = item.checked ? 'text-decoration: line-through; color: #888;' : '';
+                                const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
+
+                                itemsHtml += `
+                                    <div class="todo-item" onclick="app.toggleTodoItem(event, ${t.id}, ${itemIdx})">
+                                        <input type="checkbox" ${isChecked} onclick="event.stopPropagation(); app.toggleTodoItem(event, ${t.id}, ${itemIdx})">
+                                        <span style="${textStyle}; cursor:pointer;">${displayText}</span>
+                                    </div>
+                                `;
+                            });
+                        }
+                        itemsHtml += '</div>';
+
+                        const pinnedArray = (this.data.settings && Array.isArray(this.data.settings.pinnedTodoIds)) ? this.data.settings.pinnedTodoIds : [];
+                        const isPinned = pinnedArray.includes(t.id);
+                        const pinText = isPinned ? '📍 Unpin from Sidebar' : '📌 Pin to Sidebar';
+
+                        // --- DINAMIKUS GOMB LOGIKA ---
+                        let hasTemplateMarkers = false;
+                        if (t.todoItems) {
+                            hasTemplateMarkers = t.todoItems.some(item =>
+                                (item.text.includes('[') && item.text.includes(']')) ||
+                                (item.text.includes('{') && item.text.includes('}'))
+                            );
+                        }
+
+                        if (hasTemplateMarkers) {
+                            useBtn = `
+                                <div class="card-actions">
+                                    <button class="card-btn use" style="width: 100%;" onclick="app.generateTodoTemplate(${t.id})">Generate template</button>
+                                </div>
+                            `;
+                        } else {
+                            useBtn = ''; // Teljesen eltűnik, ha nincs benne [] vagy {}
+                        }
+
+                        menu = `
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.viewTodo(${t.id})">👁️ View</div>
+                                <div class="dropdown-item" onclick="app.pinTodo(${t.id})">${pinText}</div>
+                                <div class="dropdown-item" onclick="app.openTodoModal(${t.id})">✏️ Edit To-Do</div>
+                                <div class="dropdown-item" onclick="app.cloneTodo(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+                            </div>
+                        `;
+                        mainContentHtml = itemsHtml;
+                    
+                    } else if (t.isTicket) {
+						// 1. Az alsó gombok: Copy Title és Copy Desc. 
+						// Itt a find() metódust használjuk inline, hogy a dupla/szimpla idézőjelek a szövegben ne törjék szét a HTML-t.
+						useBtn = `
+							<div class="card-actions">
+								<button class="card-btn use" style="flex: 1; background: var(--primary);" onclick="app.currentProcessingTitle = app.data.templates.find(x => x.id === ${t.id}).title; app.currentProcessingColor = app.data.templates.find(x => x.id === ${t.id}).color; app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).title)">Copy Title</button>
+								<button class="card-btn use" style="flex: 1; background: var(--clone);" onclick="app.currentProcessingTitle = app.data.templates.find(x => x.id === ${t.id}).title; app.currentProcessingColor = app.data.templates.find(x => x.id === ${t.id}).color; app.copyToClipboard(app.data.templates.find(x => x.id === ${t.id}).content)">Copy Desc</button>
+							</div>
+						`;
+						
+						// 2. A szem ikon beállítása a jobb felső sarokba (ugyanaz a funkció, mint eddig a nagy gombé volt)
+						quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTicketTemplate(${t.id})" title="View Details">👁️</button>`;
+						
+						// 3. Frissített kártya tartalom (kivettük a felesleges "Click 'View Ticket'..." szöveget)
+						mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br>${this.escapeHtml(t.content)}`;
+						
+						menu = `
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
+                                <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+                            </div>
+                        `;
+					} else {
+                        let safeContent = this.escapeHtml(t.content);
+
+                        // --- FORMÁZÁS AZ ELŐNÉZETHEZ (PREVIEW) ---
+                        // 1. Alap formázások lecserélése
+                        safeContent = safeContent.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                        safeContent = safeContent.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                        safeContent = safeContent.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                        
+                        safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                        safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                        safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
+                        safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+
+                        // 2. Felesleges, "gigantikus" sortörések elnyelése a blokkok (hr, h1, h2) körül
+                        safeContent = safeContent.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                        safeContent = safeContent.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                        safeContent = safeContent.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
+
+                        safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                            const parts = content.split('|');
+                            const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                            return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                        });
+                        safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+                             return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                        });
+                        mainContentHtml = safeContent;
+
+                        menu = `
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
+                                <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
+                                <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-item" onclick="app.copyToSnippets(${t.id})">⚡ Copy to Snippets</div>
+                                <div class="dropdown-item" onclick="app.moveToSnippets(${t.id})">⚡ Move to Snippets</div>
+                                <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+                            </div>
+                        `;
+
+                        if (t.isViewOnly) {
+                            useBtn = `<div class="card-actions"><button class="card-btn use view-only" style="width:100%" onclick="app.viewTemplate(${t.id})">👁️ View</button></div>`;
+                        } else {
+                            useBtn = `
+                                <div class="card-actions">
+                                    <button class="card-btn use" style="flex: 1;" onclick="app.prepareTemplate(${t.id})">Use</button>
+                                    <button class="card-btn view-only card-view-btn-bottom" style="flex: 1;" onclick="app.viewTemplate(${t.id})">View</button>
+                                </div>
+                            `;
+                            quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTemplate(${t.id})" title="Quick View">👁️</button>`;
+                        }
+                    }
+
+                    div.innerHTML = `
+                            ${quickViewBtn}
+                            ${menu}
+                            <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
+                                <div class="card-title">${safeTitle}</div>
+                                ${tagsHtml}
+                                <div class="card-preview">${mainContentHtml}</div>
+                            </div>
+                            ${useBtn}
+                    `;
+
+                    if (rearranging) {
+                        div.addEventListener('dragstart', (e) => {
+                            clearTimeout(div._hoverTimer);
+                            app.hidePreviewClone();
+                            app.handleDragStart(e);
+                        });
+                        div.addEventListener('dragenter', app.handleDragEnter.bind(app));
+                        div.addEventListener('dragover', app.handleDragOver.bind(app));
+                        div.addEventListener('dragleave', app.handleDragLeave.bind(app));
+                        div.addEventListener('drop', app.handleDrop.bind(app));
+                        div.addEventListener('dragend', app.handleDragEnd.bind(app));
+                    }
+                }
+
+                if (!t.isTodo) {
+                    const hoverTrigger = div.querySelector('.card-hover-trigger');
+                    if (hoverTrigger) {
+                        hoverTrigger.addEventListener('mouseenter', () => {
+                            if (!app.data.settings.hoverPreview || rearranging) return;
+                            const delayMs = (app.data.settings.hoverDelay !== undefined ? app.data.settings.hoverDelay : 1.0) * 1000;
+                            div._hoverTimer = setTimeout(() => {
+                                app.showPreviewClone(div);
+                            }, delayMs);
+                        });
+                        hoverTrigger.addEventListener('mouseleave', () => {
+                            clearTimeout(div._hoverTimer);
+                        });
+                        hoverTrigger.addEventListener('click', () => {
+                            clearTimeout(div._hoverTimer);
+                        });
+                    }
+                }
+
+                return div;
+            };
+
+            const shouldGroup = currentCat !== 'All' && currentCat !== 'Trash' && !rearranging && !term;
+
+            if (shouldGroup) {
+                const groups = {};
+                const ungrouped = [];
+
+                const getColorPriority = (hex) => {
+                    if (!hex) hex = '#ffffff';
+                    const idx = app.data.colorOrder.findIndex(c => c.hex.toLowerCase() === hex.toLowerCase());
+                    return idx !== -1 ? idx : 999999;
+                };
+
+                filtered.forEach(t => {
+                    let sub = t.subtitle && t.subtitle.trim() !== '' ? t.subtitle.trim() : null;
+
+                    if (!sub && app.data.settings.useColorLabelAsSubtitle) {
+                        const hex = (t.color || '#ffffff').toLowerCase();
+                        const cLabel = app.data.settings.colorLabels && app.data.settings.colorLabels[hex];
+                        if (cLabel && cLabel.trim() !== '') {
+                            sub = cLabel.trim();
+                        }
+                    }
+
+                    if (sub) {
+                        if (!groups[sub]) groups[sub] = { items: [], bestPriority: 999999 };
+                        groups[sub].items.push(t);
+                        const p = getColorPriority(t.color);
+                        if (p < groups[sub].bestPriority) groups[sub].bestPriority = p;
+                    } else {
+                        ungrouped.push(t);
+                    }
+                });
+
+                const groupKeys = Object.keys(groups).sort((a, b) => {
+                    if (groups[a].bestPriority !== groups[b].bestPriority) {
+                        return groups[a].bestPriority - groups[b].bestPriority;
+                    }
+                    return a.localeCompare(b);
+                });
+
+                groupKeys.forEach(subtitle => {
+                    const header = document.createElement('h3');
+                    header.className = 'template-group-header';
+                    header.innerText = subtitle;
+                    grid.appendChild(header);
+
+                    groups[subtitle].items.forEach(t => grid.appendChild(createCardNode(t)));
+                });
+
+                if (groupKeys.length > 0 && ungrouped.length > 0) {
+                    const sep = document.createElement('div');
+                    sep.style.gridColumn = '1 / -1';
+                    sep.style.margin = '5px 0 -10px 0';
+                    sep.style.borderTop = '2px dashed rgba(0,0,0,0.15)';
+                    grid.appendChild(sep);
+                }
+
+                ungrouped.forEach(t => grid.appendChild(createCardNode(t)));
+            } else {
+                filtered.forEach(t => grid.appendChild(createCardNode(t)));
+            }
+			if (currentCat !== 'All' && currentCat !== 'Trash' && !rearranging && !term) {
+                let activeTags = [];
+                if (currentFolderId) {
+                    const folder = this.data.folders.find(f => f.id === currentFolderId);
+                    if (folder && folder.includedTags) activeTags = folder.includedTags;
+                } else {
+                    if (this.data.settings && this.data.settings.categoryTags && this.data.settings.categoryTags[currentCat]) {
+                        activeTags = this.data.settings.categoryTags[currentCat];
+                    }
+                }
+
+                if (activeTags.length > 0) {
+                    const related = this.data.templates.filter(t => {
+                        if (t.deleted) return false;
+                        if (currentFolderId) {
+                            if (t.folderId === currentFolderId) return false;
+                        } else {
+                            if (t.category === currentCat && !t.folderId) return false;
+                        }
+                        if (!t.tags || t.tags.length === 0) return false;
+                        return t.tags.some(tag => activeTags.includes(tag));
+                    });
+
+                    if (related.length > 0) {
+                        const sep = document.createElement('div');
+                        sep.style.gridColumn = '1 / -1';
+                        sep.style.marginTop = '25px';
+                        sep.style.marginBottom = '5px';
+                        sep.style.paddingTop = '15px';
+                        sep.style.borderTop = '3px solid var(--primary)';
+                        sep.innerHTML = `
+                            <h3 style="margin: 0; color: var(--primary); display:flex; align-items:center; gap:8px;">
+                                🏷️ Kapcsolódó template-ek
+                            </h3>
+                            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+                                Tags: ${activeTags.map(tag => `<b>#${this.escapeHtml(tag)}</b>`).join(', ')}
+                            </p>
+                        `;
+                        grid.appendChild(sep);
+
+                        related.forEach(t => grid.appendChild(createCardNode(t)));
+                    }
+                }
+            }
+            
+            if(saveNeededForTodos) {
+                this.saveData();
+            }
+
+            this.renderPinnedTodo();
+        },
+
+        toggleMenu: function(e, id) {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(el => {
+                if(el.id !== `menu-${id}`) {
+                    el.classList.remove('show');
+                    const parentCard = el.closest('.card');
+                    if (parentCard) parentCard.classList.remove('menu-open');
+                }
+            });
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.toggle('show');
+                const parentCard = menu.closest('.card');
+                if (parentCard) {
+                    if (menu.classList.contains('show')) {
+                        parentCard.classList.add('menu-open');
+                    } else {
+                        parentCard.classList.remove('menu-open');
+                    }
+                }
+            }
+        },
+
+        copyTemplateHyperlink: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if (!t) return;
+            const linkTag = `{{link:${t.title}}}`;
+            this.copyToClipboard(linkTag);
+
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.remove('show');
+                const parentCard = menu.closest('.card');
+                if(parentCard) parentCard.classList.remove('menu-open');
+            }
+        },
+
+        saveTemplate: function() {
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('inputTitle').value;
+            const subtitle = document.getElementById('inputSubtitle').value.trim();
+            const category = document.getElementById('inputCategory').value;
+            const lang = document.getElementById('inputLang').value;
+            const content = document.getElementById('inputContent').value;
+            const isViewOnly = document.getElementById('inputViewOnly').checked;
+            const color = document.getElementById('inputColor').value;
+            const folderId = document.getElementById('inputFolder').value || null;
+            
+            const tagsRaw = document.getElementById('inputTags').value;
+            const tags = tagsRaw.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+
+            const recommendedIds = this.currentRecommendedIds || [];
+
+            if (!title || !content) { alert("Title and Content required."); return; }
+
+            if (id) {
+                const idx = this.data.templates.findIndex(t => t.id == id);
+                if (idx > -1) this.data.templates[idx] = {
+                    ...this.data.templates[idx],
+                    title, subtitle, category, lang, content, isViewOnly, color,
+                    folderId: folderId ? parseInt(folderId) : null,
+                    recommendedIds: recommendedIds,
+                    tags: tags
+                };
+            } else {
+                this.data.templates.push({
+                    id: Date.now(),
+                    title, subtitle, category, lang, content,
+                    deleted: false, isViewOnly, color,
+                    folderId: folderId ? parseInt(folderId) : null,
+                    recommendedIds: recommendedIds,
+                    tags: tags
+                });
+            }
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                const targetFolderId = folderId ? parseInt(folderId) : null;
+                this.reorderTemplatesByColorInternal(category, targetFolderId);
+            }
+
+            this.saveData();
+            this.closeModal('editorModal');
+            this.renderTemplates();
+        },
+
+        openEditor: function(id) {
+            document.getElementById('editorModal').style.display = 'flex';
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+
+            document.getElementById('variableTray').style.display = 'none';
+            document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
+
+            
+
+            if (id) {
+                const t = this.data.templates.find(x => x.id === id);
+                document.getElementById('editorTitle').innerText = "Edit Template";
+                document.getElementById('editId').value = t.id;
+                document.getElementById('inputTitle').value = t.title;
+                document.getElementById('inputSubtitle').value = t.subtitle || '';
+
+                const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                document.getElementById('inputCategory').value = cat;
+
+                document.getElementById('inputLang').value = t.lang;
+                document.getElementById('inputContent').value = t.content;
+                document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+				document.getElementById('inputTags').value = t.tags ? t.tags.join(', ') : '';
+
+                const color = t.color || '#ffffff';
+                document.getElementById('inputColor').value = color;
+                const swatch = document.querySelector(`.color-swatch[data-hex="${color}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
+
+                document.querySelector('#editorModal .modal').style.backgroundColor = color;
+
+                this.updateFolderOptions('inputCategory', 'inputFolder');
+                document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
+
+                this.currentRecommendedIds = t.recommendedIds ? [...t.recommendedIds] : [];
+                document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+
+            } else {
+                document.getElementById('editorTitle').innerText = "New Template";
+                document.getElementById('editId').value = "";
+                document.getElementById('inputTitle').value = "";
+                document.getElementById('inputSubtitle').value = "";
+
+                let defaultCat = "General";
+                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                    defaultCat = this.data.currentCategory;
+                }
+                document.getElementById('inputCategory').value = defaultCat;
+
+                document.getElementById('inputLang').value = this.data.currentLang;
+                document.getElementById('inputContent').value = "";
+                document.getElementById('inputViewOnly').checked = false;
+				document.getElementById('inputTags').value = '';
+
+                document.getElementById('inputColor').value = '#ffffff';
+                document.querySelector('.color-swatch.none').classList.add('selected');
+
+                document.querySelector('#editorModal .modal').style.backgroundColor = '#ffffff';
+
+                this.updateFolderOptions('inputCategory', 'inputFolder');
+                document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+				
+				this.currentRecommendedIds = [];
+                document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (0)</span><span style="color: var(--primary);">✎</span>`;
+            }
+
+            const subList = document.getElementById('subtitleOptions');
+            if (subList) {
+                const targetCat = document.getElementById('inputCategory').value;
+                const uniqueSubs = [...new Set(this.data.templates.filter(temp => temp.category === targetCat && temp.subtitle).map(temp => temp.subtitle))].sort();
+                subList.innerHTML = uniqueSubs.map(s => `<option value="${this.escapeHtml(s)}">`).join('');
+            }
+
+            this.toggleLinkButton();
+        },
+
+        handleViewOnlyToggle: function() {
+            const isChecked = document.getElementById('inputViewOnly').checked;
+            const isNew = document.getElementById('editId').value === "";
+            // Csak akkor váltunk automatikusan színt, ha ÚJ template-et hozunk létre
+            if (isChecked && isNew) {
+                const defColor = (this.data.settings && this.data.settings.defaultViewOnlyColor) ? this.data.settings.defaultViewOnlyColor : '#ffffff';
+                const swatch = document.querySelector(`#editorColorSwatches .color-swatch[data-hex="${defColor}"]`);
+                this.selectColor(defColor, swatch);
+            } else if (!isChecked && isNew) {
+                const swatch = document.querySelector(`#editorColorSwatches .color-swatch.none`);
+                this.selectColor('#ffffff', swatch);
+            }
+            this.toggleLinkButton();
+        },
+
+        toggleLinkButton: function() {
+            const isViewOnly = document.getElementById('inputViewOnly').checked;
+            const btn = document.getElementById('btnLinkTemplate');
+            const formatBar = document.getElementById('formatToolbar');
+            btn.style.display = isViewOnly ? 'flex' : 'none';
+            if (formatBar) formatBar.style.display = isViewOnly ? 'flex' : 'none';
+        },
+
+        toggleVarTray: function(trayId) {
+            const tray = document.getElementById(trayId);
+            const btn = trayId === 'snippetVariableTray' ? document.getElementById('btnSnippetTray') : document.getElementById('btnTray');
+            const chipsId = trayId === 'snippetVariableTray' ? 'snippetTrayChips' : 'trayChips';
+            const targetContentId = trayId === 'snippetVariableTray' ? 'snippetContent' : 'inputContent';
+
+            if (tray.style.display === 'block') {
+                tray.style.display = 'none';
+                btn.classList.remove('active');
+                return;
+            }
+
+            tray.style.display = 'block';
+            btn.classList.add('active');
+            document.getElementById(chipsId).innerHTML = '';
+
+            const sysVars = [
+                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
+                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
+                {key: 'name', label: 'Customer Name', type: 'SYS'},
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'},
+                {key: 'DD.MM.YY', label: 'Date (23.03.26.)', type: 'SYS'},
+                {key: 'DD.MM.YYYY', label: 'Date (23.03.2026.)', type: 'SYS'},
+                {key: 'YY.MM.DD', label: 'Date (26.03.23.)', type: 'SYS'},
+                {key: 'YYYY.MM.DD', label: 'Date (2026.03.23.)', type: 'SYS'}
+            ];
+
+            const allVars = [...sysVars, ...this.data.customVars];
+            this.renderTrayChips(allVars, chipsId, targetContentId);
+        },
+
+        filterTray: function(val, chipsId, targetContentId) {
+            const sysVars = [
+                {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
+                {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
+                {key: 'name', label: 'Customer Name', type: 'SYS'},
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
+            ];
+            const allVars = [...sysVars, ...this.data.customVars];
+
+            if(!val) {
+                this.renderTrayChips(allVars, chipsId, targetContentId);
+                return;
+            }
+            const filtered = allVars.filter(v => v.key.toLowerCase().includes(val.toLowerCase()) || v.label.toLowerCase().includes(val.toLowerCase()));
+            this.renderTrayChips(filtered, chipsId, targetContentId);
+        },
+
+        renderTrayChips: function(list, chipsId, targetContentId) {
+            const container = document.getElementById(chipsId);
+            container.innerHTML = '';
+            if(list.length === 0) {
+                container.innerHTML = '<span style="color:#888; font-size:0.8rem;">No variables found.</span>';
+                return;
+            }
+            list.forEach(v => {
+                const chip = document.createElement('div');
+                if(v.type === 'SYS') chip.className = 'var-chip system';
+                else chip.className = 'var-chip';
+
+                chip.innerHTML = `{{${this.escapeHtml(v.key)}}}<small>${this.escapeHtml(v.label)}</small>`;
+                chip.onclick = () => this.insertAtCursor(`{{${v.key}}}`, targetContentId);
+                container.appendChild(chip);
+            });
+        },
+
+        insertAtCursor: function(text, targetId = 'inputContent') {
+            const textarea = document.getElementById(targetId);
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const val = textarea.value;
+
+            textarea.value = val.substring(0, start) + text + val.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + text.length;
+            textarea.focus();
+        },
+		formatText: function(type, value = null) {
+            const textarea = document.getElementById('inputContent');
+            if (!textarea) return;
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end);
+
+            let newText = "";
+            let cursorOffset = 0;
+
+            switch(type) {
+                case 'title':
+                    newText = `# ${selectedText}`;
+                    cursorOffset = 2;
+                    break;
+                case 'subtitle':
+                    newText = `## ${selectedText}`;
+                    cursorOffset = 3;
+                    break;
+                case 'bold':
+                    newText = `**${selectedText}**`;
+                    cursorOffset = 2;
+                    break;
+                case 'italic':
+                    newText = `*${selectedText}*`;
+                    cursorOffset = 1;
+                    break;
+                case 'underline':
+                    newText = `__${selectedText}__`;
+                    cursorOffset = 2;
+                    break;
+                case 'divider':
+                    newText = `---`;
+                    cursorOffset = newText.length;
+                    break;
+                case 'color':
+                    if(!value) return;
+                    newText = `[c:${value}]${selectedText}[/c]`;
+                    cursorOffset = value.length + 4; // Pld: [c:#ff0000]
+                    break;
+            }
+
+            textarea.value = text.substring(0, start) + newText + text.substring(end);
+            
+            // Ha volt kijelölés (és nem divider), megtartja kijelölve az új formázott szöveget
+            if (selectedText.length > 0 && type !== 'divider') {
+                textarea.selectionStart = start;
+                textarea.selectionEnd = start + newText.length;
+            } else {
+                // Kijelölés nélkül középre pozicionál, hogy rögtön gépelhess
+                textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+            }
+            textarea.focus();
+        },
+
+        cloneTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            this.openEditor();
+            document.getElementById('editorTitle').innerText = "Clone Template";
+            document.getElementById('inputTitle').value = t.title + " (Copy)";
+            document.getElementById('inputSubtitle').value = t.subtitle || '';
+
+            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+            document.getElementById('inputCategory').value = cat;
+
+            document.getElementById('inputLang').value = t.lang;
+            document.getElementById('inputContent').value = t.content;
+            document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+
+            const color = t.color || '#ffffff';
+            document.getElementById('inputColor').value = color;
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+            const swatch = document.querySelector(`.color-swatch[data-hex="${color}"]`);
+            if(swatch) swatch.classList.add('selected');
+            else if(color === '#ffffff') document.querySelector('.color-swatch.none').classList.add('selected');
+
+            this.updateFolderOptions('inputCategory', 'inputFolder');
+            document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
+        },
+
+        viewTemplate: function(id) {
+			const t = this.data.templates.find(x => x.id === id);
+			if(!t) return;
+
+			let safeContent = this.escapeHtml(t.content);
+
+			// --- FORMÁZÁSI LOGIKA ---
+			safeContent = safeContent.replace(/^---\r?$/gm, '<hr>');
+			safeContent = safeContent.replace(/^## (.*?)\r?$/gm, '<h2>$1</h2>');
+			safeContent = safeContent.replace(/^# (.*?)\r?$/gm, '<h1>$1</h1>');
+
+			safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+			safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
+			safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
+			safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+
+			// Felesleges sortörések eltávolítása, hogy ne legyen hatalmas üres hely
+			safeContent = safeContent.replace(/\n*(<hr>)\n*/gi, '$1');
+			safeContent = safeContent.replace(/\n*(<h1>.*?<\/h1>)\n*/gi, '$1');
+			safeContent = safeContent.replace(/\n*(<h2>.*?<\/h2>)\n*/gi, '$1');
+
+			// --- EREDETI LOGIKA FOLYTATÁSA (Változók és Linkek) ---
+			safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+				if(p1.trim().startsWith('link:')) return match;
+				return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+			});
+
+			safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+				const parts = content.split('|');
+				const tplName = parts[0].trim();
+				const displayText = parts.length > 1 ? parts[1].trim() : tplName;
+				const safeName = tplName.replace(/'/g, "\\'");
+				return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
+			});
+
+			// A modal tartalmának generálásakor adjuk hozzá a .view-content osztályt
+			const existingModals = document.querySelectorAll('.dynamic-view-modal');
+			const baseZIndex = 1050;
+			const newZIndex = baseZIndex + (existingModals.length * 10);
+			const overlay = document.createElement('div');
+			overlay.className = 'modal-overlay dynamic-view-modal';
+			overlay.style.zIndex = newZIndex;
+			overlay.style.display = 'flex';
+
+			overlay.innerHTML = `
+				<div class="modal" style="width: 800px; max-width: 95%;">
+					<div class="modal-header">
+						<span>${this.escapeHtml(t.title)}</span>
+						<button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+					</div>
+					<div class="modal-body">
+						<div class="view-content" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-primary close-dynamic-btn">Close</button>
+					</div>
+				</div>
+			`;
+
+            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
+            closeBtns.forEach(btn => {
+                btn.onclick = function() {
+                    overlay.remove();
+                };
+            });
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            };
+            document.body.appendChild(overlay);
+        },
+
+        openVarsModal: function() {
+            document.getElementById('varsModal').style.display = 'flex';
+            this.renderVarsList();
+            this.resetVarForm();
+        },
+
+        renderVarsList: function() {
+            const container = document.getElementById('variableListContainer');
+            const filter = document.getElementById('varSearchInput').value.toLowerCase();
+            container.innerHTML = '';
+
+            if (this.data.customVars.length === 0) {
+                container.innerHTML = '<div style="padding:15px; color:#888; text-align:center;">No custom variables.<br>Create one on the right.</div>';
+                return;
+            }
+
+            let filteredVars = this.data.customVars.map((v, idx) => ({ ...v, originalIndex: idx }))
+                .filter(v => v.key.toLowerCase().includes(filter) || v.label.toLowerCase().includes(filter));
+
+            if (filteredVars.length === 0) {
+                container.innerHTML = '<div style="padding:15px; color:#888;">No matches found.</div>';
+                return;
+            }
+
+            filteredVars.forEach(v => {
+                let typeBadge = '';
+                if(v.type === 'text') typeBadge = 'TXT';
+                else if(v.type === 'select') typeBadge = 'SEL';
+                else if(v.type === 'radio') typeBadge = 'RAD';
+                else if(v.type === 'checklist') typeBadge = 'CHK';
+                else if(v.type === 'fixed') typeBadge = 'FIX';
+
+                const isActive = (this.editingVarIndex === v.originalIndex) ? 'active' : '';
+
+                container.innerHTML += `
+                    <div class="var-card ${isActive}" onclick="app.editVar(${v.originalIndex})">
+                        <div class="var-card-header">
+                            <span class="var-card-key">{{${this.escapeHtml(v.key)}}}</span>
+                            <span class="var-card-type">${typeBadge}</span>
+                        </div>
+                        <div class="var-card-label">${this.escapeHtml(v.label)}</div>
+                    </div>`;
+            });
+        },
+
+        filterVars: function() {
+            this.renderVarsList();
+        },
+
+        addChecklistRow: function(label = "", value = "") {
+            const container = document.getElementById('checklistRows');
+            const row = document.createElement('div');
+            row.className = 'builder-row';
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Label (e.g. Outlook)" value="${this.escapeHtml(label)}">
+                <textarea class="form-control" placeholder="Content (Values to copy)">${this.escapeHtml(value)}</textarea>
+                <button class="btn btn-danger btn-sm" style="height:36px;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        },
+
+        saveCustomVariable: function() {
+            const key = document.getElementById('newVarKey').value.trim().replace(/[{}]/g, '');
+            let label = document.getElementById('newVarLabel').value.trim();
+            const type = document.getElementById('newVarType').value;
+            const opts = document.getElementById('newVarOptions').value;
+
+            if (!key) return alert("Key required");
+
+            const existingIdx = this.data.customVars.findIndex(v => v.key === key);
+            if (existingIdx !== -1 && existingIdx !== this.editingVarIndex) {
+                return alert("Key already exists!");
+            }
+
+            if (type === 'text') {
+                if (!label) return alert("Label (Question) is required for Text Input");
+            } else {
+                if(!label) label = key;
+            }
+
+            let options = [];
+
+            if (type === 'checklist') {
+                const rows = document.querySelectorAll('.builder-row');
+                if(rows.length === 0) return alert("Please add at least one item to the checklist.");
+
+                rows.forEach(row => {
+                    const l = row.querySelector('input').value.trim();
+                    let v = row.querySelector('textarea').value;
+                    if(l) {
+                        options.push({ label: l, value: v || l });
+                    }
+                });
+                if(options.length === 0) return alert("Please fill in the checklist items.");
+
+            } else if (type === 'fixed') {
+                if (!opts) return alert("Fixed Text content required");
+                options = opts;
+            } else if (type !== 'text') {
+                if (!opts) return alert("Options required");
+                options = opts.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            }
+
+            const newVarObj = { key, label, type, options };
+
+            if (this.editingVarIndex > -1) {
+                this.data.customVars[this.editingVarIndex] = newVarObj;
+            } else {
+                this.data.customVars.push(newVarObj);
+                this.editingVarIndex = this.data.customVars.length - 1;
+            }
+
+            this.saveData();
+            this.renderVarsList();
+
+            document.getElementById('btnDeleteVar').style.display = 'inline-block';
+            document.getElementById('btnSaveVar').innerText = "Update Variable";
+            document.getElementById('varEditorTitle').innerText = "Edit Variable";
+        },
+
+        editVar: function(idx) {
+            const v = this.data.customVars[idx];
+            this.editingVarIndex = idx;
+
+            document.getElementById('varEditorTitle').innerText = "Edit Variable";
+            document.getElementById('btnSaveVar').innerText = "Update Variable";
+            document.getElementById('btnDeleteVar').style.display = 'inline-block';
+
+            document.getElementById('newVarKey').value = v.key;
+            document.getElementById('newVarLabel').value = v.label;
+            document.getElementById('newVarType').value = v.type;
+
+            if (v.type === 'checklist') {
+                document.getElementById('checklistRows').innerHTML = '';
+                if(Array.isArray(v.options)) {
+                    v.options.forEach(opt => {
+                        this.addChecklistRow(opt.label, opt.value);
+                    });
+                }
+            } else {
+                let optsStr = "";
+                if (Array.isArray(v.options)) {
+                    optsStr = v.options.join('\n');
+                } else {
+                    optsStr = v.options || "";
+                }
+                document.getElementById('newVarOptions').value = optsStr;
+            }
+
+            this.toggleVarOptions();
+            this.renderVarsList();
+        },
+
+        deleteCurrentVar: function() {
+            if(this.editingVarIndex === -1) return;
+            if(confirm("Delete this variable?")) {
+                this.data.customVars.splice(this.editingVarIndex, 1);
+                this.saveData();
+                this.resetVarForm();
+                this.renderVarsList();
+            }
+        },
+
+        resetVarForm: function() {
+            this.editingVarIndex = -1;
+            document.getElementById('varEditorTitle').innerText = "Create New Variable";
+            document.getElementById('btnSaveVar').innerText = "Create Variable";
+            document.getElementById('btnDeleteVar').style.display = 'none';
+
+            document.getElementById('newVarKey').value = '';
+            document.getElementById('newVarLabel').value = '';
+            document.getElementById('newVarOptions').value = '';
+            document.getElementById('checklistRows').innerHTML = '';
+            document.getElementById('newVarType').value = 'text';
+
+            this.toggleVarOptions();
+            this.renderVarsList();
+        },
+
+        toggleVarOptions: function() {
+            const type = document.getElementById('newVarType').value;
+            const optContainer = document.getElementById('varOptionsContainer');
+            const builderContainer = document.getElementById('checklistBuilder');
+            const optEl = document.getElementById('newVarOptions');
+            const lblEl = document.getElementById('newVarLabel');
+
+            optContainer.style.display = 'block';
+            builderContainer.style.display = 'none';
+            optEl.disabled = false;
+            lblEl.disabled = false;
+            lblEl.placeholder = "Question (e.g. Ticket Number?)";
+
+            if (type === 'checklist') {
+                optContainer.style.display = 'none';
+                builderContainer.style.display = 'block';
+                lblEl.placeholder = "Title (e.g. Software List)";
+            } else if (type === 'text') {
+                optEl.disabled = true;
+                optEl.placeholder = 'N/A';
+            } else {
+                lblEl.disabled = true;
+                lblEl.value = '';
+                lblEl.placeholder = "Auto-generated from Key";
+                if (type === 'fixed') {
+                    optEl.placeholder = 'Enter your text (e.g. Best Regards,\nName)';
+                } else {
+                    optEl.placeholder = 'Option 1\nOption 2\nOption 3';
+                }
+            }
+        },
+
+        prepareTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            this.currentProcessingTitle = t.title;
+            this.currentProcessingColor = t.color;
+            this.processAndShowFiller(t.content, id);
+        },
+
+        processAndShowFiller: function(contentToProcess, templateId = null) {
+            this.currentProcessingTemplateId = templateId;
+            this.tempContent = contentToProcess;
+            const h = new Date().getHours();
+            const s = this.data.timeSettings;
+            let str = "";
+            if (h >= s.start && h < s.end) str = (this.data.currentLang === 'de') ? "Morgen" : "Morning";
+            else if (h >= s.end && h < s.eve) str = (this.data.currentLang === 'de') ? "Tag" : "Day";
+            else str = (this.data.currentLang === 'de') ? "Abend" : "Evening";
+
+            this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
+
+            const d = new Date();
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            const yy = String(yyyy).slice(-2);
+
+            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YYYY\s*\}\}/gi, `${dd}.${mm}.${yyyy}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
+            this.tempContent = this.tempContent.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
+
+            this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                const parts = content.split('|');
+                return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+            });
+
+            let regex = /{{(.*?)}}/g;
+            let matches = [...new Set(this.tempContent.match(regex))];
+
+            if (matches && matches.length > 0) {
+                matches.forEach(m => {
+                    const key = m.replace(/[{}]/g, '').trim();
+                    const v = this.data.customVars.find(cv => cv.key === key);
+                    if (v && v.type === 'fixed') {
+                        this.tempContent = this.tempContent.split(m).join(v.options);
+                    }
+                });
+            }
+
+            matches = [...new Set(this.tempContent.match(regex))];
+
+            if (!matches || matches.length === 0) {
+                this.copyToClipboard(this.tempContent);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent);
+                return;
+            }
+
+            const container = document.getElementById('fillerInputs');
+            container.innerHTML = '';
+
+            matches.forEach(m => {
+                const key = m.replace(/[{}]/g, '').trim();
+                const v = this.data.customVars.find(cv => cv.key === key);
+                let html = '';
+
+                if (key.toLowerCase() === 'gender') {
+                    html = `<div class="form-group"><label>Gender</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
+                                <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
+                            </div></div>`;
+                } else if (v) {
+                    html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
+
+                    if (v.type === 'checklist') {
+                        if(Array.isArray(v.options)) {
+                            v.options.forEach(opt => {
+                                html += `
+                                <div class="checklist-item">
+                                    <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
+                                    <span>${this.escapeHtml(opt.label)}</span>
+                                </div>`;
+                            });
+                        }
+                    } else if (v.type === 'text') {
+                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea>`;
+                    } else if (v.type === 'select') {
+                        html += `<select class="form-control" id="val_${key}">`;
+                        v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
+                        html += `</select>`;
+                    } else if (v.type === 'radio') {
+                        html += `<div class="radio-group">`;
+                        v.options.forEach((o, i) => html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(o)}" ${i===0?'checked':''}> ${this.escapeHtml(o)}</label>`);
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                } else {
+                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea></div>`;
+                }
+                container.innerHTML += html;
+            });
+
+            document.getElementById('fillerModal').style.display = 'flex';
+            setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
+        },
+
+        processAndCopy: function() {
+            let txt = this.tempContent;
+            const regex = /{{(.*?)}}/g;
+            const matches = [...new Set(txt.match(regex))];
+
+            matches.forEach(m => {
+                const key = m.replace(/[{}]/g, '').trim();
+                let val = "";
+
+                if (key.toLowerCase() === 'gender') {
+                    const g = document.querySelector('input[name="val_gender"]:checked').value;
+                    if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
+                    else val = (g === 'm') ? "Mr." : "Ms.";
+                } else {
+                    const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
+
+                    if(checkboxes.length > 0) {
+                        let values = [];
+                        checkboxes.forEach(chk => values.push(chk.value));
+                        val = values.join('\n');
+                    } else {
+                        const radio = document.querySelector(`input[name="val_${key}"]:checked`);
+                        if (radio) val = radio.value;
+                        else {
+                            const el = document.getElementById(`val_${key}`);
+                            if (el) val = el.value;
+                        }
+                    }
+                }
+                txt = txt.split(m).join(val);
+            });
+            this.copyToClipboard(txt);
+            this.closeModal('fillerModal');
+            this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt);
+        },
+
+        checkAndShowRecommendations: function(templateId, copiedText) {
+            if(!templateId) return;
+            const t = this.data.templates.find(x => x.id === templateId);
+            if(!t || !t.recommendedIds || t.recommendedIds.length === 0) return;
+
+            document.getElementById('recCopiedText').innerText = copiedText;
+
+            const grid = document.getElementById('recTemplatesGrid');
+            grid.innerHTML = '';
+            
+            t.recommendedIds.forEach(recId => {
+                const recT = this.data.templates.find(x => x.id === recId && !x.deleted);
+                if(recT) {
+                    let safeTitle = this.escapeHtml(recT.title);
+                    let safePreview = this.escapeHtml(recT.content).substring(0, 150) + '...';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.style.minHeight = '180px';
+                    div.style.backgroundColor = recT.color || '#ffffff';
+
+                    let btnHtml = '';
+                    if (recT.isViewOnly) {
+                        btnHtml = `<button class="card-btn use view-only" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.viewTemplate(${recT.id})">👁️ View Template</button>`;
+                    } else {
+                        btnHtml = `<button class="card-btn use" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.prepareTemplate(${recT.id})">Use Template</button>`;
+                    }
+                    
+                    div.innerHTML = `
+                        <div class="card-title">${safeTitle}</div>
+                        <div class="card-preview" style="-webkit-line-clamp: 4;">${safePreview}</div>
+                        <div class="card-actions" style="margin-top:auto;">
+                            ${btnHtml}
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                }
+            });
+
+            document.getElementById('recommendationModal').style.display = 'flex';
+        },
+
+        filterRecommended: function() {
+            const term = document.getElementById('searchRecommended').value.toLowerCase();
+            const options = document.getElementById('inputRecommended').options;
+            for (let i = 0; i < options.length; i++) {
+                const text = options[i].text.toLowerCase();
+                options[i].style.display = text.includes(term) ? '' : 'none';
+            }
+        },
+		
+		openRecommendationSelectorModal: function() {
+            document.getElementById('searchRecSelector').value = '';
+            this.renderRecommendationSelectorList();
+            document.getElementById('recommendationSelectorModal').style.display = 'flex';
+        },
+
+        closeRecommendationSelectorModal: function() {
+            document.getElementById('recommendationSelectorModal').style.display = 'none';
+        },
+
+        toggleRecommendedId: function(id, isChecked) {
+            // Ha a függvényt checkbox nélkül hívjuk (kattintás a kártyára)
+            if (isChecked === undefined) {
+                isChecked = !this.currentRecommendedIds.includes(id);
+            }
+            
+            if (isChecked) {
+                if (!this.currentRecommendedIds.includes(id)) {
+                    this.currentRecommendedIds.push(id);
+                }
+            } else {
+                this.currentRecommendedIds = this.currentRecommendedIds.filter(x => x !== id);
+            }
+            
+            // Fejléc gomb szövegének frissítése
+            document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+            
+            // Újrarajzoljuk a listát, hogy a kártyán megjelenjen a "selected" (pipa) dizájn
+            this.renderRecommendationSelectorList();
+        },
+
+        toggleRecGroup: function(groupId, headerEl) {
+            const groupDiv = document.getElementById(groupId);
+            if (!groupDiv) return;
+            const iconEl = headerEl.querySelector('.rec-group-icon');
+            
+            if (groupDiv.style.display === 'none') {
+                groupDiv.style.display = 'block'; // Block-ot használunk, mert ezen belül lesz a grid
+                if (iconEl) iconEl.innerText = '▼';
+            } else {
+                groupDiv.style.display = 'none';
+                if (iconEl) iconEl.innerText = '▶';
+            }
+        },
+
+        renderRecommendationSelectorList: function() {
+            const term = document.getElementById('searchRecSelector').value.toLowerCase();
+            const listContainer = document.getElementById('recSelectorList');
+            const currentCat = document.getElementById('inputCategory').value;
+            const currentFolderId = document.getElementById('inputFolder').value ? parseInt(document.getElementById('inputFolder').value) : null;
+            const currentEditId = document.getElementById('editId').value ? parseInt(document.getElementById('editId').value) : null;
+
+            // 1. Szűrés: Törölt, Todo, Ticket és a jelenleg szerkesztett kizárása
+            let validTemplates = this.data.templates.filter(t => !t.deleted && !t.isTodo && !t.isTicket && t.id !== currentEditId);
+
+            // 2. Kereső szerinti szűrés
+            if (term) {
+                validTemplates = validTemplates.filter(t => t.title.toLowerCase().includes(term) || (t.content && t.content.toLowerCase().includes(term)));
+            }
+
+            // 3. Adatok csoportosítása (Kategória -> Mappa)
+            const groupedByCategory = {};
+            validTemplates.forEach(t => {
+                const cat = t.category || 'General';
+                if (!groupedByCategory[cat]) {
+                    groupedByCategory[cat] = { root: [], folders: {} };
+                }
+                
+                if (!t.folderId) {
+                    groupedByCategory[cat].root.push(t);
+                } else {
+                    if (!groupedByCategory[cat].folders[t.folderId]) {
+                        groupedByCategory[cat].folders[t.folderId] = [];
+                    }
+                    groupedByCategory[cat].folders[t.folderId].push(t);
+                }
+            });
+
+            // 4. Kategóriák sorrendje (Jelenlegi kategória az első, utána ABC)
+            const sortedCategories = Object.keys(groupedByCategory).sort((a, b) => {
+                if (a === currentCat) return -1;
+                if (b === currentCat) return 1;
+                return a.localeCompare(b);
+            });
+
+            let html = '';
+            let catIdCounter = 0;
+
+            // Template-eket (Kártyákat) generáló segédfüggvény
+            const renderGridHtml = (templatesArray) => {
+                let gridHtml = `<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; margin-top: 10px; margin-bottom: 10px;">`;
+                templatesArray.forEach(t => {
+                    const isChecked = this.currentRecommendedIds.includes(t.id);
+                    const selectionClass = isChecked ? ' selected' : '';
+                    const safeTitle = this.escapeHtml(t.title);
+                    
+                    // Tartalom formázása
+                    let safePreview = this.escapeHtml(t.content || '');
+                    safePreview = safePreview.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                    safePreview = safePreview.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                    safePreview = safePreview.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                    safePreview = safePreview.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    safePreview = safePreview.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                    safePreview = safePreview.replace(/__(.*?)__/g, '<u>$1</u>');
+                    safePreview = safePreview.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                    safePreview = safePreview.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                        const parts = content.split('|');
+                        const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                        return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                    });
+                    safePreview = safePreview.replace(/{{(.*?)}}/g, (match, p1) => {
+                         return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                    });
+
+                    gridHtml += `
+                        <div class="card${selectionClass}" style="background-color: ${t.color || '#ffffff'}; cursor: pointer; min-height: 150px; transition: transform 0.1s, box-shadow 0.1s; margin-bottom: 0;" onclick="app.toggleRecommendedId(${t.id})">
+                            <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; pointer-events: none;">
+                                <div class="card-title">${safeTitle}</div>
+                                <div class="card-preview">${safePreview}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                gridHtml += `</div>`;
+                return gridHtml;
+            };
+
+            // 5. HTML generálása hierarchikusan
+            sortedCategories.forEach(cat => {
+                catIdCounter++;
+                const catData = groupedByCategory[cat];
+                const isCurrentCat = (cat === currentCat);
+                
+                // Kategória nyitva tartása, ha keresünk vagy ha ez a jelenlegi kategória
+                const isCatExpanded = isCurrentCat || term !== '';
+                const catDisplayStyle = isCatExpanded ? 'block' : 'none';
+                const catIcon = isCatExpanded ? '▼' : '▶';
+                
+                const catHeaderStyle = `margin-top: 15px; padding: 10px 15px; border: 1px solid #c8c6c4; border-bottom: 2px solid var(--primary); font-weight: bold; font-size: 1.05rem; color: ${isCurrentCat ? 'var(--success)' : 'var(--primary)'}; background: #ffffff; cursor: pointer; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s;`;
+                
+                // --- KATEGÓRIA FEJLÉC ---
+                html += `
+                    <div style="${catHeaderStyle}" onclick="app.toggleRecGroup('rec-cat-${catIdCounter}', this)" onmouseover="this.style.background='#e6f2ff'" onmouseout="this.style.background='#ffffff'">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            ${isCurrentCat ? '⭐' : '📁'} <span style="color: inherit;">${this.escapeHtml(cat)}</span>
+                        </span>
+                        <span class="rec-group-icon" style="color: #605e5c; font-size: 0.85rem;">${catIcon}</span>
+                    </div>
+                `;
+                
+                // Kategória tartalma (Rejtve vagy mutatva)
+                html += `<div id="rec-cat-${catIdCounter}" style="display: ${catDisplayStyle}; padding: 10px 5px 15px 15px; border-left: 2px solid var(--primary); margin-left: 10px;">`;
+                
+                // Mappán kívüli (gyökér) template-ek a kategóriában
+                if (catData.root.length > 0) {
+                    html += renderGridHtml(catData.root);
+                }
+                
+                // Mappák sorrendezése (Jelenlegi mappa az első, majd ABC)
+                const sortedFolderIds = Object.keys(catData.folders).sort((a, b) => {
+                    if (parseInt(a) === currentFolderId && isCurrentCat) return -1;
+                    if (parseInt(b) === currentFolderId && isCurrentCat) return 1;
+                    const fA = this.data.folders.find(f => f.id === parseInt(a));
+                    const fB = this.data.folders.find(f => f.id === parseInt(b));
+                    const nameA = fA ? fA.name : 'Unknown';
+                    const nameB = fB ? fB.name : 'Unknown';
+                    return nameA.localeCompare(nameB);
+                });
+                
+                // --- MAPPÁK FEJLÉCE ÉS TARTALMA ---
+                sortedFolderIds.forEach(fId => {
+                    const folderTemplates = catData.folders[fId];
+                    const folderObj = this.data.folders.find(f => f.id === parseInt(fId));
+                    const folderName = folderObj ? folderObj.name : 'Root';
+                    const isCurrentFolder = (parseInt(fId) === currentFolderId && isCurrentCat);
+                    
+                    const fIdCounter = catIdCounter + '-' + fId;
+                    // Mappa nyitva tartása, ha keresünk vagy ha ez a jelenlegi mappa
+                    const isFolderExpanded = isCurrentFolder || term !== '';
+                    const folderDisplayStyle = isFolderExpanded ? 'block' : 'none';
+                    const folderIcon = isFolderExpanded ? '▼' : '▶';
+                    
+                    const folderHeaderStyle = `margin-top: 10px; padding: 8px 12px; border: 1px solid #e1dfdd; font-weight: 600; font-size: 0.9rem; color: #323130; background: #fff; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;`;
+                    
+                    html += `
+                        <div style="${folderHeaderStyle}" onclick="app.toggleRecGroup('rec-folder-${fIdCounter}', this)" onmouseover="this.style.background='#f3f2f1'" onmouseout="this.style.background='#fff'">
+                            <span style="display: flex; align-items: center; gap: 6px;">
+                                ${isCurrentFolder ? '⭐' : '📂'} <span style="color: ${isCurrentFolder ? 'var(--success)' : 'inherit'};">${this.escapeHtml(folderName)}</span>
+                            </span>
+                            <span class="rec-group-icon" style="color: #888; font-size: 0.8rem;">${folderIcon}</span>
+                        </div>
+                    `;
+                    
+                    html += `<div id="rec-folder-${fIdCounter}" style="display: ${folderDisplayStyle}; padding-left: 10px; border-left: 2px dashed #e1dfdd; margin-left: 5px; margin-bottom: 15px;">`;
+                    html += renderGridHtml(folderTemplates);
+                    html += `</div>`;
+                });
+                
+                html += `</div>`; // Kategória tartalom div zárása
+            });
+
+            if (validTemplates.length === 0) {
+                html = '<div style="text-align: center; color: #888; padding: 20px;">Nem található template.</div>';
+            }
+
+            listContainer.innerHTML = html;
+        },
+
+        copyToClipboard: async function(text, overrideTitle = null, overrideColor = null) {
+            // Szín és cím átvétele a globális ideiglenes változókból, ha elérhetőek
+            let title = overrideTitle || this.currentProcessingTitle || "Copied Text";
+            let color = overrideColor || this.currentProcessingColor || "#ffffff";
+            
+            // Értékek tisztítása a következő futtatás előtt
+            this.currentProcessingTitle = null;
+            this.currentProcessingColor = null;
+
+            const toast = document.getElementById('toast');
+            
+            let htmlText = text.replace(/\n/g, '<br>');
+            htmlText = htmlText.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2">$1</a>');
+            let plainText = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1 ($2)');
+
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const htmlBlob = new Blob([htmlText], { type: 'text/html' });
+                    const textBlob = new Blob([plainText], { type: 'text/plain' });
+                    const clipboardItem = new ClipboardItem({
+                        'text/html': htmlBlob,
+                        'text/plain': textBlob
+                    });
+                    await navigator.clipboard.write([clipboardItem]);
+                } else {
+                    throw new Error("ClipboardItem API not supported");
+                }
+
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2000);
+                this.addToClipboardHistory(text, title, color); // Hozzáadjuk a színt és címet
+                if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
+                    this.renderClipboardHistory();
+                }
+
+            } catch (err) {
+                console.warn("Using fallback clipboard method...");
+                try {
+                    const div = document.createElement('div');
+                    div.contentEditable = true;
+                    div.innerHTML = htmlText;
+                    div.style.position = 'fixed';
+                    div.style.left = '-9999px';
+                    document.body.appendChild(div);
+                    
+                    const range = document.createRange();
+                    range.selectNodeContents(div);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    
+                    document.execCommand('copy');
+                    document.body.removeChild(div);
+                    
+                    toast.style.display = 'block';
+                    setTimeout(() => toast.style.display = 'none', 2000);
+                    this.addToClipboardHistory(text, title, color); // Hozzáadjuk a színt és címet
+                    if (document.getElementById('clipboardHistoryModal').style.display === 'flex') {
+                        this.renderClipboardHistory();
+                    }
+                } catch (fallbackErr) {
+                    alert("Clipboard copy failed. Please check browser permissions.");
+                }
+            }
+        },
+
+        openLinkBuilder: function() {
+            document.getElementById('linkNameInput').value = '';
+            document.getElementById('linkCustomInput').value = '';
+
+            const list = document.getElementById('templateOptions');
+            list.innerHTML = '';
+            this.data.templates.forEach(t => {
+                if(!t.deleted) list.innerHTML += `<option value="${this.escapeHtml(t.title)}">`;
+            });
+
+            document.getElementById('linkBuilderModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('linkNameInput').focus(), 50);
+        },
+
+        generateLinkTag: function() {
+            const name = document.getElementById('linkNameInput').value.trim();
+            const custom = document.getElementById('linkCustomInput').value.trim();
+
+            if(!name) {
+                alert("Please enter a template name.");
+                return;
+            }
+
+            let tag = "";
+            if(custom) {
+                tag = `{{link:${name}|${custom}}}`;
+            } else {
+                tag = `{{link:${name}}}`;
+            }
+
+            this.insertAtCursor(tag);
+            this.closeModal('linkBuilderModal');
+        },
+
+        openDeepL: function(target) {
+            const text = document.getElementById('inputContent').value;
+            if (!text) return;
+            const sourceLang = document.getElementById('inputLang').value || 'auto';
+            window.open(`https://www.deepl.com/translator?share=generic#${sourceLang}/${target}/${encodeURIComponent(text)}`, '_blank');
+        },
+
+        openGoogleTranslate: function(target) {
+            const text = document.getElementById('inputContent').value;
+            if (!text) return;
+            window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
+        },
+
+        closeModal: function(id) { document.getElementById(id).style.display = 'none'; },
+
+        openTodoModal: function(id) {
+            document.getElementById('todoModal').style.display = 'flex';
+            document.querySelectorAll('#todoColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+
+            if (id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(!t) return;
+                document.getElementById('todoTitle').innerText = "Edit To-Do List";
+                document.getElementById('todoEditId').value = t.id;
+                document.getElementById('todoInputTitle').value = t.title;
+                document.getElementById('todoInputSubtitle').value = t.subtitle || '';
+
+                const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                document.getElementById('todoInputCategory').value = cat;
+
+                const color = t.color || '#ffffff';
+                document.getElementById('todoInputColor').value = color;
+                const swatch = document.querySelector(`#todoColorSwatches .color-swatch[data-hex="${color}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else if(color === '#ffffff') document.querySelector('#todoColorSwatches .color-swatch.none').classList.add('selected');
+
+                document.querySelector('#todoModal .modal').style.backgroundColor = color;
+
+                document.getElementById('todoDailyReset').checked = !!t.todoDailyReset;
+                document.getElementById('todoAutoReset').checked = !!t.todoAutoReset;
+
+                this.updateFolderOptions('todoInputCategory', 'todoInputFolder');
+                document.getElementById('todoInputFolder').value = t.folderId ? t.folderId : "";
+
+                if(t.todoItems) {
+                    document.getElementById('todoInputContent').value = t.todoItems.map(item => item.text).join('\n');
+                } else {
+                    document.getElementById('todoInputContent').value = '';
+                }
+
+            } else {
+                document.getElementById('todoTitle').innerText = "New To-Do List";
+                document.getElementById('todoEditId').value = "";
+                document.getElementById('todoInputTitle').value = "";
+                document.getElementById('todoInputSubtitle').value = "";
+
+                let defaultCat = "General";
+                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                    defaultCat = this.data.currentCategory;
+                }
+                document.getElementById('todoInputCategory').value = defaultCat;
+
+                // --- ALAPÉRTELMEZETT TO-DO SZÍN BEÁLLÍTÁSA ---
+                const defTodoColor = (this.data.settings && this.data.settings.defaultTodoColor) ? this.data.settings.defaultTodoColor : '#ffffff';
+                document.getElementById('todoInputColor').value = defTodoColor;
+                document.querySelector('#todoModal .modal').style.backgroundColor = defTodoColor;
+
+                const swatch = document.querySelector(`#todoColorSwatches .color-swatch[data-hex="${defTodoColor}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else document.querySelector('#todoColorSwatches .color-swatch.none').classList.add('selected');
+
+                document.getElementById('todoDailyReset').checked = false;
+                document.getElementById('todoAutoReset').checked = false;
+
+                this.updateFolderOptions('todoInputCategory', 'todoInputFolder');
+                document.getElementById('todoInputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+
+                document.getElementById('todoInputContent').value = '';
+            }
+
+            const subList = document.getElementById('todoSubtitleOptions');
+            if (subList) {
+                const targetCat = document.getElementById('todoInputCategory').value;
+                const uniqueSubs = [...new Set(this.data.templates.filter(temp => temp.category === targetCat && temp.subtitle).map(temp => temp.subtitle))].sort();
+                subList.innerHTML = uniqueSubs.map(s => `<option value="${this.escapeHtml(s)}">`).join('');
+            }
+        },
+
+        selectTodoColor: function(colorHex, element) {
+            document.getElementById('todoInputColor').value = colorHex;
+            document.querySelectorAll('#todoColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            if(element) element.classList.add('selected');
+
+            const modalContent = document.querySelector('#todoModal .modal');
+            if(modalContent) modalContent.style.backgroundColor = colorHex;
+        },
+
+        saveTodo: function() {
+            const id = document.getElementById('todoEditId').value;
+            const title = document.getElementById('todoInputTitle').value;
+            const subtitle = document.getElementById('todoInputSubtitle').value.trim();
+            const category = document.getElementById('todoInputCategory').value;
+            const folderId = document.getElementById('todoInputFolder').value || null;
+            const color = document.getElementById('todoInputColor').value;
+            const dailyReset = document.getElementById('todoDailyReset').checked;
+            const autoReset = document.getElementById('todoAutoReset').checked;
+
+            // MEGVÁLTOZOTT RÉSZ: Sorok beolvasása a textareából
+            const content = document.getElementById('todoInputContent').value;
+            let lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+            let items = [];
+            let existingItems = [];
+
+            // Ha szerkesztünk, megkeressük a régi elemeket, hogy megtartsuk a már kipipált állapotokat
+            if (id) {
+                const idx = this.data.templates.findIndex(t => t.id == id);
+                if (idx > -1 && this.data.templates[idx].todoItems) {
+                    existingItems = this.data.templates[idx].todoItems;
+                }
+            }
+
+            lines.forEach(line => {
+                const existing = existingItems.find(item => item.text === line);
+                items.push({ text: line, checked: existing ? existing.checked : false });
+            });
+
+            if(!title) { alert("Title is required."); return; }
+            if(items.length === 0) { alert("Please add at least one task description."); return; }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            if (id) {
+                const idx = this.data.templates.findIndex(t => t.id == id);
+                if (idx > -1) {
+                    this.data.templates[idx] = {
+                        ...this.data.templates[idx],
+                        title, subtitle, category, color,
+                        folderId: folderId ? parseInt(folderId) : null,
+                        isTodo: true,
+                        todoItems: items,
+                        todoDailyReset: dailyReset,
+                        todoAutoReset: autoReset,
+                        lastResetDate: dailyReset ? today : null
+                    };
+                }
+            } else {
+                this.data.templates.push({
+                    id: Date.now(),
+                    title, subtitle, category, lang: this.data.currentLang,
+                    deleted: false, isViewOnly: false, color,
+                    folderId: folderId ? parseInt(folderId) : null,
+                    isTodo: true,
+                    todoItems: items,
+                    todoDailyReset: dailyReset,
+                    todoAutoReset: autoReset,
+                    lastResetDate: dailyReset ? today : null
+                });
+            }
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                const targetFolderId = folderId ? parseInt(folderId) : null;
+                this.reorderTemplatesByColorInternal(category, targetFolderId);
+            }
+
+            this.saveData();
+            this.closeModal('todoModal');
+            this.renderTemplates();
+        },
+        toggleTodoItem: function(event, templateId, itemIdx) {
+            // Megakadályozzuk, hogy a kártya egyéb kattintási eseményei is lezajlanak
+            if (event) event.stopPropagation();
+
+            // Megkeressük a To-Do kártyát az ID alapján
+            const template = this.data.templates.find(t => t.id === templateId);
+
+            if (template && template.todoItems && template.todoItems[itemIdx]) {
+                // Átbillentjük a checkbox állapotát (igaz/hamis)
+                template.todoItems[itemIdx].checked = !template.todoItems[itemIdx].checked;
+
+                // Mentjük és frissítjük az UI-t, hogy látszódjon a friss pipa
+                this.saveData();
+                this.renderTemplates();
+
+                // ÚJ RÉSZ: Ha az auto-reset be van kapcsolva
+                if (template.todoAutoReset) {
+                    // Megnézzük, hogy minden elem be van-e pipálva
+                    const allChecked = template.todoItems.every(item => item.checked);
+
+                    if (allChecked) {
+                        // Egy kis (400ms) késleltetés, hogy a felhasználó lássa, hogy be lett pipálva az utolsó is,
+                        // mielőtt az összes eltűnne.
+                        setTimeout(() => {
+                            template.todoItems.forEach(item => item.checked = false);
+                            this.saveData();
+                            this.renderTemplates();
+                        }, 400);
+                    }
+                }
+            }
+        },
+        generateTodoTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if (!t || !t.todoItems) return;
+
+            this.currentProcessingTitle = t.title;
+            this.currentProcessingColor = t.color;
+
+            let resultLines = [];
+            let hasCheckedItems = false; // Változó annak figyelésére, hogy volt-e bepipált elem
+
+            t.todoItems.forEach(item => {
+                let textToAdd = "";
+
+                if (item.checked) {
+                    hasCheckedItems = true; // Jelöljük, hogy találtunk bepipált elemet
+                    // Ha be van pipálva, kikeressük a [] közötti részt
+                    const matchChecked = item.text.match(/\[(.*?)\]/);
+                    if (matchChecked && matchChecked[1].trim() !== "") {
+                        textToAdd = matchChecked[1];
+                    }
+                } else {
+                    // Ha nincs bepipálva, kikeressük a {} közötti részt
+                    const matchUnchecked = item.text.match(/\{(.*?)\}/);
+                    if (matchUnchecked && matchUnchecked[1].trim() !== "") {
+                        textToAdd = matchUnchecked[1];
+                    }
+                }
+
+                if (textToAdd) {
+                    resultLines.push(textToAdd);
+                }
+            });
+
+            const finalText = resultLines.join('\n');
+            if (finalText) {
+                // Vágólapra másolás
+                this.copyToClipboard(finalText);
+
+                // --- ÚJ RÉSZ: Bepipált elemek automatikus törlése ---
+                if (hasCheckedItems) {
+                    // Kis késleltetés, hogy a felhasználó még lássa a sikeres másolást, mielőtt eltűnnek a pipák
+                    setTimeout(() => {
+                        t.todoItems.forEach(item => item.checked = false);
+                        this.saveData(); // Mentés az adatbázisba
+                        this.renderTemplates(); // UI újrarajzolása (hogy eltűnjenek a pipák a képernyőről is)
+                    }, 300); 
+                }
+
+            } else {
+                alert("No content generated. Please check your [] and {} configurations.");
+            }
+        },
+        // --- END TO-DO LIST LOGIC ---
+
+        copyToSnippets: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            if(!confirm("Are you sure you want to copy this template to Snippets?")) return;
+
+            const mainCat = this.data.categories.includes(t.category) ? t.category : 'General';
+            const fId = t.folderId || null;
+            const subCat = t.subtitle || 'General';
+            const desc = t.title || '';
+            const txt = t.content || '';
+            let color = t.color || '#ffffff';
+
+            const existing = this.data.quickTitles.find(q => q.mainCategory === mainCat && q.subCategory === subCat);
+            if (existing && existing.color) {
+                color = existing.color;
+            }
+
+            this.data.quickTitles.push({ mainCategory: mainCat, folderId: fId, subCategory: subCat, description: desc, text: txt, color: color });
+
+            this.saveData();
+            this.renderQuickTitles();
+
+            if (!this.data.isQuickOpen) {
+                this.toggleQuickSidebar();
+            }
+        },
+
+        moveToSnippets: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            if(!confirm("Are you sure you want to move this template to Snippets?")) return;
+
+            const mainCat = this.data.categories.includes(t.category) ? t.category : 'General';
+            const fId = t.folderId || null;
+            const subCat = t.subtitle || 'General';
+            const desc = t.title || '';
+            const txt = t.content || '';
+            let color = t.color || '#ffffff';
+
+            const existing = this.data.quickTitles.find(q => q.mainCategory === mainCat && q.subCategory === subCat);
+            if (existing && existing.color) {
+                color = existing.color;
+            }
+
+            this.data.quickTitles.push({ mainCategory: mainCat, folderId: fId, subCategory: subCat, description: desc, text: txt, color: color });
+
+            t.deleted = true;
+
+            this.saveData();
+            this.renderTemplates();
+            this.renderQuickTitles();
+
+            if (!this.data.isQuickOpen) {
+                this.toggleQuickSidebar();
+            }
+        },
+
+        moveToTrash: function(id) {
+            if (!confirm("Move to Trash?")) return;
+            const t = this.data.templates.find(x => x.id === id);
+            if(t) { t.deleted = true; this.saveData(); this.renderTemplates(); }
+        },
+
+        restoreTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(t) {
+                t.deleted = false;
+                if(!this.data.categories.includes(t.category)) t.category = "General";
+                this.saveData(); this.renderTemplates();
+            }
+        },
+
+        deleteForever: function(id) {
+            if (!confirm("Permanently Delete?")) return;
+            this.data.templates = this.data.templates.filter(t => t.id !== id);
+            this.saveData(); this.renderTemplates();
+        },
+
+        emptyTrash: function() {
+            if (!confirm("Empty Trash? This will delete all items AND folders in trash.")) return;
+            this.data.templates = this.data.templates.filter(t => !t.deleted);
+            this.data.folders = this.data.folders.filter(f => !f.deleted);
+            this.saveData();
+            this.renderTemplates();
+        },
+
+        addNewCategory: function() {
+            const name = prompt("New Category Name:");
+            if (name && !this.data.categories.includes(name)) {
+                this.data.categories.push(name);
+                this.saveData();
+                this.renderCategories();
+            }
+        },
+
+        deleteCategory: function(e, cat) {
+            e.stopPropagation();
+            const count = this.data.templates.filter(t => t.category === cat && !t.deleted).length;
+            if (count > 0) {
+                if (!confirm(`Category has ${count} templates. Move them to Trash? (Cancel = Move to General)`)) {
+                    this.data.templates.forEach(t => { if (t.category === cat) { t.category = "General"; t.folderId = null; } });
+                    this.data.folders.forEach(f => { if(f.category === cat) f.category = "General"; });
+                    this.data.quickTitles.forEach(q => { if(q.mainCategory === cat) q.mainCategory = "General"; });
+                } else {
+                    this.data.templates.forEach(t => { if (t.category === cat) t.deleted = true; });
+                    this.data.folders.forEach(f => { if(f.category === cat) f.deleted = true; });
+                    this.data.quickTitles = this.data.quickTitles.filter(q => q.mainCategory !== cat);
+                }
+            } else {
+                this.data.quickTitles = this.data.quickTitles.filter(q => q.mainCategory !== cat);
+            }
+            this.data.categories = this.data.categories.filter(c => c !== cat);
+            if (this.data.currentCategory === cat) this.selectCategory('All');
+            this.saveData();
+            this.renderCategories();
+            this.renderTemplates();
+            this.renderQuickTitles();
+        },
+
+        selectColor: function(colorHex, element) {
+            document.getElementById('inputColor').value = colorHex;
+
+            document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+            if(element) {
+                element.classList.add('selected');
+            }
+
+            const modalContent = document.querySelector('#editorModal .modal');
+            if(modalContent) {
+                modalContent.style.backgroundColor = colorHex;
+            }
+        }
+    }; // <-- Itt záródik be az app objektum
+
+    window.app = app;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        app.initAuth();
+        app.initQuickSidebar();
+        app.initSidebarResize();
+        app.initClipboardHistory();
+
+        document.querySelector('.main').addEventListener('scroll', () => {
+            if (app.hidePreviewClone) app.hidePreviewClone();
+        });
+
+        window.onclick = function(event) {
+            // Bezárja a kártyák menüit ÉS leveszi a z-indexet biztosító classt
+            if (!event.target.classList.contains('card-menu-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(el => {
+                    el.classList.remove('show');
+                    const parentCard = el.closest('.card');
+                    if (parentCard) parentCard.classList.remove('menu-open');
+                });
+            }
+            // Bezárja az új "+" gomb legördülő menüjét
+            if (!event.target.classList.contains('btn-create-plus')) {
+                document.querySelectorAll('.create-dropdown-menu').forEach(el => el.classList.remove('show'));
+            }
+        };
+    });
+</script>
+</body>
+</html>
