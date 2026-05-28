@@ -3148,10 +3148,32 @@
             if(this.data.isCategoryEditing) {
                 btn.classList.add('active');
                 btn.innerText = "✓ Done";
+                // Edit módba lépéskor csukjuk össze az összes kategóriát
+                this.data.expandedSidebarCats = [];
             } else {
                 btn.classList.remove('active');
                 btn.innerText = "✎ Edit";
+                // Kilépéskor nyissuk vissza azt az egyet, amelyik épp aktív (normál nézet)
+                this.data.expandedSidebarCats = [this.data.currentCategory];
                 this.saveData();
+            }
+            this.renderCategories();
+        },
+		
+		toggleSidebarCat: function(e, cat) {
+            if (e) e.stopPropagation(); // Ne válassza ki a kategóriát, csak nyissa le
+            
+            if (!this.data.expandedSidebarCats) {
+                this.data.expandedSidebarCats = [];
+            }
+
+            const index = this.data.expandedSidebarCats.indexOf(cat);
+            if (index > -1) {
+                // Ha már nyitva van, akkor összecsukjuk
+                this.data.expandedSidebarCats.splice(index, 1);
+            } else {
+                // Ha csukva van, akkor kinyitjuk
+                this.data.expandedSidebarCats.push(cat);
             }
             this.renderCategories();
         },
@@ -3173,7 +3195,7 @@
                 this.renderCategories();
                 return;
             }
-
+			
             this.data.categories[index] = newName;
 
             this.data.templates.forEach(t => { if (t.category === oldName) t.category = newName; });
@@ -3187,7 +3209,24 @@
             this.renderCategories();
             this.renderQuickTitles();
         },
-
+		
+		renameFolder: function(id, newName) {
+            const trimmedName = newName.trim();
+            if (!trimmedName) {
+                alert("A mappa neve nem lehet üres!");
+                this.renderCategories();
+                return;
+            }
+            
+            const folder = this.data.folders.find(f => f.id === id);
+            if (folder) {
+                folder.name = trimmedName;
+                this.saveData();
+                this.renderCategories();
+                this.renderTemplates();
+            }
+        },
+		
         renderCategories: function() {
             const list = document.getElementById('categoryList');
             const current = this.data.currentCategory;
@@ -3196,10 +3235,16 @@
             const searchInput = document.getElementById('catSearchInput');
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
+            if (!this.data.expandedSidebarCats) this.data.expandedSidebarCats = [current];
+
             let html = '';
 
             if ("all templates".includes(searchTerm)) {
-                html += `<li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')"><span>All Templates</span></li>`;
+                html += `
+                    <li class="category-item ${current === 'All' ? 'active' : ''}" onclick="app.selectCategory('All')">
+                        <i style="display:inline-block; width:18px; font-style:normal; flex-shrink:0;"></i>
+                        <span>All Templates</span>
+                    </li>`;
             }
 
             const doesFolderMatch = (folderId) => {
@@ -3220,23 +3265,41 @@
 
                 if (searchTerm && !catMatches && !hasMatchingFolder) return;
 
+                const isExpanded = this.data.expandedSidebarCats.includes(cat) || searchTerm !== '';
+                const expandIcon = isExpanded ? '▼' : '▶';
+
+                // A nyíl CSAK edit módban jelenik meg, és CSAK akkor, ha valóban tartalmaz mappát
+                const arrowHtml = (editing && rootFolders.length > 0)
+                    ? `<i style="display:inline-block; width:18px; text-align:left; font-style:normal; font-size:0.75rem; color:inherit; cursor:pointer; flex-shrink:0; user-select:none;" onclick="app.toggleSidebarCat(event, '${safeCat}')">${expandIcon}</i>`
+                    : `<i style="display:inline-block; width:18px; font-style:normal; flex-shrink:0;"></i>`;
+
                 if (editing) {
                     html += `
                         <li class="category-item" style="cursor:default; background-color: #f0f0f0;">
-                            <input type="text" class="cat-input" value="${safeCat}" onchange="app.renameCategory(${index}, this.value)">
-                            <div class="cat-controls">
+                            ${arrowHtml}
+                            <input type="text" class="cat-input" style="flex:1; margin-left:4px;" value="${safeCat}" onchange="app.renameCategory(${index}, this.value)">
+                            <div class="cat-controls" style="flex-shrink:0; margin-left:5px;">
                                 <button class="cat-btn" onclick="app.moveCategory(${index}, -1)">↑</button>
                                 <button class="cat-btn" onclick="app.moveCategory(${index}, 1)">↓</button>
                                 <button class="cat-btn del" onclick="app.deleteCategory(event, '${safeCat}')">×</button>
                             </div>
                         </li>`;
+                    
+                    if (isExpanded) {
+                        rootFolders.forEach(f => {
+                            if (!searchTerm || catMatches || doesFolderMatch(f.id)) {
+                                html += this.renderFolderTree(cat, f.id, 0, currentFolder, searchTerm, catMatches);
+                            }
+                        });
+                    }
                 } else {
                     html += `
                         <li class="category-item ${isActiveCat && !currentFolder ? 'active' : ''}" onclick="app.selectCategory('${safeCat}')" title="${safeCat}">
+                            ${arrowHtml}
                             <span>${safeCat}</span>
                         </li>`;
 
-                    if (isActiveCat || (searchTerm && (hasMatchingFolder || catMatches))) {
+                    if (isExpanded) {
                         rootFolders.forEach(f => {
                            if (!searchTerm || catMatches || doesFolderMatch(f.id)) {
                                html += this.renderFolderTree(cat, f.id, 0, currentFolder, searchTerm, catMatches);
@@ -3247,33 +3310,37 @@
             });
 
             if ("trash".includes(searchTerm) || "🗑️ trash".includes(searchTerm)) {
-                html += `<li class="category-item trash-item ${current === 'Trash' ? 'active' : ''}" onclick="app.selectCategory('Trash')"><span>🗑️ Trash</span></li>`;
+                html += `
+                    <li class="category-item trash-item ${current === 'Trash' ? 'active' : ''}" onclick="app.selectCategory('Trash')">
+                        <i style="display:inline-block; width:18px; font-style:normal; flex-shrink:0;"></i>
+                        <span>🗑️ Trash</span>
+                    </li>`;
             }
             list.innerHTML = html;
 
             const select = document.getElementById('inputCategory');
             const batchSelect = document.getElementById('batchCategory');
-            const todoSelect = document.getElementById('todoInputCategory'); // Ezt hozzáadtuk
+            const todoSelect = document.getElementById('todoInputCategory');
 
             if(select && batchSelect) {
                 const currentSelectVal = select.value;
                 const currentBatchVal = batchSelect.value;
-                const currentTodoVal = todoSelect ? todoSelect.value : ''; // Ezt hozzáadtuk
+                const currentTodoVal = todoSelect ? todoSelect.value : '';
 
                 select.innerHTML = '';
                 batchSelect.innerHTML = '';
-                if(todoSelect) todoSelect.innerHTML = ''; // Ezt hozzáadtuk
+                if(todoSelect) todoSelect.innerHTML = '';
 
                 this.data.categories.forEach(cat => {
                     const opt = `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
                     select.innerHTML += opt;
                     batchSelect.innerHTML += opt;
-                    if(todoSelect) todoSelect.innerHTML += opt; // Ezt hozzáadtuk
+                    if(todoSelect) todoSelect.innerHTML += opt;
                 });
 
                 if(currentSelectVal) select.value = currentSelectVal;
                 if(currentBatchVal) batchSelect.value = currentBatchVal;
-                if(currentTodoVal && todoSelect) todoSelect.value = currentTodoVal; // Ezt hozzáadtuk
+                if(currentTodoVal && todoSelect) todoSelect.value = currentTodoVal;
             }
         },
 
@@ -3297,11 +3364,22 @@
             let html = '';
 
             if (searchTerm === '' || folderMatches || hasMatchingDescendant || catMatches) {
-                html += `
-                    <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
-                        <span><i class="folder-icon-tree">└</i> ${this.escapeHtml(folder.name)}</span>
-                        <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
-                    </li>`;
+                
+                // ÚJ LOGIKA: Ha a kategória editáló módban vagyunk
+                if (this.data.isCategoryEditing) {
+                    html += `
+                        <li class="folder-item" style="padding-left:${padding}px; cursor:default; background-color: #fcfcfc; border-bottom: 1px solid #eee;">
+                            <i class="folder-icon-tree" style="margin-right: 5px;">└</i>
+                            <input type="text" class="cat-input" style="flex: 1; padding: 2px 4px; font-size: 0.85rem;" value="${this.escapeHtml(folder.name)}" onchange="app.renameFolder(${folder.id}, this.value)">
+                            <button class="cat-btn del" style="margin-left: 5px;" onclick="app.deleteFolder(event, ${folder.id})" title="Mappa törlése">×</button>
+                        </li>`;
+                } else {
+                    html += `
+                        <li class="folder-item ${isFolderActive ? 'active' : ''}" style="padding-left:${padding}px" onclick="app.selectFolder(${folder.id}, '${this.escapeHtml(cat)}')" title="${this.escapeHtml(folder.name)}">
+                            <span><i class="folder-icon-tree">└</i> ${this.escapeHtml(folder.name)}</span>
+                            <button class="sidebar-delete-btn" onclick="app.deleteFolder(event, ${folder.id})">×</button>
+                        </li>`;
+                }
 
                 const children = this.data.folders.filter(f => f.category === cat && f.parentFolderId === parentId && !f.deleted);
                 children.forEach(child => {
@@ -3316,6 +3394,12 @@
             if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return;
             this.data.currentCategory = cat;
             this.data.currentFolderId = null;
+            
+            // Normál nézetben az újonnan kiválasztott kategória mindig nyíljon le
+            if (!this.data.isCategoryEditing) {
+                this.data.expandedSidebarCats = [cat];
+            }
+            
             this.updateHeaderButtons(cat);
             this.renderCategories();
             this.renderTemplates();
@@ -3325,6 +3409,12 @@
         selectFolder: function(folderId, catName) {
             this.data.currentCategory = catName;
             this.data.currentFolderId = folderId;
+            
+            // Normál nézet védelem
+            if (!this.data.isCategoryEditing) {
+                this.data.expandedSidebarCats = [catName];
+            }
+            
             this.updateHeaderButtons(catName);
             this.renderCategories();
             this.renderTemplates();
