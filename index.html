@@ -339,10 +339,11 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s ease, box-shadow 0.2s ease, z-index 0s;
             position: relative; display: flex; flex-direction: column;
             min-height: var(--card-min-height);
+            z-index: 1; /* Alap z-index a megfelelő működéshez */
         }
 
         .card.menu-open {
-            z-index: 150 !important;
+            z-index: 1000 !important; /* Lenyitott menü esetén garantáltan legfelül van */
         }
 
         /* Hover Preview Clone */
@@ -506,7 +507,7 @@
             display: none !important;
         }
 
-        .card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 50; }
 
         .card-preview {
             font-size: 0.9rem; color: #605e5c; margin-bottom: 15px; overflow: hidden; text-overflow: ellipsis; flex-grow: 1;
@@ -3603,7 +3604,52 @@
             });
             this.saveData();
         },
+		moveSingleTemplate: function(id) {
+            this.data.selectedIds = [id];
+            this.openBatchMoveModal();
+            // Címsor átírása, hogy logikus legyen egy elemnél
+            document.getElementById('batchMoveCountText').innerText = `Moving 1 template...`;
+            
+            // Bezárjuk a lenyíló menüt áthelyezés előtt
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.remove('show');
+                const parentCard = menu.closest('.card');
+                if (parentCard) parentCard.classList.remove('menu-open');
+            }
+        },
 
+        cloneTicket: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            
+            this.openTicketEditor();
+            document.getElementById('ticketEditorTitle').innerText = "Clone Ticket Template";
+            document.getElementById('ticketEditId').value = ""; // Üres ID = újként fog mentődni
+            
+            document.getElementById('ticketTitleText').value = t.title + " (Copy)";
+            document.getElementById('ticketDescText').value = t.content;
+            
+            const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+            document.getElementById('ticketAppCategory').value = cat;
+            
+            const color = t.color || '#ffffff';
+            document.getElementById('ticketColor').value = color;
+            document.querySelectorAll('#ticketColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            const swatch = document.querySelector(`#ticketColorSwatches .color-swatch[data-hex="${color}"]`);
+            if(swatch) swatch.classList.add('selected');
+            else document.querySelector('#ticketColorSwatches .color-swatch.none').classList.add('selected');
+            document.querySelector('#ticketEditorModal .modal').style.backgroundColor = color;
+            
+            document.getElementById('ticketType').value = t.ticketType || 'Incident';
+            document.getElementById('ticketSysCat').value = t.ticketSysCat || '';
+            document.getElementById('ticketCaller').value = t.ticketCaller || '';
+            document.getElementById('ticketAffected').value = t.ticketAffected || '';
+            document.getElementById('ticketUrgency').value = t.ticketUrgency || '';
+            
+            this.updateFolderOptions('ticketAppCategory', 'ticketAppFolder');
+            document.getElementById('ticketAppFolder').value = t.folderId ? t.folderId : "";
+        },
         openBatchMoveModal: function() {
             if (this.data.selectedIds.length === 0) return;
             document.getElementById('batchMoveCountText').innerText = `Moving ${this.data.selectedIds.length} items...`;
@@ -4260,6 +4306,7 @@
                                 <div class="dropdown-item" onclick="app.pinTodo(${t.id})">${pinText}</div>
                                 <div class="dropdown-item" onclick="app.openTodoModal(${t.id})">✏️ Edit To-Do</div>
                                 <div class="dropdown-item" onclick="app.cloneTodo(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
                                 <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
@@ -4284,13 +4331,15 @@
 						mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br>${this.escapeHtml(t.content)}`;
 						
 						menu = `
-							<button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
-							<div class="dropdown-menu" id="menu-${t.id}">
-								<div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
-								<div class="dropdown-divider"></div>
-								<div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
-							</div>
-						`;
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
+                                <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+                            </div>
+                        `;
 					} else {
                         let safeContent = this.escapeHtml(t.content);
 
@@ -4326,6 +4375,7 @@
                                 <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
                                 <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
                                 <div class="dropdown-item" onclick="app.copyToSnippets(${t.id})">⚡ Copy to Snippets</div>
                                 <div class="dropdown-item" onclick="app.moveToSnippets(${t.id})">⚡ Move to Snippets</div>
                                 <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
@@ -5340,6 +5390,11 @@
         },
 
         toggleRecommendedId: function(id, isChecked) {
+            // Ha a függvényt checkbox nélkül hívjuk (kattintás a kártyára)
+            if (isChecked === undefined) {
+                isChecked = !this.currentRecommendedIds.includes(id);
+            }
+            
             if (isChecked) {
                 if (!this.currentRecommendedIds.includes(id)) {
                     this.currentRecommendedIds.push(id);
@@ -5347,20 +5402,12 @@
             } else {
                 this.currentRecommendedIds = this.currentRecommendedIds.filter(x => x !== id);
             }
+            
+            // Fejléc gomb szövegének frissítése
             document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
-        },
-		
-		toggleRecPreview: function(id, event) {
-            if (event) event.stopPropagation();
-            const previewDiv = document.getElementById(`rec-preview-${id}`);
-            const btn = document.getElementById(`rec-btn-${id}`);
-            if (previewDiv.style.display === 'none') {
-                previewDiv.style.display = 'block';
-                btn.innerText = '▲';
-            } else {
-                previewDiv.style.display = 'none';
-                btn.innerText = '▼';
-            }
+            
+            // Újrarajzoljuk a listát, hogy a kártyán megjelenjen a "selected" (pipa) dizájn
+            this.renderRecommendationSelectorList();
         },
 
         renderRecommendationSelectorList: function() {
@@ -5393,40 +5440,60 @@
 
             let html = '';
             let lastGroup = null;
+            let inGrid = false;
 
             validTemplates.forEach(t => {
                 const folderName = t.folderId ? (this.data.folders.find(f => f.id === t.folderId)?.name || 'Root') : 'Root';
                 const groupName = `${this.escapeHtml(t.category)} > 📂 ${this.escapeHtml(folderName)}`;
                 const isHighlyRelevant = (t.category === currentCat && t.folderId === currentFolderId);
                 
+                // Kategória/Mappa fejléc és Grid nyitása
                 if (groupName !== lastGroup) {
+                    if (inGrid) html += `</div>`; // Zárjuk az előző gridet
                     const groupStyle = `margin-top: 15px; padding-bottom: 5px; border-bottom: 2px solid #ddd; font-weight: bold; font-size: 0.95rem; color: ${isHighlyRelevant ? 'var(--success)' : 'var(--primary)'};`;
                     html += `<div style="${groupStyle}">${isHighlyRelevant ? '⭐ Ebből a mappából:' : groupName}</div>`;
+                    html += `<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; margin-top: 15px;">`;
+                    inGrid = true;
                     lastGroup = groupName;
                 }
 
-                const isChecked = this.currentRecommendedIds.includes(t.id) ? 'checked' : '';
+                const isChecked = this.currentRecommendedIds.includes(t.id);
+                const selectionClass = isChecked ? ' selected' : '';
                 const safeTitle = this.escapeHtml(t.title);
-                const safePreview = this.escapeHtml(t.content || '');
-                const colorIndicator = t.color ? `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${t.color}; border:1px solid #ccc; margin-right:8px; flex-shrink:0;"></span>` : '';
+                
+                // Tartalom formázása, pont ahogy a főoldalon történik
+                let safePreview = this.escapeHtml(t.content || '');
+                safePreview = safePreview.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                safePreview = safePreview.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                safePreview = safePreview.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                safePreview = safePreview.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                safePreview = safePreview.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                safePreview = safePreview.replace(/__(.*?)__/g, '<u>$1</u>');
+                safePreview = safePreview.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                safePreview = safePreview.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                safePreview = safePreview.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                safePreview = safePreview.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
+                safePreview = safePreview.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                    const parts = content.split('|');
+                    const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                    return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                });
+                safePreview = safePreview.replace(/{{(.*?)}}/g, (match, p1) => {
+                     return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                });
 
-                // Struktúra: Fő konténer -> (Flexbox a pipának/címnek + Nyíl gomb) -> Előnézet div
+                // Maga a Template Kártya HTML-je (ugyanaz a CSS struktúra, mint a főoldalon)
                 html += `
-                    <div style="background: white; border: 1px solid var(--border); margin-top: 6px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 15px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; flex: 1; margin: 0;">
-                                <input type="checkbox" style="transform: scale(1.3); margin-right: 15px; cursor: pointer; flex-shrink:0;" value="${t.id}" ${isChecked} onchange="app.toggleRecommendedId(${t.id}, this.checked)">
-                                ${colorIndicator}
-                                <span style="font-weight: 600; font-size: 0.95rem; color: #201f1e;">${safeTitle}</span>
-                            </label>
-                            <button type="button" onclick="app.toggleRecPreview(${t.id}, event)" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #888; padding: 5px 10px; flex-shrink:0; margin-right:-10px;" id="rec-btn-${t.id}" title="Előnézet">
-                                ${isHighlyRelevant ? '▲' : '▼'}
-                            </button>
+                    <div class="card${selectionClass}" style="background-color: ${t.color || '#ffffff'}; cursor: pointer; min-height: 150px; transition: transform 0.1s, box-shadow 0.1s;" onclick="app.toggleRecommendedId(${t.id})">
+                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; pointer-events: none;">
+                            <div class="card-title">${safeTitle}</div>
+                            <div class="card-preview">${safePreview}</div>
                         </div>
-                        <div id="rec-preview-${t.id}" style="display: ${isHighlyRelevant ? 'block' : 'none'}; padding: 0 15px 12px 45px; color: #555; font-size: 0.85rem; border-top: 1px dashed #eee; margin-top: -2px; padding-top: 10px; white-space: pre-wrap; max-height: 150px; overflow-y: auto; font-family: monospace;">${safePreview}</div>
                     </div>
                 `;
             });
+
+            if (inGrid) html += '</div>'; // Zárjuk az utolsó gridet, ha nyitva maradt
 
             if (validTemplates.length === 0) {
                 html = '<div style="text-align: center; color: #888; padding: 20px;">Nem található template.</div>';
@@ -5939,9 +6006,13 @@
         });
 
         window.onclick = function(event) {
-            // Bezárja a kártyák menüit
+            // Bezárja a kártyák menüit ÉS leveszi a z-indexet biztosító classt
             if (!event.target.classList.contains('card-menu-btn')) {
-                document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
+                document.querySelectorAll('.dropdown-menu').forEach(el => {
+                    el.classList.remove('show');
+                    const parentCard = el.closest('.card');
+                    if (parentCard) parentCard.classList.remove('menu-open');
+                });
             }
             // Bezárja az új "+" gomb legördülő menüjét
             if (!event.target.classList.contains('btn-create-plus')) {
