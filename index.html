@@ -5410,6 +5410,20 @@
             this.renderRecommendationSelectorList();
         },
 
+        toggleRecGroup: function(groupId, headerEl) {
+            const groupDiv = document.getElementById(groupId);
+            if (!groupDiv) return;
+            const iconEl = headerEl.querySelector('.rec-group-icon');
+            
+            if (groupDiv.style.display === 'none') {
+                groupDiv.style.display = 'block'; // Block-ot használunk, mert ezen belül lesz a grid
+                if (iconEl) iconEl.innerText = '▼';
+            } else {
+                groupDiv.style.display = 'none';
+                if (iconEl) iconEl.innerText = '▶';
+            }
+        },
+
         renderRecommendationSelectorList: function() {
             const term = document.getElementById('searchRecSelector').value.toLowerCase();
             const listContainer = document.getElementById('recSelectorList');
@@ -5417,83 +5431,157 @@
             const currentFolderId = document.getElementById('inputFolder').value ? parseInt(document.getElementById('inputFolder').value) : null;
             const currentEditId = document.getElementById('editId').value ? parseInt(document.getElementById('editId').value) : null;
 
+            // 1. Szűrés: Törölt, Todo, Ticket és a jelenleg szerkesztett kizárása
             let validTemplates = this.data.templates.filter(t => !t.deleted && !t.isTodo && !t.isTicket && t.id !== currentEditId);
 
+            // 2. Kereső szerinti szűrés
             if (term) {
                 validTemplates = validTemplates.filter(t => t.title.toLowerCase().includes(term) || (t.content && t.content.toLowerCase().includes(term)));
             }
 
-            // Okos rendezés (legrelevánsabbak előre)
-            validTemplates.sort((a, b) => {
-                const scoreA = (a.category === currentCat && a.folderId === currentFolderId) ? 3 : (a.category === currentCat ? 2 : 1);
-                const scoreB = (b.category === currentCat && b.folderId === currentFolderId) ? 3 : (b.category === currentCat ? 2 : 1);
+            // 3. Adatok csoportosítása (Kategória -> Mappa)
+            const groupedByCategory = {};
+            validTemplates.forEach(t => {
+                const cat = t.category || 'General';
+                if (!groupedByCategory[cat]) {
+                    groupedByCategory[cat] = { root: [], folders: {} };
+                }
+                
+                if (!t.folderId) {
+                    groupedByCategory[cat].root.push(t);
+                } else {
+                    if (!groupedByCategory[cat].folders[t.folderId]) {
+                        groupedByCategory[cat].folders[t.folderId] = [];
+                    }
+                    groupedByCategory[cat].folders[t.folderId].push(t);
+                }
+            });
 
-                if (scoreA !== scoreB) return scoreB - scoreA; 
-
-                if (a.category !== b.category) return a.category.localeCompare(b.category);
-                const fNameA = a.folderId ? (this.data.folders.find(f => f.id === a.folderId)?.name || 'Root') : 'Root';
-                const fNameB = b.folderId ? (this.data.folders.find(f => f.id === b.folderId)?.name || 'Root') : 'Root';
-                if (fNameA !== fNameB) return fNameA.localeCompare(fNameB);
-
-                return a.title.localeCompare(b.title);
+            // 4. Kategóriák sorrendje (Jelenlegi kategória az első, utána ABC)
+            const sortedCategories = Object.keys(groupedByCategory).sort((a, b) => {
+                if (a === currentCat) return -1;
+                if (b === currentCat) return 1;
+                return a.localeCompare(b);
             });
 
             let html = '';
-            let lastGroup = null;
-            let inGrid = false;
+            let catIdCounter = 0;
 
-            validTemplates.forEach(t => {
-                const folderName = t.folderId ? (this.data.folders.find(f => f.id === t.folderId)?.name || 'Root') : 'Root';
-                const groupName = `${this.escapeHtml(t.category)} > 📂 ${this.escapeHtml(folderName)}`;
-                const isHighlyRelevant = (t.category === currentCat && t.folderId === currentFolderId);
-                
-                // Kategória/Mappa fejléc és Grid nyitása
-                if (groupName !== lastGroup) {
-                    if (inGrid) html += `</div>`; // Zárjuk az előző gridet
-                    const groupStyle = `margin-top: 15px; padding-bottom: 5px; border-bottom: 2px solid #ddd; font-weight: bold; font-size: 0.95rem; color: ${isHighlyRelevant ? 'var(--success)' : 'var(--primary)'};`;
-                    html += `<div style="${groupStyle}">${isHighlyRelevant ? '⭐ Ebből a mappából:' : groupName}</div>`;
-                    html += `<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; margin-top: 15px;">`;
-                    inGrid = true;
-                    lastGroup = groupName;
-                }
+            // Template-eket (Kártyákat) generáló segédfüggvény
+            const renderGridHtml = (templatesArray) => {
+                let gridHtml = `<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; margin-top: 10px; margin-bottom: 10px;">`;
+                templatesArray.forEach(t => {
+                    const isChecked = this.currentRecommendedIds.includes(t.id);
+                    const selectionClass = isChecked ? ' selected' : '';
+                    const safeTitle = this.escapeHtml(t.title);
+                    
+                    // Tartalom formázása
+                    let safePreview = this.escapeHtml(t.content || '');
+                    safePreview = safePreview.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                    safePreview = safePreview.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                    safePreview = safePreview.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                    safePreview = safePreview.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    safePreview = safePreview.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                    safePreview = safePreview.replace(/__(.*?)__/g, '<u>$1</u>');
+                    safePreview = safePreview.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                    safePreview = safePreview.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
+                    safePreview = safePreview.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                        const parts = content.split('|');
+                        const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                        return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                    });
+                    safePreview = safePreview.replace(/{{(.*?)}}/g, (match, p1) => {
+                         return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                    });
 
-                const isChecked = this.currentRecommendedIds.includes(t.id);
-                const selectionClass = isChecked ? ' selected' : '';
-                const safeTitle = this.escapeHtml(t.title);
-                
-                // Tartalom formázása, pont ahogy a főoldalon történik
-                let safePreview = this.escapeHtml(t.content || '');
-                safePreview = safePreview.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
-                safePreview = safePreview.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
-                safePreview = safePreview.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
-                safePreview = safePreview.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                safePreview = safePreview.replace(/\*(.*?)\*/g, '<i>$1</i>');
-                safePreview = safePreview.replace(/__(.*?)__/g, '<u>$1</u>');
-                safePreview = safePreview.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
-                safePreview = safePreview.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
-                safePreview = safePreview.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
-                safePreview = safePreview.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
-                safePreview = safePreview.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
-                    const parts = content.split('|');
-                    const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
-                    return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
-                });
-                safePreview = safePreview.replace(/{{(.*?)}}/g, (match, p1) => {
-                     return `<span style="font-weight:bold;">{{${p1}}}</span>`;
-                });
-
-                // Maga a Template Kártya HTML-je (ugyanaz a CSS struktúra, mint a főoldalon)
-                html += `
-                    <div class="card${selectionClass}" style="background-color: ${t.color || '#ffffff'}; cursor: pointer; min-height: 150px; transition: transform 0.1s, box-shadow 0.1s;" onclick="app.toggleRecommendedId(${t.id})">
-                        <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; pointer-events: none;">
-                            <div class="card-title">${safeTitle}</div>
-                            <div class="card-preview">${safePreview}</div>
+                    gridHtml += `
+                        <div class="card${selectionClass}" style="background-color: ${t.color || '#ffffff'}; cursor: pointer; min-height: 150px; transition: transform 0.1s, box-shadow 0.1s; margin-bottom: 0;" onclick="app.toggleRecommendedId(${t.id})">
+                            <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; pointer-events: none;">
+                                <div class="card-title">${safeTitle}</div>
+                                <div class="card-preview">${safePreview}</div>
+                            </div>
                         </div>
+                    `;
+                });
+                gridHtml += `</div>`;
+                return gridHtml;
+            };
+
+            // 5. HTML generálása hierarchikusan
+            sortedCategories.forEach(cat => {
+                catIdCounter++;
+                const catData = groupedByCategory[cat];
+                const isCurrentCat = (cat === currentCat);
+                
+                // Kategória nyitva tartása, ha keresünk vagy ha ez a jelenlegi kategória
+                const isCatExpanded = isCurrentCat || term !== '';
+                const catDisplayStyle = isCatExpanded ? 'block' : 'none';
+                const catIcon = isCatExpanded ? '▼' : '▶';
+                
+                const catHeaderStyle = `margin-top: 15px; padding: 10px 15px; border: 1px solid #c8c6c4; border-bottom: 2px solid var(--primary); font-weight: bold; font-size: 1.05rem; color: ${isCurrentCat ? 'var(--success)' : 'var(--primary)'}; background: #ffffff; cursor: pointer; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s;`;
+                
+                // --- KATEGÓRIA FEJLÉC ---
+                html += `
+                    <div style="${catHeaderStyle}" onclick="app.toggleRecGroup('rec-cat-${catIdCounter}', this)" onmouseover="this.style.background='#e6f2ff'" onmouseout="this.style.background='#ffffff'">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            ${isCurrentCat ? '⭐' : '📁'} <span style="color: inherit;">${this.escapeHtml(cat)}</span>
+                        </span>
+                        <span class="rec-group-icon" style="color: #605e5c; font-size: 0.85rem;">${catIcon}</span>
                     </div>
                 `;
+                
+                // Kategória tartalma (Rejtve vagy mutatva)
+                html += `<div id="rec-cat-${catIdCounter}" style="display: ${catDisplayStyle}; padding: 10px 5px 15px 15px; border-left: 2px solid var(--primary); margin-left: 10px;">`;
+                
+                // Mappán kívüli (gyökér) template-ek a kategóriában
+                if (catData.root.length > 0) {
+                    html += renderGridHtml(catData.root);
+                }
+                
+                // Mappák sorrendezése (Jelenlegi mappa az első, majd ABC)
+                const sortedFolderIds = Object.keys(catData.folders).sort((a, b) => {
+                    if (parseInt(a) === currentFolderId && isCurrentCat) return -1;
+                    if (parseInt(b) === currentFolderId && isCurrentCat) return 1;
+                    const fA = this.data.folders.find(f => f.id === parseInt(a));
+                    const fB = this.data.folders.find(f => f.id === parseInt(b));
+                    const nameA = fA ? fA.name : 'Unknown';
+                    const nameB = fB ? fB.name : 'Unknown';
+                    return nameA.localeCompare(nameB);
+                });
+                
+                // --- MAPPÁK FEJLÉCE ÉS TARTALMA ---
+                sortedFolderIds.forEach(fId => {
+                    const folderTemplates = catData.folders[fId];
+                    const folderObj = this.data.folders.find(f => f.id === parseInt(fId));
+                    const folderName = folderObj ? folderObj.name : 'Root';
+                    const isCurrentFolder = (parseInt(fId) === currentFolderId && isCurrentCat);
+                    
+                    const fIdCounter = catIdCounter + '-' + fId;
+                    // Mappa nyitva tartása, ha keresünk vagy ha ez a jelenlegi mappa
+                    const isFolderExpanded = isCurrentFolder || term !== '';
+                    const folderDisplayStyle = isFolderExpanded ? 'block' : 'none';
+                    const folderIcon = isFolderExpanded ? '▼' : '▶';
+                    
+                    const folderHeaderStyle = `margin-top: 10px; padding: 8px 12px; border: 1px solid #e1dfdd; font-weight: 600; font-size: 0.9rem; color: #323130; background: #fff; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;`;
+                    
+                    html += `
+                        <div style="${folderHeaderStyle}" onclick="app.toggleRecGroup('rec-folder-${fIdCounter}', this)" onmouseover="this.style.background='#f3f2f1'" onmouseout="this.style.background='#fff'">
+                            <span style="display: flex; align-items: center; gap: 6px;">
+                                ${isCurrentFolder ? '⭐' : '📂'} <span style="color: ${isCurrentFolder ? 'var(--success)' : 'inherit'};">${this.escapeHtml(folderName)}</span>
+                            </span>
+                            <span class="rec-group-icon" style="color: #888; font-size: 0.8rem;">${folderIcon}</span>
+                        </div>
+                    `;
+                    
+                    html += `<div id="rec-folder-${fIdCounter}" style="display: ${folderDisplayStyle}; padding-left: 10px; border-left: 2px dashed #e1dfdd; margin-left: 5px; margin-bottom: 15px;">`;
+                    html += renderGridHtml(folderTemplates);
+                    html += `</div>`;
+                });
+                
+                html += `</div>`; // Kategória tartalom div zárása
             });
-
-            if (inGrid) html += '</div>'; // Zárjuk az utolsó gridet, ha nyitva maradt
 
             if (validTemplates.length === 0) {
                 html = '<div style="text-align: center; color: #888; padding: 20px;">Nem található template.</div>';
