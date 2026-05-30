@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v189</title>
+    <title>SD Helper v193</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1067,6 +1067,49 @@
 		.view-content b { font-weight: bold; }
 		.view-content i { font-style: italic; }
 		.view-content u { text-decoration: underline; }
+		.db-template-list {
+            max-height: 140px; 
+            overflow-y: auto; 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            background: #fff; 
+            margin-bottom: 10px;
+        }
+        .db-template-item {
+            padding: 6px 10px; 
+            cursor: pointer; 
+            border-bottom: 1px solid #f3f2f1; 
+            font-size: 0.9rem; 
+            transition: background 0.1s;
+            color: #323130;
+        }
+        .db-template-item:last-child {
+            border-bottom: none;
+        }
+        .db-template-item:hover { 
+            background-color: #f3f2f1; 
+        }
+        .db-template-item.selected { 
+            background-color: #cce4f7; 
+            font-weight: bold; 
+            border-left: 4px solid var(--primary); 
+            color: var(--primary);
+        }
+
+        /* --- DATABASE KÁRTYA KÜLÖNLEGES STÍLUSAI --- */
+        .card.database-card .card-preview {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px; /* Kisebb térköz a gombok felett */
+            pointer-events: auto; /* ENGEDÉLYEZI A KATTINTÁST ÉS GÉPELÉST */
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+        .card.database-card .db-template-list {
+            flex: 1;
+            margin-bottom: 0; /* Eltüntetjük a felesleges alsó margót */
+            max-height: 125px; /* Kicsit kompaktabb lista */
+        }
     </style>
 </head>
 <body>
@@ -1345,9 +1388,14 @@
             </div>
 
             <div class="form-group" style="margin-bottom:0;">
+                <div id="instructionsContainer"></div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label>Content</label>
-                    <button class="btn btn-sm btn-secondary" id="btnAddExtraContent" onclick="app.addExtraContent()" title="Add optional extra content" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 5px;">+ Add Extra Content</button>
+                    <div>
+                        <button class="btn btn-sm btn-secondary" onclick="app.addInstruction()" title="Add instructions shown during filling" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 5px;">+ Add Instruction</button>
+                        <button class="btn btn-sm btn-secondary" onclick="app.addExtraContent()" title="Add optional extra content" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 5px;">+ Add Extra Content</button>
+                    </div>
                 </div>
                 <div class="editor-toolbar">
                     <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
@@ -1470,6 +1518,66 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('todoModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.saveTodo()">Save To-Do List</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="dbEditorModal">
+    <div class="modal" style="width: 700px;">
+        <div class="modal-header"><span id="dbEditorTitle">Create Database Template</span></div>
+        <div class="modal-body">
+            <input type="hidden" id="dbEditId">
+
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>Database Name</label>
+                        <input type="text" class="form-control" id="dbInputTitle" placeholder="e.g. Software Links">
+                    </div>
+                </div>
+                <div class="col" style="flex: 1.5;">
+                    <div class="form-group">
+                        <label>Subtitle (Optional Group)</label>
+                        <input type="text" list="dbSubtitleOptions" class="form-control" id="dbInputSubtitle" placeholder="e.g. IT Resources">
+                        <datalist id="dbSubtitleOptions"></datalist>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="form-control" id="dbInputCategory" onchange="app.updateFolderOptions('dbInputCategory', 'dbInputFolder')"></select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Folder (Optional)</label>
+                        <select class="form-control" id="dbInputFolder">
+                            <option value="">(No Folder / Root)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Color Coding</label>
+                <div class="color-picker-container" id="dbColorSwatches">
+                    <input type="hidden" id="dbInputColor" value="#ffffff">
+                    </div>
+            </div>
+
+            <div class="form-group" style="background: #f0f3f5; padding: 15px; border-radius: 6px; border: 1px solid #dbe4ea;">
+                <label>Database Items (Label vs Content)</label>
+                <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Ha a Content üres, a Label kerül másolásra.</p>
+                <div id="dbRowsContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <button class="btn btn-sm btn-secondary" style="margin-top:10px;" onclick="app.addDbRow()">+ Add Item</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="app.closeModal('dbEditorModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.saveDbTemplate()">Save Database</button>
         </div>
     </div>
 </div>
@@ -3314,26 +3422,31 @@
             const select = document.getElementById('inputCategory');
             const batchSelect = document.getElementById('batchCategory');
             const todoSelect = document.getElementById('todoInputCategory');
+            const dbSelect = document.getElementById('dbInputCategory'); // 1. Adjuk hozzá a dbSelect-et
 
             if(select && batchSelect) {
                 const currentSelectVal = select.value;
                 const currentBatchVal = batchSelect.value;
                 const currentTodoVal = todoSelect ? todoSelect.value : '';
+                const currentDbVal = dbSelect ? dbSelect.value : ''; // 2. Aktuális érték mentése
 
                 select.innerHTML = '';
                 batchSelect.innerHTML = '';
                 if(todoSelect) todoSelect.innerHTML = '';
+                if(dbSelect) dbSelect.innerHTML = ''; // 3. HTML ürítése
 
                 this.data.categories.forEach(cat => {
                     const opt = `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`;
                     select.innerHTML += opt;
                     batchSelect.innerHTML += opt;
                     if(todoSelect) todoSelect.innerHTML += opt;
+                    if(dbSelect) dbSelect.innerHTML += opt; // 4. Opciók hozzáadása
                 });
 
                 if(currentSelectVal) select.value = currentSelectVal;
                 if(currentBatchVal) batchSelect.value = currentBatchVal;
                 if(currentTodoVal && todoSelect) todoSelect.value = currentTodoVal;
+                if(currentDbVal && dbSelect) dbSelect.value = currentDbVal; // 5. Érték visszaállítása
             }
         },
 
@@ -3482,10 +3595,9 @@
                      }
                      content += `
                                 <button class="create-dropdown-item" onclick="app.openTodoModal(); app.closeCreateMenu();">☑️ New To Do</button>
+                                <button class="create-dropdown-item" onclick="app.openDbEditor(); app.closeCreateMenu();">🗄️ New Database</button>
                                 <button class="create-dropdown-item" style="color: #6b69d6; font-weight: bold;" onclick="app.openTicketEditor(); app.closeCreateMenu();">🎟️ New Ticket</button>
                                 <button class="create-dropdown-item" onclick="app.openEditor(); app.closeCreateMenu();">📄 New Template</button>
-								
-
                             </div>
                         </div>
                      `;
@@ -4581,6 +4693,7 @@
                 const div = document.createElement('div');
                 div.className = rearranging ? `card rearrange-mode${selectionClass}` : "card";
                 if(t.isTodo) div.classList.add('todo-card');
+                if(t.isDatabase) div.classList.add('database-card'); /* EZT A SORT KELLETT HOZZÁADNI */
                 if(rearranging) div.draggable = true;
                 div.style.backgroundColor = bgColor;
                 div.setAttribute('data-id', t.id);
@@ -4687,6 +4800,40 @@
                             <div class="dropdown-menu" id="menu-${t.id}">
                                 <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
                                 <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
+                            </div>
+                        `;
+						} else if (t.isDatabase) {
+                        let dbItemsHtml = `<div class="db-template-list" id="db-list-card-${t.id}">`;
+                        if (t.dbItems) {
+                            t.dbItems.forEach((item, idx) => {
+                                const label = item.label || item.content;
+                                dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, false)">${this.escapeHtml(label)}</div>`;
+                            });
+                        }
+                        dbItemsHtml += `</div>`;
+
+                        mainContentHtml = `
+                            <input type="text" class="form-control" placeholder="🔍 Search database..." onkeyup="app.filterDbTemplate(${t.id}, this.value, false)" style="margin-bottom: 8px; font-size: 0.85rem; padding: 6px;">
+                            ${dbItemsHtml}
+                        `;
+
+                        useBtn = `
+                            <div class="card-actions">
+                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${t.id})">👁️ View</button>
+                                <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${t.id}, false)">📋 Copy</button>
+                            </div>
+                        `;
+                        quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewDbTemplate(${t.id})" title="Expand Database">👁️</button>`;
+
+                        menu = `
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.viewDbTemplate(${t.id})">👁️ View</div>
+                                <div class="dropdown-item" onclick="app.openDbEditor(${t.id})">✏️ Edit Database</div>
+                                <div class="dropdown-item" onclick="app.cloneDbTemplate(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
@@ -4980,8 +5127,7 @@
             const category = document.getElementById('inputCategory').value;
             const lang = document.getElementById('inputLang').value;
             const content = document.getElementById('inputContent').value;
-            
-            // Dinamikus extra contentek begyűjtése
+            const instructions = Array.from(document.querySelectorAll('.instruction-textarea')).map(ta => ta.value);
             const extraContents = Array.from(document.querySelectorAll('.extra-content-textarea')).map(ta => ta.value);
             
             const isViewOnly = document.getElementById('inputViewOnly').checked;
@@ -5000,6 +5146,7 @@
                 if (idx > -1) this.data.templates[idx] = {
                     ...this.data.templates[idx],
                     title, subtitle, category, lang, content, isViewOnly, color,
+                    instructions: instructions,
                     extraContents: extraContents,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
@@ -5009,6 +5156,7 @@
                 this.data.templates.push({
                     id: Date.now(),
                     title, subtitle, category, lang, content,
+                    instructions: instructions,
                     extraContents: extraContents,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
@@ -5025,6 +5173,36 @@
             this.saveData();
             this.closeModal('editorModal');
             this.renderTemplates();
+        },
+		
+		addInstruction: function(val = '') {
+            const container = document.getElementById('instructionsContainer');
+            const currentCount = container.querySelectorAll('.instruction-block').length;
+            const nextIndex = currentCount + 1;
+            
+            const div = document.createElement('div');
+            div.className = 'instruction-block';
+            div.style.cssText = 'margin-bottom: 15px; background: #e6f2ff; padding: 10px; border-radius: 4px; border-left: 4px solid var(--primary);';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                    <label style="color: var(--primary); font-weight: bold; margin: 0;">ℹ️ Instruction <span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-left: 5px;">{{info${nextIndex}}}</span></label>
+                    <button class="btn btn-sm btn-secondary" onclick="app.removeInstruction(this)" style="padding: 2px 6px; font-size: 0.75rem;">✖ Remove</button>
+                </div>
+                <textarea class="form-control instruction-textarea" placeholder="Write instructions here... Use {{info${nextIndex}}} in Content to position." style="min-height: 80px; border-color: var(--primary);">${this.escapeHtml(val)}</textarea>
+            `;
+            container.appendChild(div);
+        },
+
+        removeInstruction: function(btn) {
+            btn.closest('.instruction-block').remove();
+            const blocks = document.getElementById('instructionsContainer').querySelectorAll('.instruction-block');
+            blocks.forEach((block, idx) => {
+                const newIndex = idx + 1;
+                const labelSpan = block.querySelector('label span');
+                labelSpan.innerText = '{{info' + newIndex + '}}';
+                const textarea = block.querySelector('textarea');
+                textarea.placeholder = 'Write instructions here... Use {{info' + newIndex + '}} in Content to position.';
+            });
         },
 		
 		addExtraContent: function(val = '') {
@@ -5061,6 +5239,15 @@
 
                 document.getElementById('inputLang').value = t.lang;
                 document.getElementById('inputContent').value = t.content;
+                
+                // Instrukciók betöltése
+                document.getElementById('instructionsContainer').innerHTML = '';
+                if (t.instructions && t.instructions.length > 0) {
+                    t.instructions.forEach(inst => this.addInstruction(inst));
+                } else if (t.instruction) {
+                    // Visszafelé kompatibilitás a régi 1 db instrukcióval
+                    this.addInstruction(t.instruction);
+                }
                 
                 // Extra tartalmak betöltése
                 document.getElementById('extraContentsContainer').innerHTML = '';
@@ -5101,6 +5288,8 @@
 
                 document.getElementById('inputLang').value = this.data.currentLang;
                 document.getElementById('inputContent').value = "";
+                
+                document.getElementById('instructionsContainer').innerHTML = '';
                 
                 // Extra tartalmak ürítése új template-nél
                 document.getElementById('extraContentsContainer').innerHTML = '';
@@ -5301,6 +5490,13 @@
             document.getElementById('inputLang').value = t.lang;
             document.getElementById('inputContent').value = t.content;
             
+            document.getElementById('instructionsContainer').innerHTML = '';
+            if (t.instructions && t.instructions.length > 0) {
+                t.instructions.forEach(inst => this.addInstruction(inst));
+            } else if (t.instruction) {
+                this.addInstruction(t.instruction);
+            }
+
             document.getElementById('extraContentsContainer').innerHTML = '';
             if (t.extraContents && t.extraContents.length > 0) {
                 t.extraContents.forEach(ext => this.addExtraContent(ext));
@@ -5610,6 +5806,13 @@
             if(!t) return;
             this.currentProcessingTitle = t.title;
             this.currentProcessingColor = t.color;
+            if (t.instructions) {
+                this.tempInstructions = [...t.instructions];
+            } else if (t.instruction) {
+                this.tempInstructions = [t.instruction];
+            } else {
+                this.tempInstructions = [];
+            }
             this.tempExtraContents = t.extraContents ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
             this.processAndShowFiller(t.content, id);
         },
@@ -5649,9 +5852,12 @@
             if (this.tempExtraContents && this.tempExtraContents.length > 0) {
                 this.tempExtraContents = this.tempExtraContents.map(ext => applySystemVars(ext));
             }
+            if (this.tempInstructions && this.tempInstructions.length > 0) {
+                this.tempInstructions = this.tempInstructions.map(inst => applySystemVars(inst));
+            }
 
             let regex = /{{(.*?)}}/g;
-            let combinedText = this.tempContent + "\n" + (this.tempExtraContents ? this.tempExtraContents.join('\n') : "");
+            let combinedText = this.tempContent + "\n" + (this.tempExtraContents ? this.tempExtraContents.join('\n') : "") + "\n" + (this.tempInstructions ? this.tempInstructions.join('\n') : "");
             let matchesArray = combinedText.match(regex) || [];
             let matches = [...new Set(matchesArray)];
 
@@ -5672,7 +5878,7 @@
             matchesArray = combinedText.match(regex) || [];
             matches = [...new Set(matchesArray)];
 
-            if (!matches || matches.length === 0) {
+            if (!matches || matches.length === 0 && (!this.tempInstructions || this.tempInstructions.length === 0)) {
                 this.copyToClipboard(this.tempContent);
                 this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent, this.tempExtraContents);
                 return;
@@ -5681,12 +5887,67 @@
             const container = document.getElementById('fillerInputs');
             container.innerHTML = '';
 
+            const renderInstructionHtml = (text, index) => {
+                let safeInfo = this.escapeHtml(text);
+                safeInfo = safeInfo.replace(/^---\r?$/gm, '<hr>');
+                safeInfo = safeInfo.replace(/^## (.*?)\r?$/gm, '<h2>$1</h2>');
+                safeInfo = safeInfo.replace(/^# (.*?)\r?$/gm, '<h1>$1</h1>');
+                safeInfo = safeInfo.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                safeInfo = safeInfo.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                safeInfo = safeInfo.replace(/__(.*?)__/g, '<u>$1</u>');
+                safeInfo = safeInfo.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                safeInfo = safeInfo.replace(/\n*(<hr>)\n*/gi, '$1');
+                safeInfo = safeInfo.replace(/\n*(<h1>.*?<\/h1>)\n*/gi, '$1');
+                safeInfo = safeInfo.replace(/\n*(<h2>.*?<\/h2>)\n*/gi, '$1');
+                safeInfo = safeInfo.replace(/{{(.*?)}}/g, (match, p1) => {
+                    if(p1.trim().startsWith('link:')) return match;
+                    return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                });
+                safeInfo = safeInfo.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                    const parts = content.split('|');
+                    const linkTplName = parts[0].trim();
+                    const displayText = parts.length > 1 ? parts[1].trim() : linkTplName;
+                    const safeName = linkTplName.replace(/'/g, "\\'");
+                    return `<span class="template-link" onclick="app.findAndUseTemplate('${safeName}')">${displayText}</span>`;
+                });
+
+                return `
+                <div class="form-group" style="background-color: #e6f2ff; border-left: 4px solid var(--primary); padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                    <label style="color: var(--primary); font-weight: bold; margin-bottom: 5px;">ℹ️ Beépített Útmutató ${index}</label>
+                    <div class="view-content" style="white-space: pre-wrap; font-size: 0.95rem; color: #333; line-height: 1.5;">${safeInfo}</div>
+                </div>`;
+            };
+
+            const textWithoutInstructions = this.tempContent + "\n" + (this.tempExtraContents ? this.tempExtraContents.join('\n') : "");
+            
+            // Ha a {{infoX}} címke nincs benne a szövegben, akkor az a legfelülre kerül
+            if (this.tempInstructions && this.tempInstructions.length > 0) {
+                this.tempInstructions.forEach((inst, idx) => {
+                    const infoTag = `{{info${idx + 1}}}`;
+                    if (!textWithoutInstructions.includes(infoTag) && inst.trim() !== "") {
+                        container.innerHTML += renderInstructionHtml(inst, idx + 1);
+                    }
+                });
+            }
+
+            if (container.innerHTML === '' && matches.length === 0) {
+                this.copyToClipboard(this.tempContent);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent, this.tempExtraContents);
+                return;
+            }
+
             matches.forEach(m => {
                 const key = m.replace(/[{}]/g, '').trim();
                 const v = this.data.customVars.find(cv => cv.key === key);
                 let html = '';
 
-                if (key.toLowerCase().startsWith('info:')) {
+                const infoMatch = key.match(/^info(\d+)$/i);
+                if (infoMatch) {
+                    const instIdx = parseInt(infoMatch[1]) - 1;
+                    if (this.tempInstructions && this.tempInstructions[instIdx] && this.tempInstructions[instIdx].trim() !== "") {
+                        container.innerHTML += renderInstructionHtml(this.tempInstructions[instIdx], instIdx + 1);
+                    }
+                } else if (key.toLowerCase().startsWith('info:')) {
                     const tplName = key.substring(5).trim();
                     const t = this.data.templates.find(x => !x.deleted && x.title === tplName);
                     if (t) {
@@ -5815,7 +6076,9 @@
                 const key = m.replace(/[{}]/g, '').trim();
                 let val = "";
 
-                if (key.toLowerCase().startsWith('info:')) {
+                if (key.toLowerCase().match(/^info\d+$/i)) {
+                    val = "";
+                } else if (key.toLowerCase().startsWith('info:')) {
                     val = "";
                 } else if (key.toLowerCase() === 'gender') {
                     const g = document.querySelector('input[name="val_gender"]:checked').value;
@@ -6509,7 +6772,273 @@
             }
         },
         // --- END TO-DO LIST LOGIC ---
+		// ==========================================
+        // --- DATABASE TEMPLATE LOGIC ---
+        // ==========================================
+        
+        openDbEditor: function(id) {
+            document.getElementById('dbEditorModal').style.display = 'flex';
+            
+            // Színek inicializálása (másoljuk a Todo Swatchek generálását)
+            const colorContainer = document.getElementById('dbColorSwatches');
+            if (colorContainer.children.length <= 1) { // Ha még üres, beletesszük a színválasztókat
+                let swatchesHtml = document.getElementById('todoColorSwatches').innerHTML;
+                swatchesHtml = swatchesHtml.replace(/todoInputColor/g, 'dbInputColor');
+                swatchesHtml = swatchesHtml.replace(/todoCustomColorPicker/g, 'dbCustomColorPicker');
+                swatchesHtml = swatchesHtml.replace(/app\.selectTodoColor/g, 'app.selectDbColor');
+                colorContainer.innerHTML = swatchesHtml;
+            }
+            document.querySelectorAll('#dbColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
 
+            if (id) {
+                const t = this.data.templates.find(x => x.id === id);
+                if(!t) return;
+                
+                document.getElementById('dbEditorTitle').innerText = "Edit Database Template";
+                document.getElementById('dbEditId').value = t.id;
+                document.getElementById('dbInputTitle').value = t.title;
+                document.getElementById('dbInputSubtitle').value = t.subtitle || '';
+
+                const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
+                document.getElementById('dbInputCategory').value = cat;
+
+                const color = t.color || '#ffffff';
+                document.getElementById('dbInputColor').value = color;
+                const swatch = document.querySelector(`#dbColorSwatches .color-swatch[data-hex="${color}"]`);
+                if(swatch) swatch.classList.add('selected');
+                else if(color === '#ffffff') document.querySelector('#dbColorSwatches .color-swatch.none').classList.add('selected');
+                document.querySelector('#dbEditorModal .modal').style.backgroundColor = color;
+
+                this.updateFolderOptions('dbInputCategory', 'dbInputFolder');
+                document.getElementById('dbInputFolder').value = t.folderId ? t.folderId : "";
+
+                document.getElementById('dbRowsContainer').innerHTML = '';
+                if(t.dbItems && t.dbItems.length > 0) {
+                    t.dbItems.forEach(item => this.addDbRow(item.label, item.content));
+                } else {
+                    this.addDbRow();
+                }
+            } else {
+                document.getElementById('dbEditorTitle').innerText = "New Database Template";
+                document.getElementById('dbEditId').value = "";
+                document.getElementById('dbInputTitle').value = "";
+                document.getElementById('dbInputSubtitle').value = "";
+
+                let defaultCat = "General";
+                if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
+                    defaultCat = this.data.currentCategory;
+                }
+                document.getElementById('dbInputCategory').value = defaultCat;
+
+                const defColor = '#ffffff';
+                document.getElementById('dbInputColor').value = defColor;
+                document.querySelector('#dbEditorModal .modal').style.backgroundColor = defColor;
+                
+                const swatch = document.querySelector(`#dbColorSwatches .color-swatch[data-hex="${defColor}"]`);
+                if(swatch) swatch.classList.add('selected');
+
+                this.updateFolderOptions('dbInputCategory', 'dbInputFolder');
+                document.getElementById('dbInputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
+
+                document.getElementById('dbRowsContainer').innerHTML = '';
+                this.addDbRow();
+            }
+            
+            const subList = document.getElementById('dbSubtitleOptions');
+            if (subList) {
+                const targetCat = document.getElementById('dbInputCategory').value;
+                const uniqueSubs = [...new Set(this.data.templates.filter(temp => temp.category === targetCat && temp.subtitle).map(temp => temp.subtitle))].sort();
+                subList.innerHTML = uniqueSubs.map(s => `<option value="${this.escapeHtml(s)}">`).join('');
+            }
+        },
+
+        selectDbColor: function(colorHex, element) {
+            document.getElementById('dbInputColor').value = colorHex;
+            document.querySelectorAll('#dbColorSwatches .color-swatch').forEach(el => el.classList.remove('selected'));
+            if(element) element.classList.add('selected');
+            const modalContent = document.querySelector('#dbEditorModal .modal');
+            if(modalContent) modalContent.style.backgroundColor = colorHex;
+        },
+
+        addDbRow: function(label = "", content = "") {
+            const container = document.getElementById('dbRowsContainer');
+            const row = document.createElement('div');
+            row.className = 'builder-row db-builder-row';
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Label (e.g. Name)" value="${this.escapeHtml(label)}" style="flex:1;">
+                <textarea class="form-control" placeholder="Content (What gets copied)" style="flex:2;">${this.escapeHtml(content)}</textarea>
+                <button class="btn btn-danger btn-sm" style="height:36px; align-self:flex-start;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        },
+
+        saveDbTemplate: function() {
+            const id = document.getElementById('dbEditId').value;
+            const title = document.getElementById('dbInputTitle').value.trim();
+            const subtitle = document.getElementById('dbInputSubtitle').value.trim();
+            const category = document.getElementById('dbInputCategory').value;
+            const folderId = document.getElementById('dbInputFolder').value || null;
+            const color = document.getElementById('dbInputColor').value || '#ffffff';
+
+            if(!title) { alert("Database Name is required."); return; }
+
+            let items = [];
+            document.querySelectorAll('.db-builder-row').forEach(row => {
+                const l = row.querySelector('input').value.trim();
+                const c = row.querySelector('textarea').value; // Nincs trim, mert a sortörés számíthat
+                if (l || c.trim()) {
+                    items.push({ label: l, content: c });
+                }
+            });
+
+            if (items.length === 0) { alert("Please add at least one item to the database."); return; }
+
+            const templateObj = {
+                title, subtitle, category, color,
+                folderId: folderId ? parseInt(folderId) : null,
+                isDatabase: true,
+                dbItems: items,
+                deleted: false,
+                lang: this.data.currentLang
+            };
+
+            if (id) {
+                const idx = this.data.templates.findIndex(t => t.id == id);
+                if (idx > -1) this.data.templates[idx] = { ...this.data.templates[idx], ...templateObj };
+            } else {
+                this.data.templates.push({ id: Date.now(), ...templateObj });
+            }
+
+            if(this.data.settings && this.data.settings.autoSortColor) {
+                this.reorderTemplatesByColorInternal(category, folderId ? parseInt(folderId) : null);
+            }
+
+            this.saveData();
+            this.closeModal('dbEditorModal');
+            this.renderTemplates();
+        },
+
+        cloneDbTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+            this.openDbEditor();
+            document.getElementById('dbEditorTitle').innerText = "Clone Database";
+            document.getElementById('dbInputTitle').value = t.title + " (Copy)";
+            
+            document.getElementById('dbRowsContainer').innerHTML = '';
+            if(t.dbItems) {
+                t.dbItems.forEach(item => this.addDbRow(item.label, item.content));
+            }
+        },
+
+        filterDbTemplate: function(id, term, isModal) {
+            term = term.toLowerCase();
+            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+            const list = document.getElementById(listId);
+            if (!list) return;
+            
+            const items = list.querySelectorAll('.db-template-item');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        },
+
+        selectDbItem: function(id, idx, isModal) {
+            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+            const list = document.getElementById(listId);
+            if (!list) return;
+            
+            list.querySelectorAll('.db-template-item').forEach(el => el.classList.remove('selected'));
+            const selectedEl = list.querySelector(`.db-template-item[data-idx="${idx}"]`);
+            if(selectedEl) selectedEl.classList.add('selected');
+        },
+
+        copyDbTemplate: function(event, id, isModal) {
+            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+            const list = document.getElementById(listId);
+            if (!list) return;
+            
+            const selectedEl = list.querySelector('.db-template-item.selected');
+            if (!selectedEl) {
+                alert("Please select a line to copy!");
+                return;
+            }
+            
+            const idx = selectedEl.getAttribute('data-idx');
+            const t = this.data.templates.find(x => x.id === id);
+            
+            if (t && t.dbItems && t.dbItems[idx]) {
+                // Ha a content üres, a labelt másoljuk
+                const contentToCopy = t.dbItems[idx].content || t.dbItems[idx].label;
+                
+                // History formázás
+                this.currentProcessingTitle = t.title + " (" + (t.dbItems[idx].label || "Item") + ")";
+                this.currentProcessingColor = t.color;
+                
+                this.copyToClipboard(contentToCopy);
+                
+                // Vizuális visszajelzés
+                if (event && event.currentTarget) {
+                    const btn = event.currentTarget;
+                    const origText = btn.innerHTML;
+                    btn.innerHTML = "✅ Copied!";
+                    btn.style.backgroundColor = "#2e7d32"; // Sötétebb zöld
+                    setTimeout(() => {
+                        btn.innerHTML = origText;
+                        btn.style.backgroundColor = "";
+                    }, 1500);
+                }
+            }
+        },
+
+        viewDbTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if(!t) return;
+
+            let dbItemsHtml = `<div class="db-template-list" id="db-list-modal-${t.id}" style="max-height: 450px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 6px;">`;
+            if (t.dbItems) {
+                t.dbItems.forEach((item, idx) => {
+                    const label = item.label || item.content;
+                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, true)" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb;">${this.escapeHtml(label)}</div>`;
+                });
+            }
+            dbItemsHtml += `</div>`;
+
+            const existingModals = document.querySelectorAll('.dynamic-view-modal');
+            const baseZIndex = 2600;
+            const newZIndex = baseZIndex + (existingModals.length * 10);
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay dynamic-view-modal';
+            overlay.style.zIndex = newZIndex;
+            overlay.style.display = 'flex';
+
+            overlay.innerHTML = `
+                <div class="modal" style="width: 800px; max-width: 95%;">
+                    <div class="modal-header">
+                        <span>🗄️ ${this.escapeHtml(t.title)}</span>
+                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" placeholder="🔍 Keresés a listában..." onkeyup="app.filterDbTemplate(${t.id}, this.value, true)" style="margin-bottom: 15px; font-size: 1rem; padding: 10px; border-radius: 6px; border: 2px solid var(--primary);">
+                        ${dbItemsHtml}
+                    </div>
+                    <div class="modal-footer" style="display:flex; justify-content: space-between; align-items: center;">
+                        <span style="color:#666; font-size:0.9rem; font-style: italic;">Válassz ki egy sort a másoláshoz!</span>
+                        <div>
+                            <button class="btn btn-secondary close-dynamic-btn">Cancel</button>
+                            <button class="btn btn-success" style="font-size: 1.1rem; padding: 8px 20px;" onclick="app.copyDbTemplate(event, ${t.id}, true)">📋 Copy Selected</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
+            closeBtns.forEach(btn => { btn.onclick = function() { overlay.remove(); }; });
+            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+            document.body.appendChild(overlay);
+        },
+		
         copyToSnippets: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
