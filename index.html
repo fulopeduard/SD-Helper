@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v187</title>
+    <title>SD Helper v189</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1347,7 +1347,7 @@
             <div class="form-group" style="margin-bottom:0;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label>Content</label>
-                    <button class="btn btn-sm btn-secondary" id="btnAddContent2" onclick="app.toggleSecondaryContent()" title="Add optional secondary content" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 5px;">+ Add Content 2</button>
+                    <button class="btn btn-sm btn-secondary" id="btnAddExtraContent" onclick="app.addExtraContent()" title="Add optional extra content" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 5px;">+ Add Extra Content</button>
                 </div>
                 <div class="editor-toolbar">
                     <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
@@ -1380,10 +1380,7 @@
 
                 <textarea class="form-control" id="inputContent" placeholder="Hello {{name}}..." style="min-height: 200px;"></textarea>
                 
-                <div id="secondaryContentContainer" style="display:none; margin-top:15px; border-top: 2px dashed var(--border); padding-top: 15px;">
-                    <label style="color: var(--primary);">Optional Content 2 (Not auto-copied)</label>
-                    <textarea class="form-control" id="inputContent2" placeholder="Secondary content..." style="min-height: 150px; border-color: var(--primary);"></textarea>
-                </div>
+                <div id="extraContentsContainer"></div>
             </div>
         </div>
         <div class="modal-footer">
@@ -1903,13 +1900,7 @@
                     <div id="recCopiedText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;"></div>
                 </div>
                 
-                <div id="recOptionalContainer" style="display: none; flex: 1; background: #fff9c4; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="margin: 0; color: #d83b01;">Optional Content:</h4>
-                        <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(document.getElementById('recOptionalText').innerText)">📋 Copy Content</button>
-                    </div>
-                    <div id="recOptionalText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;"></div>
-                </div>
+                <div id="recExtrasWrapper" style="display: none; flex: 1; flex-direction: column; gap: 10px; min-width: 300px;"></div>
             </div>
 
             <div id="recTemplatesSection">
@@ -4989,7 +4980,10 @@
             const category = document.getElementById('inputCategory').value;
             const lang = document.getElementById('inputLang').value;
             const content = document.getElementById('inputContent').value;
-			const content2 = document.getElementById('inputContent2').value;
+            
+            // Dinamikus extra contentek begyűjtése
+            const extraContents = Array.from(document.querySelectorAll('.extra-content-textarea')).map(ta => ta.value);
+            
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const color = document.getElementById('inputColor').value;
             const folderId = document.getElementById('inputFolder').value || null;
@@ -5005,7 +4999,8 @@
                 const idx = this.data.templates.findIndex(t => t.id == id);
                 if (idx > -1) this.data.templates[idx] = {
                     ...this.data.templates[idx],
-                    title, subtitle, category, lang, content, content2, isViewOnly, color,
+                    title, subtitle, category, lang, content, isViewOnly, color,
+                    extraContents: extraContents,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
                     tags: tags
@@ -5014,6 +5009,7 @@
                 this.data.templates.push({
                     id: Date.now(),
                     title, subtitle, category, lang, content,
+                    extraContents: extraContents,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
@@ -5031,16 +5027,19 @@
             this.renderTemplates();
         },
 		
-		toggleSecondaryContent: function() {
-            const container = document.getElementById('secondaryContentContainer');
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-                document.getElementById('btnAddContent2').innerText = "- Remove Content 2";
-            } else {
-                container.style.display = 'none';
-                document.getElementById('inputContent2').value = '';
-                document.getElementById('btnAddContent2').innerText = "+ Add Content 2";
-            }
+		addExtraContent: function(val = '') {
+            const container = document.getElementById('extraContentsContainer');
+            const div = document.createElement('div');
+            div.className = 'extra-content-block';
+            div.style.cssText = 'margin-top:15px; border-top: 2px dashed var(--border); padding-top: 15px; position: relative;';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                    <label style="color: var(--primary);">Extra Content (Not auto-copied)</label>
+                    <button class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" onclick="this.parentElement.parentElement.remove()" title="Remove this content">✖</button>
+                </div>
+                <textarea class="form-control extra-content-textarea" placeholder="Secondary content..." style="min-height: 100px; border-color: var(--primary);">${this.escapeHtml(val)}</textarea>
+            `;
+            container.appendChild(div);
         },
 
         openEditor: function(id) {
@@ -5049,8 +5048,6 @@
 
             document.getElementById('variableTray').style.display = 'none';
             document.querySelectorAll('.editor-toolbar-btn').forEach(b => b.classList.remove('active'));
-
-            
 
             if (id) {
                 const t = this.data.templates.find(x => x.id === id);
@@ -5064,8 +5061,17 @@
 
                 document.getElementById('inputLang').value = t.lang;
                 document.getElementById('inputContent').value = t.content;
+                
+                // Extra tartalmak betöltése
+                document.getElementById('extraContentsContainer').innerHTML = '';
+                if (t.extraContents && t.extraContents.length > 0) {
+                    t.extraContents.forEach(ext => this.addExtraContent(ext));
+                } else if (t.content2) { // Visszafelé kompatibilitás a régivel
+                    this.addExtraContent(t.content2);
+                }
+
                 document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
-				document.getElementById('inputTags').value = t.tags ? t.tags.join(', ') : '';
+                document.getElementById('inputTags').value = t.tags ? t.tags.join(', ') : '';
 
                 const color = t.color || '#ffffff';
                 document.getElementById('inputColor').value = color;
@@ -5095,8 +5101,12 @@
 
                 document.getElementById('inputLang').value = this.data.currentLang;
                 document.getElementById('inputContent').value = "";
+                
+                // Extra tartalmak ürítése új template-nél
+                document.getElementById('extraContentsContainer').innerHTML = '';
+
                 document.getElementById('inputViewOnly').checked = false;
-				document.getElementById('inputTags').value = '';
+                document.getElementById('inputTags').value = '';
 
                 document.getElementById('inputColor').value = '#ffffff';
                 document.querySelector('.color-swatch.none').classList.add('selected');
@@ -5105,8 +5115,8 @@
 
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = this.data.currentFolderId ? this.data.currentFolderId : "";
-				
-				this.currentRecommendedIds = [];
+                
+                this.currentRecommendedIds = [];
                 document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (0)</span><span style="color: var(--primary);">✎</span>`;
             }
 
@@ -5289,16 +5299,16 @@
             document.getElementById('inputCategory').value = cat;
 
             document.getElementById('inputLang').value = t.lang;
-                document.getElementById('inputContent').value = t.content;
-                document.getElementById('inputContent2').value = t.content2 || '';
-                if (t.content2) {
-                    document.getElementById('secondaryContentContainer').style.display = 'block';
-                    document.getElementById('btnAddContent2').innerText = "- Remove Content 2";
-                } else {
-                    document.getElementById('secondaryContentContainer').style.display = 'none';
-                    document.getElementById('btnAddContent2').innerText = "+ Add Content 2";
-                }
-                document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
+            document.getElementById('inputContent').value = t.content;
+            
+            document.getElementById('extraContentsContainer').innerHTML = '';
+            if (t.extraContents && t.extraContents.length > 0) {
+                t.extraContents.forEach(ext => this.addExtraContent(ext));
+            } else if (t.content2) {
+                this.addExtraContent(t.content2);
+            }
+            
+            document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
 
             const color = t.color || '#ffffff';
             document.getElementById('inputColor').value = color;
@@ -5600,13 +5610,14 @@
             if(!t) return;
             this.currentProcessingTitle = t.title;
             this.currentProcessingColor = t.color;
-            this.tempContent2 = t.content2 || ''; // Eltároljuk a memóriában a másodlagos tartalmat
+            this.tempExtraContents = t.extraContents ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
             this.processAndShowFiller(t.content, id);
         },
 
         processAndShowFiller: function(contentToProcess, templateId = null) {
             this.currentProcessingTemplateId = templateId;
             this.tempContent = contentToProcess;
+
             const h = new Date().getHours();
             const s = this.data.timeSettings;
             let str = "";
@@ -5620,57 +5631,50 @@
             const yyyy = d.getFullYear();
             const yy = String(yyyy).slice(-2);
 
-            // --- 1. CONTENT CSERÉK ---
-            this.tempContent = this.tempContent.replace(/\{\{\s*daytime\s*\}\}/gi, str);
-            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YYYY\s*\}\}/gi, `${dd}.${mm}.${yyyy}`);
-            this.tempContent = this.tempContent.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
-            this.tempContent = this.tempContent.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
-            this.tempContent = this.tempContent.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
-            this.tempContent = this.tempContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
-                const parts = content.split('|');
-                return parts.length > 1 ? parts[1].trim() : parts[0].trim();
-            });
-
-            // --- 2. CONTENT CSERÉK (EZ HIÁNYZOTT!) ---
-            if (this.tempContent2) {
-                this.tempContent2 = this.tempContent2.replace(/\{\{\s*daytime\s*\}\}/gi, str);
-                this.tempContent2 = this.tempContent2.replace(/\{\{\s*DD\.MM\.YYYY\s*\}\}/gi, `${dd}.${mm}.${yyyy}`);
-                this.tempContent2 = this.tempContent2.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
-                this.tempContent2 = this.tempContent2.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
-                this.tempContent2 = this.tempContent2.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
-                this.tempContent2 = this.tempContent2.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+            const applySystemVars = (text) => {
+                let res = text;
+                res = res.replace(/\{\{\s*daytime\s*\}\}/gi, str);
+                res = res.replace(/\{\{\s*DD\.MM\.YYYY\s*\}\}/gi, `${dd}.${mm}.${yyyy}`);
+                res = res.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
+                res = res.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
+                res = res.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
+                res = res.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                     const parts = content.split('|');
                     return parts.length > 1 ? parts[1].trim() : parts[0].trim();
                 });
+                return res;
+            };
+
+            this.tempContent = applySystemVars(this.tempContent);
+            if (this.tempExtraContents && this.tempExtraContents.length > 0) {
+                this.tempExtraContents = this.tempExtraContents.map(ext => applySystemVars(ext));
             }
 
             let regex = /{{(.*?)}}/g;
-            let combinedText = this.tempContent + "\n" + (this.tempContent2 || "");
+            let combinedText = this.tempContent + "\n" + (this.tempExtraContents ? this.tempExtraContents.join('\n') : "");
             let matchesArray = combinedText.match(regex) || [];
             let matches = [...new Set(matchesArray)];
 
-            // FIX típusú változók cseréje (mindkét contentben)
             if (matches && matches.length > 0) {
                 matches.forEach(m => {
                     const key = m.replace(/[{}]/g, '').trim();
                     const v = this.data.customVars.find(cv => cv.key === key);
                     if (v && v.type === 'fixed') {
                         this.tempContent = this.tempContent.split(m).join(v.options);
-                        if (this.tempContent2) {
-                            this.tempContent2 = this.tempContent2.split(m).join(v.options); // Ez is hiányzott!
+                        if (this.tempExtraContents) {
+                            this.tempExtraContents = this.tempExtraContents.map(ext => ext.split(m).join(v.options));
                         }
                     }
                 });
             }
 
-            // Újrakalkuláljuk a matches-t, miután a fix változók eltűntek
-            combinedText = this.tempContent + "\n" + (this.tempContent2 || "");
+            combinedText = this.tempContent + "\n" + (this.tempExtraContents ? this.tempExtraContents.join('\n') : "");
             matchesArray = combinedText.match(regex) || [];
             matches = [...new Set(matchesArray)];
 
             if (!matches || matches.length === 0) {
                 this.copyToClipboard(this.tempContent);
-                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent, this.tempContent2 || "");
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent, this.tempExtraContents);
                 return;
             }
 
@@ -5687,29 +5691,20 @@
                     const t = this.data.templates.find(x => !x.deleted && x.title === tplName);
                     if (t) {
                         let safeInfo = this.escapeHtml(t.content);
-
-                        // --- FORMÁZÁSI LOGIKA (Megegyezik a View formázásával) ---
                         safeInfo = safeInfo.replace(/^---\r?$/gm, '<hr>');
                         safeInfo = safeInfo.replace(/^## (.*?)\r?$/gm, '<h2>$1</h2>');
                         safeInfo = safeInfo.replace(/^# (.*?)\r?$/gm, '<h1>$1</h1>');
-
                         safeInfo = safeInfo.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                         safeInfo = safeInfo.replace(/\*(.*?)\*/g, '<i>$1</i>');
                         safeInfo = safeInfo.replace(/__(.*?)__/g, '<u>$1</u>');
                         safeInfo = safeInfo.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
-
-                        // Felesleges sortörések eltávolítása a címsorok/elválasztók körül
                         safeInfo = safeInfo.replace(/\n*(<hr>)\n*/gi, '$1');
                         safeInfo = safeInfo.replace(/\n*(<h1>.*?<\/h1>)\n*/gi, '$1');
                         safeInfo = safeInfo.replace(/\n*(<h2>.*?<\/h2>)\n*/gi, '$1');
-
-                        // Változók megvastagítása (kivéve linkek)
                         safeInfo = safeInfo.replace(/{{(.*?)}}/g, (match, p1) => {
                             if(p1.trim().startsWith('link:')) return match;
                             return `<span style="font-weight:bold;">{{${p1}}}</span>`;
                         });
-
-                        // Linkek kattinthatóvá tétele
                         safeInfo = safeInfo.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                             const parts = content.split('|');
                             const linkTplName = parts[0].trim();
@@ -5727,7 +5722,7 @@
                         html = `<div class="form-group"><div style="color: red; font-weight: bold;">❌ Nem található a megadott utasítás sablon: ${this.escapeHtml(tplName)}</div></div>`;
                     }
                 } else if (key.toLowerCase() === 'gender') {
-					html = `<div class="form-group"><label>Gender</label>
+                    html = `<div class="form-group"><label>Gender</label>
                             <div class="radio-group">
                                 <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
                                 <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
@@ -5748,7 +5743,6 @@
                     } else if (v.type === 'database') {
                         html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value)" style="margin-bottom: 5px;">`;
                         html += `<select class="form-control db-select" id="val_${key}" size="5" onchange="app.checkDatabaseOther('${key}')">`;
-                        // Az "Other" opciót felraktuk a lista tetejére:
                         html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                         if(Array.isArray(v.options)) {
                             v.options.forEach(opt => {
@@ -5810,25 +5804,25 @@
 		
         processAndCopy: function() {
             let txt = this.tempContent;
-            let txt2 = this.tempContent2 || "";
+            let txtExtras = this.tempExtraContents ? [...this.tempExtraContents] : [];
             const regex = /{{(.*?)}}/g;
-            const combinedText = txt + "\n" + txt2;
-			const matchedItems = combinedText.match(regex) || [];
-			const matches = [...new Set(matchedItems)];
+            
+            const combinedText = txt + "\n" + txtExtras.join('\n');
+            const matchedItems = combinedText.match(regex) || [];
+            const matches = [...new Set(matchedItems)];
 
             matches.forEach(m => {
                 const key = m.replace(/[{}]/g, '').trim();
                 let val = "";
 
                 if (key.toLowerCase().startsWith('info:')) {
-                    val = ""; // Ez garantálja, hogy az instrukció egyáltalán nem kerül be a végső szövegbe
+                    val = "";
                 } else if (key.toLowerCase() === 'gender') {
                     const g = document.querySelector('input[name="val_gender"]:checked').value;
                     if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
                     else val = (g === 'm') ? "Mr." : "Ms.";
                 } else {
                     const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
-
                     if(checkboxes.length > 0) {
                         let values = [];
                         checkboxes.forEach(chk => values.push(chk.value));
@@ -5844,14 +5838,12 @@
                                     const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
                                     const newContent = document.getElementById(`db_new_content_${key}`).value;
                                     val = newContent || newLabel;
-                                    
-                                    // Ha van címke, az új elemet bele is mentjük a Custom Variable-ba véglegesen
                                     const varObj = this.data.customVars.find(cv => cv.key === key);
                                     if (varObj && newLabel) {
                                         if (!varObj.options) varObj.options = [];
                                         varObj.options.push({ label: newLabel, value: val });
-                                        this.saveData(); // Lementi a kibővített Database-t a Firebase-be
-                                        if (this.data.currentMode === 'variables') this.renderVariables(); // Frissíti a UI-t
+                                        this.saveData(); 
+                                        if (this.data.currentMode === 'variables') this.renderVariables(); 
                                     }
                                 } else {
                                     val = el.value;
@@ -5861,35 +5853,47 @@
                     }
                 }
                 txt = txt.split(m).join(val);
-                if (txt2) txt2 = txt2.split(m).join(val); // Itt hajtjuk végre a cserét a második szövegben is!
+                txtExtras = txtExtras.map(ext => ext.split(m).join(val));
             });
-            this.copyToClipboard(txt); // CSAK az 1-est másoljuk a vágólapra
+            
+            this.copyToClipboard(txt); 
             this.closeModal('fillerModal');
-            this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt, txt2); // Itt átadjuk mindkettőt!
+            this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt, txtExtras);
         },
 
-        checkAndShowRecommendations: function(templateId, copiedText, optionalText = "") {
+        checkAndShowRecommendations: function(templateId, copiedText, extraContents = []) {
             if(!templateId) return;
             const t = this.data.templates.find(x => x.id === templateId);
             
             const hasRecs = t && t.recommendedIds && t.recommendedIds.length > 0;
-            const hasOptContent = optionalText && optionalText.trim() !== "";
+            const hasExtras = extraContents && extraContents.length > 0 && extraContents.some(e => e.trim() !== "");
             
-            // Ha nincsenek ajánlások ÉS nincs másodlagos tartalom, akkor nem nyitjuk meg az ablakot!
-            if(!hasRecs && !hasOptContent) return;
+            if(!hasRecs && !hasExtras) return;
 
             document.getElementById('recCopiedText').innerText = copiedText;
 
-            // Optional Content beállítása
-            const optContainer = document.getElementById('recOptionalContainer');
-            if (hasOptContent) {
-                optContainer.style.display = 'block';
-                document.getElementById('recOptionalText').innerText = optionalText;
+            const extrasWrapper = document.getElementById('recExtrasWrapper');
+            extrasWrapper.innerHTML = '';
+            
+            if (hasExtras) {
+                extrasWrapper.style.display = 'flex';
+                extraContents.forEach((ext, idx) => {
+                    if (ext.trim() === "") return;
+                    const safeExt = this.escapeHtml(ext);
+                    extrasWrapper.innerHTML += `
+                        <div style="background: #fff9c4; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="margin: 0; color: #d83b01;">Extra Content ${idx + 1}:</h4>
+                                <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy Content</button>
+                            </div>
+                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;">${safeExt}</div>
+                        </div>
+                    `;
+                });
             } else {
-                optContainer.style.display = 'none';
+                extrasWrapper.style.display = 'none';
             }
 
-            // Javaslatok (Templates) beállítása
             const recSection = document.getElementById('recTemplatesSection');
             const grid = document.getElementById('recTemplatesGrid');
             grid.innerHTML = '';
