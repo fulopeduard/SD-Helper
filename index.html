@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v193</title>
+    <title>SD Helper v203</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1982,7 +1982,7 @@
         </div>
     </div>
 </div>
-<div class="modal-overlay" id="fillerModal">
+<div class="modal-overlay" id="fillerModal" style="z-index: 1500;">
     <div class="modal">
         <div class="modal-header">Fill Details</div>
         <div class="modal-body" id="fillerInputs"></div>
@@ -4048,8 +4048,9 @@
 
                     const div = document.createElement('div');
                     div.className = 'card';
+                    if (recT.isDatabase) div.classList.add('database-card');
                     div.style.minHeight = '180px';
-                    div.style.backgroundColor = '#ffffff';
+                    div.style.backgroundColor = recT.color || '#ffffff';
 
                     div.innerHTML = `
                         <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column;">
@@ -4810,20 +4811,20 @@
                         if (t.dbItems) {
                             t.dbItems.forEach((item, idx) => {
                                 const label = item.label || item.content;
-                                dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, false)">${this.escapeHtml(label)}</div>`;
+                                dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'card')">${this.escapeHtml(label)}</div>`;
                             });
                         }
                         dbItemsHtml += `</div>`;
 
                         mainContentHtml = `
-                            <input type="text" class="form-control" placeholder="🔍 Search database..." onkeyup="app.filterDbTemplate(${t.id}, this.value, false)" style="margin-bottom: 8px; font-size: 0.85rem; padding: 6px;">
+                            <input type="text" class="form-control" placeholder="🔍 Search database..." onkeyup="app.filterDbTemplate(${t.id}, this.value, 'card')" style="margin-bottom: 8px; font-size: 0.85rem; padding: 6px;">
                             ${dbItemsHtml}
                         `;
 
                         useBtn = `
                             <div class="card-actions">
                                 <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${t.id})">👁️ View</button>
-                                <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${t.id}, false)">📋 Copy</button>
+                                <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${t.id}, 'card')">📋 Copy</button>
                             </div>
                         `;
                         quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewDbTemplate(${t.id})" title="Expand Database">👁️</button>`;
@@ -6164,16 +6165,67 @@
             if (hasRecs) {
                 recSection.style.display = 'block';
                 t.recommendedIds.forEach(recId => {
-                    const recT = this.data.templates.find(x => x.id === recId && !x.deleted);
-                    if(recT) {
-                        let safeTitle = this.escapeHtml(recT.title);
-                        let safePreview = this.escapeHtml(recT.content).substring(0, 150) + '...';
-                        
-                        const div = document.createElement('div');
-                        div.className = 'card';
-                        div.style.minHeight = '180px';
-                        div.style.backgroundColor = recT.color || '#ffffff';
+                const recT = this.data.templates.find(x => x.id === recId && !x.deleted);
+                if(recT) {
+                    let safeTitle = this.escapeHtml(recT.title);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.style.minHeight = '180px';
+                    div.style.backgroundColor = recT.color || '#ffffff';
 
+                    let innerHtml = '';
+                    
+                    if (recT.isDatabase) {
+                        div.classList.add('database-card');
+                        
+                        let dbItemsHtml = `<div class="db-template-list" id="db-list-rec-${recT.id}">`;
+                        if (recT.dbItems) {
+                            recT.dbItems.forEach((item, idx) => {
+                                const label = item.label || item.content;
+                                dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${recT.id}, ${idx}, 'rec')">${this.escapeHtml(label)}</div>`;
+                            });
+                        }
+                        dbItemsHtml += `</div>`;
+
+                        let mainContentHtml = `
+                            <input type="text" class="form-control" placeholder="🔍 Search database..." onkeyup="app.filterDbTemplate(${recT.id}, this.value, 'rec')" style="margin-bottom: 8px; font-size: 0.85rem; padding: 6px;">
+                            ${dbItemsHtml}
+                        `;
+
+                        let useBtn = `
+                            <div class="card-actions">
+                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${recT.id})">👁️ View</button>
+                                <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${recT.id}, 'rec')">📋 Copy</button>
+                            </div>
+                        `;
+                        let quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewDbTemplate(${recT.id})" title="Expand Database">👁️</button>`;
+
+                        let menu = `
+                            <button class="card-menu-btn" onclick="app.toggleMenu(event, ${recT.id})">⋮</button>
+                            <div class="dropdown-menu" id="menu-${recT.id}">
+                                <div class="dropdown-item" onclick="app.viewDbTemplate(${recT.id})">👁️ View</div>
+                                <div class="dropdown-item" onclick="app.openDbEditor(${recT.id})">✏️ Edit Database</div>
+                                <div class="dropdown-item" onclick="app.cloneDbTemplate(${recT.id})">📄 Create a copy</div>
+                                <div class="dropdown-item" onclick="app.moveSingleTemplate(${recT.id})">📂 Move to folder</div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item danger" onclick="app.moveToTrash(${recT.id})">🗑️ Delete</div>
+                            </div>
+                        `;
+
+                        innerHtml = `
+                            ${quickViewBtn}
+                            ${menu}
+                            <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
+                                <div class="card-title">${safeTitle}</div>
+                                <div class="card-preview">${mainContentHtml}</div>
+                            </div>
+                            ${useBtn}
+                        `;
+                    } else {
+                        let rawPreview = recT.content || '';
+                        let safePreview = this.escapeHtml(rawPreview).substring(0, 150) + '...';
+                        
                         let btnHtml = '';
                         if (recT.isViewOnly) {
                             btnHtml = `<button class="card-btn use view-only" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.viewTemplate(${recT.id})">👁️ View Template</button>`;
@@ -6181,16 +6233,19 @@
                             btnHtml = `<button class="card-btn use" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.prepareTemplate(${recT.id})">Use Template</button>`;
                         }
                         
-                        div.innerHTML = `
+                        innerHtml = `
                             <div class="card-title">${safeTitle}</div>
                             <div class="card-preview" style="-webkit-line-clamp: 4;">${safePreview}</div>
                             <div class="card-actions" style="margin-top:auto;">
                                 ${btnHtml}
                             </div>
                         `;
-                        grid.appendChild(div);
                     }
-                });
+                    
+                    div.innerHTML = innerHtml;
+                    grid.appendChild(div);
+                }
+            });
             } else {
                 recSection.style.display = 'none';
             }
@@ -6304,7 +6359,11 @@
                     const safeTitle = this.escapeHtml(t.title);
                     
                     // Tartalom formázása
-                    let safePreview = this.escapeHtml(t.content || '');
+                    let rawPreview = t.content || '';
+                    if (t.isDatabase && t.dbItems && t.dbItems.length > 0) {
+                        rawPreview = t.dbItems.map(item => item.label || item.content).join(', ');
+                    }
+                    let safePreview = this.escapeHtml(rawPreview);
                     safePreview = safePreview.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
                     safePreview = safePreview.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
                     safePreview = safePreview.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
@@ -6931,31 +6990,66 @@
             }
         },
 
-        filterDbTemplate: function(id, term, isModal) {
+        filterDbTemplate: function(id, term, context) {
             term = term.toLowerCase();
-            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+            let listId;
+            if (context === 'modal') listId = `db-list-modal-${id}`;
+            else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else listId = `db-list-card-${id}`;
+            
             const list = document.getElementById(listId);
             if (!list) return;
             
             const items = list.querySelectorAll('.db-template-item');
             items.forEach(item => {
                 const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(term) ? 'block' : 'none';
+                item.style.display = text.includes(term) ? '' : 'none';
             });
         },
 
-        selectDbItem: function(id, idx, isModal) {
-            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+        selectDbItem: function(id, idx, context) {
+            let listId;
+            if (context === 'modal') listId = `db-list-modal-${id}`;
+            else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else listId = `db-list-card-${id}`;
+            
             const list = document.getElementById(listId);
             if (!list) return;
             
             list.querySelectorAll('.db-template-item').forEach(el => el.classList.remove('selected'));
             const selectedEl = list.querySelector(`.db-template-item[data-idx="${idx}"]`);
             if(selectedEl) selectedEl.classList.add('selected');
+
+            // --- ÚJ: Jobb oldali előnézet frissítése View modálban ---
+            if (context === 'modal') {
+                const previewContainer = document.getElementById(`db-preview-modal-${id}`);
+                const t = this.data.templates.find(x => x.id === id);
+                if (previewContainer && t && t.dbItems && t.dbItems[idx]) {
+                    const item = t.dbItems[idx];
+                    const contentToShow = item.content || item.label;
+                    
+                    let formatted = this.escapeHtml(contentToShow);
+                    // Változók kiemelése kék háttérrel, hogy látszódjon, ha van benne feldolgozandó tag
+                    formatted = formatted.replace(/{{(.*?)}}/g, (match, p1) => {
+                        return `<span style="font-weight:bold; color: var(--primary); background: rgba(0,120,212,0.1); padding: 2px 4px; border-radius: 3px;">{{${this.escapeHtml(p1)}}}</span>`;
+                    });
+                    
+                    previewContainer.innerHTML = `
+                        <div style="font-size: 0.75rem; color: #605e5c; margin-bottom: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                            ${this.escapeHtml(item.label || 'Selected Item')}
+                        </div>
+                        <div>${formatted}</div>
+                    `;
+                }
+            }
         },
 
-        copyDbTemplate: function(event, id, isModal) {
-            const listId = isModal ? `db-list-modal-${id}` : `db-list-card-${id}`;
+        copyDbTemplate: function(event, id, context) {
+            let listId;
+            if (context === 'modal') listId = `db-list-modal-${id}`;
+            else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else listId = `db-list-card-${id}`;
+            
             const list = document.getElementById(listId);
             if (!list) return;
             
@@ -7000,11 +7094,11 @@
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
 
-            let dbItemsHtml = `<div class="db-template-list" id="db-list-modal-${t.id}" style="max-height: 450px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 6px;">`;
+            let dbItemsHtml = `<div class="db-template-list" id="db-list-modal-${t.id}" style="max-height: 450px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 6px; overflow-y: auto;">`;
             if (t.dbItems) {
                 t.dbItems.forEach((item, idx) => {
                     const label = item.label || item.content;
-                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, true)" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb;">${this.escapeHtml(label)}</div>`;
+                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'modal')" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; cursor: pointer;">${this.escapeHtml(label)}</div>`;
                 });
             }
             dbItemsHtml += `</div>`;
@@ -7018,20 +7112,27 @@
             overlay.style.display = 'flex';
 
             overlay.innerHTML = `
-                <div class="modal" style="width: 800px; max-width: 95%;">
+                <div class="modal" style="width: 900px; max-width: 95%;">
                     <div class="modal-header">
                         <span>🗄️ ${this.escapeHtml(t.title)}</span>
                         <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
                     </div>
-                    <div class="modal-body">
-                        <input type="text" class="form-control" placeholder="🔍 Keresés a listában..." onkeyup="app.filterDbTemplate(${t.id}, this.value, true)" style="margin-bottom: 15px; font-size: 1rem; padding: 10px; border-radius: 6px; border: 2px solid var(--primary);">
-                        ${dbItemsHtml}
+                    <div class="modal-body" style="display: flex; gap: 20px; overflow: hidden; padding-bottom: 10px;">
+                        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                            <input type="text" class="form-control" placeholder="🔍 Keresés a listában..." onkeyup="app.filterDbTemplate(${t.id}, this.value, 'modal')" style="margin-bottom: 15px; font-size: 1rem; padding: 10px; border-radius: 6px; border: 2px solid var(--primary);">
+                            ${dbItemsHtml}
+                        </div>
+                        <div style="flex: 1; min-width: 0; border-left: 2px solid var(--border); padding-left: 20px; display: flex; flex-direction: column;">
+                            <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--primary); font-size: 1rem;">👁️ Preview</h4>
+                            <div id="db-preview-modal-${t.id}" style="white-space: pre-wrap; font-family: monospace; background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #e1dfdd; flex: 1; overflow-y: auto; line-height: 1.5; color: #201f1e; font-size: 0.95rem;"><div style="color: #888;">Select an item to see preview...</div>
+							</div>
+                        </div>
                     </div>
                     <div class="modal-footer" style="display:flex; justify-content: space-between; align-items: center;">
                         <span style="color:#666; font-size:0.9rem; font-style: italic;">Válassz ki egy sort a másoláshoz!</span>
                         <div>
                             <button class="btn btn-secondary close-dynamic-btn">Cancel</button>
-                            <button class="btn btn-success" style="font-size: 1.1rem; padding: 8px 20px;" onclick="app.copyDbTemplate(event, ${t.id}, true)">📋 Copy Selected</button>
+                            <button class="btn btn-success" style="font-size: 1.1rem; padding: 8px 20px;" onclick="app.copyDbTemplate(event, ${t.id}, 'modal')">📋 Copy Selected</button>
                         </div>
                     </div>
                 </div>
