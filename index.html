@@ -6970,20 +6970,24 @@
             
             if (t && t.dbItems && t.dbItems[idx]) {
                 // Ha a content üres, a labelt másoljuk
-                const contentToCopy = t.dbItems[idx].content || t.dbItems[idx].label;
+                                const contentToCopy = t.dbItems[idx].content || t.dbItems[idx].label;
                 
                 // History formázás
                 this.currentProcessingTitle = t.title + " (" + (t.dbItems[idx].label || "Item") + ")";
                 this.currentProcessingColor = t.color;
                 
-                this.copyToClipboard(contentToCopy);
+                // Változók feldolgozása: ha van {{...}} a szövegben, megnyílik a filler modal
+                this.tempInstructions = [];
+                this.tempExtraContents = [];
+                this.processAndShowFiller(contentToCopy, id);
                 
-                // Vizuális visszajelzés
-                if (event && event.currentTarget) {
+                // Vizuális visszajelzés csak akkor, ha nem nyílt meg a modal (azaz nem volt benne változó)
+                const modalOpened = document.getElementById('fillerModal').style.display === 'flex';
+                if (!modalOpened && event && event.currentTarget) {
                     const btn = event.currentTarget;
                     const origText = btn.innerHTML;
                     btn.innerHTML = "✅ Copied!";
-                    btn.style.backgroundColor = "#2e7d32"; // Sötétebb zöld
+                    btn.style.backgroundColor = "#2e7d32";
                     setTimeout(() => {
                         btn.innerHTML = origText;
                         btn.style.backgroundColor = "";
