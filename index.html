@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v203</title>
+    <title>SD Helper v208</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1927,6 +1927,10 @@
                     <input type="checkbox" id="settingAutoSnippetSubCat">
                     <span style="margin-left: 5px;"><strong>Automatic snippet sub-category based on color</strong> (Uses color label if sub-category is empty)</span>
                 </label>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 15px;">
+                    <label style="font-size:0.85rem; color:#666;"><strong>Max remembered variables:</strong> (Includes auto-filled)</label>
+                    <input type="number" id="settingVarHistoryLimit" class="form-control" min="1" max="20" step="1" style="width: 80px; padding: 4px;">
+                </div>
             </div>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
@@ -1982,7 +1986,7 @@
         </div>
     </div>
 </div>
-<div class="modal-overlay" id="fillerModal" style="z-index: 1500;">
+<div class="modal-overlay" id="fillerModal" style="z-index: 3500;">
     <div class="modal">
         <div class="modal-header">Fill Details</div>
         <div class="modal-body" id="fillerInputs"></div>
@@ -2098,7 +2102,8 @@
             leftSidebarTimer: null,
             rightSidebarTimer: null,
             selectedIds: [],
-            clipboardHistory: []
+            clipboardHistory: [],
+            variableHistory: { date: new Date().toISOString().split('T')[0], values: {} }
         },
 		
 		openTicketEditor: function(id) {
@@ -2411,12 +2416,24 @@
                         if(this.data.settings.autoSnippetSubCat === undefined) this.data.settings.autoSnippetSubCat = false;
                         if(this.data.settings.highlightTitle === undefined) this.data.settings.highlightTitle = false;
                         if(this.data.settings.titleSeparator === undefined) this.data.settings.titleSeparator = false;
-                        if(this.data.settings.showViewButton === undefined) this.data.settings.showViewButton = false;
+                    if(this.data.settings.showViewButton === undefined) this.data.settings.showViewButton = false;
+                    if(this.data.settings.varHistoryLimit === undefined) this.data.settings.varHistoryLimit = 5;
+                }
+                
+                if (savedData.variableHistory) {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (savedData.variableHistory.date === today) {
+                        this.data.variableHistory = savedData.variableHistory;
+                    } else {
+                        this.data.variableHistory = { date: today, values: {} };
                     }
                 } else {
-                    this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
+                    this.data.variableHistory = { date: new Date().toISOString().split('T')[0], values: {} };
+                }
+            } else {
+                this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false };
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, varHistoryLimit: 5 };
                     this.saveData();
                 }
 
@@ -2442,17 +2459,18 @@
     const userDocRef = doc(db, "users", this.user.uid);
 
     const payload = {
-        templates: this.data.templates,
-        folders: this.data.folders,
-        categories: this.data.categories,
-        customVars: this.data.customVars,
-        quickTitles: this.data.quickTitles,
-        timeSettings: this.data.timeSettings,
-        lastUpdated: new Date(),
-        currentLang: this.data.currentLang,
-        colorOrder: this.data.colorOrder,
-        settings: this.data.settings
-    };
+            templates: this.data.templates,
+            folders: this.data.folders,
+            categories: this.data.categories,
+            customVars: this.data.customVars,
+            quickTitles: this.data.quickTitles,
+            timeSettings: this.data.timeSettings,
+            lastUpdated: new Date(),
+            currentLang: this.data.currentLang,
+            colorOrder: this.data.colorOrder,
+            settings: this.data.settings,
+            variableHistory: this.data.variableHistory
+        };
 
     try {
         await setDoc(userDocRef, payload);
@@ -4229,6 +4247,7 @@
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
+            document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit || 5;
 
             document.getElementById('settingDefaultTodoColor').value = this.data.settings.defaultTodoColor || '#ffffff';
             document.getElementById('settingDefaultViewOnlyColor').value = this.data.settings.defaultViewOnlyColor || '#ffffff';
@@ -4277,6 +4296,7 @@
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
+            this.data.settings.varHistoryLimit = parseInt(document.getElementById('settingVarHistoryLimit').value) || 5;
 
             this.data.settings.defaultTodoColor = document.getElementById('settingDefaultTodoColor').value;
             this.data.settings.defaultViewOnlyColor = document.getElementById('settingDefaultViewOnlyColor').value;
@@ -6019,7 +6039,32 @@
                                     <textarea class="form-control" id="db_new_content_${key}" rows="2" placeholder="Content"></textarea>
                                  </div>`;
                     } else if (v.type === 'text') {
-                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea>`;
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        let lastVal = "";
+                        let hasHistory = this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                        let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
+                        if (hasHistory) {
+                            const lastItem = hArr[0];
+                            lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
+                        }
+                        
+                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
+                        
+                        if (hasHistory) {
+                            const varLimit = this.data.settings.varHistoryLimit || 5;
+                            html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
+                            hArr.slice(0, varLimit).forEach((item, i) => {
+                                const valStr = typeof item === 'string' ? item : item.v;
+                                const timeStr = typeof item === 'string' ? '' : ` <span style="color:#888; font-size:0.75rem;">(${item.t})</span>`;
+                                const safeVal = this.escapeHtml(valStr);
+                                const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
+                                const isFirst = (i === 0);
+                                const displayStyle = isFirst ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                                
+                                html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';">${displayVal}${timeStr}</button>`;
+                            });
+                            html += `</div>`;
+                        }
                     } else if (v.type === 'select') {
                         html += `<select class="form-control" id="val_${key}">`;
                         v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
@@ -6031,7 +6076,33 @@
                     }
                     html += `</div>`;
                 } else {
-                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}"></textarea></div>`;
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let lastVal = "";
+                    let hasHistory = this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                    let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
+                    if (hasHistory) {
+                        const lastItem = hArr[0];
+                        lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
+                    }
+                    
+                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
+                    
+                    if (hasHistory) {
+                        const varLimit = this.data.settings.varHistoryLimit || 5;
+                        html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
+                        hArr.slice(0, varLimit).forEach((item, i) => {
+                            const valStr = typeof item === 'string' ? item : item.v;
+                            const timeStr = typeof item === 'string' ? '' : ` <span style="color:#888; font-size:0.75rem;">(${item.t})</span>`;
+                            const safeVal = this.escapeHtml(valStr);
+                            const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
+                            const isFirst = (i === 0);
+                            const displayStyle = isFirst ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                            
+                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';">${displayVal}${timeStr}</button>`;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
                 }
                 container.innerHTML += html;
             });
@@ -6072,6 +6143,8 @@
             const combinedText = txt + "\n" + txtExtras.join('\n');
             const matchedItems = combinedText.match(regex) || [];
             const matches = [...new Set(matchedItems)];
+
+            let historyChanged = false;
 
             matches.forEach(m => {
                 const key = m.replace(/[{}]/g, '').trim();
@@ -6118,9 +6191,43 @@
                 }
                 txt = txt.split(m).join(val);
                 txtExtras = txtExtras.map(ext => ext.split(m).join(val));
+                
+                if (val && val.trim() !== '') {
+                    const isSystem = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:') || key.toLowerCase() === 'gender';
+                    if (!isSystem) {
+                        const today = new Date().toISOString().split('T')[0];
+                        if (!this.data.variableHistory || this.data.variableHistory.date !== today) {
+                            this.data.variableHistory = { date: today, values: {} };
+                        }
+                        if (!this.data.variableHistory.values[key]) {
+                            this.data.variableHistory.values[key] = [];
+                        }
+                        
+                        // Kiszűrjük a korábbi egyezéseket (kezeli a régi string alapú és az új objektum alapú mentést is)
+                        this.data.variableHistory.values[key] = this.data.variableHistory.values[key].filter(item => {
+                            const itemVal = typeof item === 'string' ? item : item.v;
+                            return itemVal !== val;
+                        });
+                        
+                        // Időbélyeg generálása (ÓÓ:PP)
+                        const now = new Date();
+                        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                        
+                        // Új elem hozzáadása (value és time formátumban)
+                        this.data.variableHistory.values[key].unshift({ v: val, t: timeStr });
+                        
+                        const varLimit = this.data.settings.varHistoryLimit || 5;
+                        if (this.data.variableHistory.values[key].length > varLimit) {
+                            this.data.variableHistory.values[key] = this.data.variableHistory.values[key].slice(0, varLimit);
+                        }
+                        historyChanged = true;
+                    }
+                }
             });
+
+            if (historyChanged) this.saveData();
             
-            this.copyToClipboard(txt); 
+            this.copyToClipboard(txt);
             this.closeModal('fillerModal');
             this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt, txtExtras);
         },
