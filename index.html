@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v208</title>
+    <title>SD Helper v209</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1929,7 +1929,7 @@
                 </label>
                 <div style="display:flex; align-items:center; gap: 10px; margin-top: 15px;">
                     <label style="font-size:0.85rem; color:#666;"><strong>Max remembered variables:</strong> (Includes auto-filled)</label>
-                    <input type="number" id="settingVarHistoryLimit" class="form-control" min="1" max="20" step="1" style="width: 80px; padding: 4px;">
+                    <input type="number" id="settingVarHistoryLimit" class="form-control" min="0" max="20" step="1" style="width: 80px; padding: 4px;">
                 </div>
             </div>
 
@@ -4247,7 +4247,7 @@
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
-            document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit || 5;
+            document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
 
             document.getElementById('settingDefaultTodoColor').value = this.data.settings.defaultTodoColor || '#ffffff';
             document.getElementById('settingDefaultViewOnlyColor').value = this.data.settings.defaultViewOnlyColor || '#ffffff';
@@ -4296,7 +4296,8 @@
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
-            this.data.settings.varHistoryLimit = parseInt(document.getElementById('settingVarHistoryLimit').value) || 5;
+            const parsedLimit = parseInt(document.getElementById('settingVarHistoryLimit').value);
+            this.data.settings.varHistoryLimit = isNaN(parsedLimit) ? 5 : parsedLimit;
 
             this.data.settings.defaultTodoColor = document.getElementById('settingDefaultTodoColor').value;
             this.data.settings.defaultViewOnlyColor = document.getElementById('settingDefaultViewOnlyColor').value;
@@ -6041,7 +6042,8 @@
                     } else if (v.type === 'text') {
                         const todayStr = new Date().toISOString().split('T')[0];
                         let lastVal = "";
-                        let hasHistory = this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                        const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                        let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
                         let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
                         if (hasHistory) {
                             const lastItem = hArr[0];
@@ -6051,7 +6053,6 @@
                         html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
                         
                         if (hasHistory) {
-                            const varLimit = this.data.settings.varHistoryLimit || 5;
                             html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                             hArr.slice(0, varLimit).forEach((item, i) => {
                                 const valStr = typeof item === 'string' ? item : item.v;
@@ -6078,7 +6079,8 @@
                 } else {
                     const todayStr = new Date().toISOString().split('T')[0];
                     let lastVal = "";
-                    let hasHistory = this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                    const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                    let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
                     let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
                     if (hasHistory) {
                         const lastItem = hArr[0];
@@ -6088,7 +6090,6 @@
                     html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
                     
                     if (hasHistory) {
-                        const varLimit = this.data.settings.varHistoryLimit || 5;
                         html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                         hArr.slice(0, varLimit).forEach((item, i) => {
                             const valStr = typeof item === 'string' ? item : item.v;
@@ -6216,8 +6217,10 @@
                         // Új elem hozzáadása (value és time formátumban)
                         this.data.variableHistory.values[key].unshift({ v: val, t: timeStr });
                         
-                        const varLimit = this.data.settings.varHistoryLimit || 5;
-                        if (this.data.variableHistory.values[key].length > varLimit) {
+                        const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                        if (varLimit === 0) {
+                            this.data.variableHistory.values[key] = [];
+                        } else if (this.data.variableHistory.values[key].length > varLimit) {
                             this.data.variableHistory.values[key] = this.data.variableHistory.values[key].slice(0, varLimit);
                         }
                         historyChanged = true;
