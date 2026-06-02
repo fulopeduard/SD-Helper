@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v227</title>
+    <title>SD Helper v233</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -18,6 +18,7 @@
             --clone: #6b69d6;
             --deepl: #0F2B46;
             --view-mode: #605e5c;
+            --view-text: #323130;
             --folder-bg: #fff9c4;
             --folder-hover: #fff59d;
             --folder-active: #fdd835;
@@ -185,6 +186,16 @@
             border-color: var(--primary) !important;
             box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2) !important;
             outline: none;
+        }
+
+        /* View Only Window Theme Styling */
+        .view-mode, .view-modal, [id*="view" i] .modal, [id*="preview" i] .modal, .viewer-modal, .dynamic-view-modal .modal {
+            background: var(--view-mode) !important;
+            color: var(--view-text) !important;
+        }
+        /* A span-ekről levettük a kényszerített színt, így a formázott [c:#hex] inline style-ok megmaradnak */
+        .view-mode p, .view-mode div, .view-modal p, [id*="view" i] .modal p, .dynamic-view-modal .modal div, .dynamic-view-modal .modal p {
+            color: var(--view-text);
         }
         .btn-cat-edit {
             background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
@@ -619,7 +630,7 @@
         .card-btn.use { background-color: var(--primary); color: white; border: none; font-weight: bold; opacity: 1; }
         .card-btn.use:hover { background-color: #005a9e; }
 
-        .card-btn.view-only { background-color: var(--view-mode); color: white; border: none; font-weight: bold; }
+        .card-btn.view-only { background-color: var(--view-btn, var(--view-mode)); color: white; border: none; font-weight: bold; }
         .card-btn.view-only:hover { background-color: #4a4846; }
 
         .card-btn.clone { color: var(--clone); border: 1px solid var(--clone); }
@@ -703,15 +714,15 @@
         #todoModal { z-index: 1400; }
 
         .template-link {
-            color: var(--primary);
-            text-decoration: none;
+            color: var(--view-link-color, var(--primary)) !important;
+            text-decoration: underline;
             cursor: pointer;
             font-weight: inherit;
             font-size: inherit;
             padding: 0;
-            transition: color 0.2s;
+            transition: opacity 0.2s;
         }
-        .template-link:hover { color: #005a9e; }
+        .template-link:hover { opacity: 0.8; }
 
         /* Color Picker Styles */
         .color-picker-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -1145,7 +1156,7 @@
             border-bottom: 1px solid #f3f2f1; 
             font-size: 0.9rem; 
             transition: background 0.1s;
-            color: #323130;
+            color: #000000 !important;
         }
         .db-template-item:last-child {
             border-bottom: none;
@@ -2266,6 +2277,33 @@
                             <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewBtn')" title="Elfogadás">✓</button>
                         </div>
                     </div>
+                    <div class="form-group" style="margin: 0; grid-column: span 2;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Bg (Solid or Gradient)</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <input type="hidden" id="themeViewBg">
+                            <input type="color" id="themeViewBg_1" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeViewBg')">
+                            <span style="font-size: 0.8rem; color: #64748b;">to</span>
+                            <input type="color" id="themeViewBg_2" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeViewBg')">
+                            <input type="number" id="themeViewBg_angle" value="135" style="width: 50px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; text-align: center;" title="Szög (fok)" oninput="app.updateGradient('themeViewBg')"><span style="font-size: 0.8rem; color: #64748b; margin-left: -4px;">°</span>
+                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 3px; cursor: pointer;" title="Visszatérés az első színhez"><input type="checkbox" id="themeViewBg_bounce" onchange="app.updateGradient('themeViewBg')"> 🪃 3-color</label>
+                            <button class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-weight: 600; font-size: 0.75rem;" onclick="app.matchGradient('themeViewBg')" title="Második szín megegyezik az elsővel">🔗 Match</button>
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold; margin-left: auto;" onclick="app.acceptColor('themeViewBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Text</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeViewText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Link</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeViewLink" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewLink')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2783,7 +2821,7 @@
                             id: 'default', name: 'Default Theme',
                             subtitle: '#0078d4', mainBg: '#d0d0e8', sidebarBg: '#bcbce4',
                             sidebarText: '#323130', catBg: '#d0d0ff', catTitle: '#1a1a1a', catBtnBg: '#f3f2f1',
-                            text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c',
+                            text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c', viewBg: '#605e5c', viewText: '#ffffff', viewLink: '#93c5fd',
                             sidebarCatOddBg: '#a6e7f4', sidebarCatEvenBg: '#a0dfec', sidebarCatHoverBg: '#8fd4e6', sidebarCatActiveBg: '#0078d4',
                             sidebarFolderBg: '#fff9c4', sidebarFolderHoverBg: '#fff59d', sidebarFolderActiveBg: '#fdd835', sidebarFolderText: '#4e342e', sidebarCatItemText: '#201f1e',
                             sidebarTrashBg: '#fde7e9', sidebarTrashText: '#a80000'
@@ -2830,7 +2868,7 @@
                     id: 'default', name: 'Default Theme',
                     subtitle: '#0078d4', mainBg: '#d0d0e8', sidebarBg: '#bcbce4',
                     sidebarText: '#323130', catBg: '#d0d0ff', catTitle: '#1a1a1a', catBtnBg: '#f3f2f1',
-                    text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c',
+                    text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c', viewBg: '#605e5c', viewText: '#ffffff', viewLink: '#93c5fd',
                     sidebarCatOddBg: '#a6e7f4', sidebarCatEvenBg: '#a0dfec', sidebarCatHoverBg: '#8fd4e6', sidebarCatActiveBg: '#0078d4',
                     sidebarFolderBg: '#fff9c4', sidebarFolderHoverBg: '#fff59d', sidebarFolderActiveBg: '#fdd835', sidebarFolderText: '#4e342e', sidebarCatItemText: '#201f1e',
                     sidebarTrashBg: '#fde7e9', sidebarTrashText: '#a80000'
@@ -3229,7 +3267,7 @@
                         <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
                     </div>
                     <div class="modal-body">
-                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+                        <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: var(--view-text);">${safeContent}</div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-primary close-dynamic-btn">Close</button>
@@ -4940,6 +4978,9 @@
             setVal('themeTitle', theme.title || '#1a1a1a');
             setVal('themePrimary', theme.primary || '#0078d4');
             setVal('themeViewBtn', theme.viewBtn || '#605e5c');
+            setGradientVal('themeViewBg', theme.viewBg || '#605e5c');
+            setVal('themeViewText', theme.viewText || '#323130');
+            setVal('themeViewLink', theme.viewLink || '#93c5fd');
             
             setVal('themeSidebarCatOddBg', theme.sidebarCatOddBg || '#a6e7f4');
             setVal('themeSidebarCatEvenBg', theme.sidebarCatEvenBg || '#a0dfec');
@@ -5014,6 +5055,9 @@
             const title = document.getElementById('themeTitle')?.value || '#1a1a1a';
             const primary = document.getElementById('themePrimary')?.value || '#0078d4';
             const viewBtn = document.getElementById('themeViewBtn')?.value || '#605e5c';
+            const viewBg = document.getElementById('themeViewBg')?.value || '#605e5c';
+            const viewText = document.getElementById('themeViewText')?.value || '#323130';
+            const viewLink = document.getElementById('themeViewLink')?.value || '#93c5fd';
             
             const sidebarCatOddBg = document.getElementById('themeSidebarCatOddBg')?.value || '#a6e7f4';
             const sidebarCatEvenBg = document.getElementById('themeSidebarCatEvenBg')?.value || '#a0dfec';
@@ -5037,7 +5081,10 @@
             document.documentElement.style.setProperty('--app-text', text);
             document.documentElement.style.setProperty('--title-color', title);
             document.documentElement.style.setProperty('--primary', primary);
-            document.documentElement.style.setProperty('--view-mode', viewBtn);
+            document.documentElement.style.setProperty('--view-btn', viewBtn);
+            document.documentElement.style.setProperty('--view-mode', viewBg);
+            document.documentElement.style.setProperty('--view-text', viewText);
+            document.documentElement.style.setProperty('--view-link-color', viewLink);
             
             document.documentElement.style.setProperty('--sidebar-cat-odd-bg', sidebarCatOddBg);
             document.documentElement.style.setProperty('--sidebar-cat-even-bg', sidebarCatEvenBg);
@@ -5061,6 +5108,9 @@
 
             document.documentElement.style.setProperty('--subtitle-color', theme.subtitle || '#0078d4');
             document.documentElement.style.setProperty('--main-bg', theme.mainBg || '#d0d0e8');
+            document.documentElement.style.setProperty('--view-mode', theme.viewBg || '#605e5c');
+            document.documentElement.style.setProperty('--view-text', theme.viewText || '#323130');
+            document.documentElement.style.setProperty('--view-link-color', theme.viewLink || '#93c5fd');
             document.documentElement.style.setProperty('--sidebar-bg-color', theme.sidebarBg || '#bcbce4');
             document.documentElement.style.setProperty('--sidebar-text', theme.sidebarText || '#323130');
             document.documentElement.style.setProperty('--cat-bg', theme.catBg || '#d0d0ff');
@@ -5069,7 +5119,9 @@
             document.documentElement.style.setProperty('--app-text', theme.text || '#323130');
             document.documentElement.style.setProperty('--title-color', theme.title || '#1a1a1a');
             document.documentElement.style.setProperty('--primary', theme.primary || '#0078d4');
-            document.documentElement.style.setProperty('--view-mode', theme.viewBtn || '#605e5c');
+            document.documentElement.style.setProperty('--view-btn', theme.viewBtn || '#605e5c');
+            document.documentElement.style.setProperty('--view-mode', theme.viewBg || '#605e5c');
+            document.documentElement.style.setProperty('--view-text', theme.viewText || '#323130');
             
             document.documentElement.style.setProperty('--sidebar-cat-odd-bg', theme.sidebarCatOddBg || '#a6e7f4');
             document.documentElement.style.setProperty('--sidebar-cat-even-bg', theme.sidebarCatEvenBg || '#a0dfec');
@@ -5105,6 +5157,9 @@
                 title: document.getElementById('themeTitle').value,
                 primary: document.getElementById('themePrimary').value,
                 viewBtn: document.getElementById('themeViewBtn').value,
+                viewBg: document.getElementById('themeViewBg').value,
+                viewText: document.getElementById('themeViewText').value,
+                viewLink: document.getElementById('themeViewLink').value,
                 sidebarCatOddBg: document.getElementById('themeSidebarCatOddBg').value,
                 sidebarCatEvenBg: document.getElementById('themeSidebarCatEvenBg').value,
                 sidebarCatHoverBg: document.getElementById('themeSidebarCatHoverBg').value,
@@ -5406,7 +5461,7 @@
             if(t.todoItems) {
                 t.todoItems.forEach(item => {
                     const checkedIcon = item.checked ? '☑' : '☐';
-                    const style = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: #333;';
+                    const style = item.checked ? 'text-decoration: line-through; color: #888;' : 'color: var(--view-text);';
 
                     // ÚJ: A [] és {} részek eltávolítása a vizuális megjelenésből
                     const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
@@ -5685,9 +5740,9 @@
                         let dbItemsHtml = `<div class="db-template-list" id="db-list-card-${t.id}">`;
                         if (t.dbItems) {
                             t.dbItems.forEach((item, idx) => {
-                                const label = item.label || item.content;
-                                dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'card')">${this.escapeHtml(label)}</div>`;
-                            });
+                    const label = item.label || item.content;
+                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'modal')" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #000000 !important;">${this.escapeHtml(label)}</div>`;
+                });
                         }
                         dbItemsHtml += `</div>`;
 
@@ -6446,7 +6501,7 @@
 						<button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
 					</div>
 					<div class="modal-body">
-						<div class="view-content" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: #201f1e;">${safeContent}</div>
+						<div class="view-content" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: var(--view-text);">${safeContent}</div>
 					</div>
 					<div class="modal-footer">
 						<button class="btn btn-primary close-dynamic-btn">Close</button>
@@ -8001,7 +8056,7 @@
                     });
                     
                     previewContainer.innerHTML = `
-                        <div style="font-size: 0.75rem; color: #605e5c; margin-bottom: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                        <div style="font-size: 0.75rem; color: #000000 !important; margin-bottom: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
                             ${this.escapeHtml(item.label || 'Selected Item')}
                         </div>
                         <div>${formatted}</div>
@@ -8090,7 +8145,7 @@
                         </div>
                         <div style="flex: 1; min-width: 0; border-left: 2px solid var(--border); padding-left: 20px; display: flex; flex-direction: column;">
                             <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--primary); font-size: 1rem;">👁️ Preview</h4>
-                            <div id="db-preview-modal-${t.id}" style="white-space: pre-wrap; font-family: monospace; background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #e1dfdd; flex: 1; overflow-y: auto; line-height: 1.5; color: #201f1e; font-size: 0.95rem;"><div style="color: #888;">Select an item to see preview...</div>
+                            <div id="db-preview-modal-${t.id}" style="white-space: pre-wrap; font-family: monospace; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); flex: 1; overflow-y: auto; line-height: 1.5; color: var(--view-text); font-size: 0.95rem;"><div style="color: inherit; opacity: 0.7;">Select an item to see preview...</div>
 							</div>
                         </div>
                     </div>
@@ -8230,7 +8285,7 @@
             this.renderTemplates();
             this.renderQuickTitles();
         },
-
+		
         selectColor: function(colorHex, element) {
             document.getElementById('inputColor').value = colorHex;
 
