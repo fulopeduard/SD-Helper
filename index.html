@@ -1147,7 +1147,7 @@
             100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); border-color: var(--border); transform: scale(1); }
         }
         .highlight-target {
-            animation: highlightTemplatePulse 2s ease-out;
+            animation: highlightTemplatePulse 2s infinite;
             z-index: 100 !important;
         }
     </style>
@@ -1905,6 +1905,11 @@
                 <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingShowViewButton">
                     <span style="margin-left: 5px;"><strong>View button next to Use</strong> (Replaces the eye icon)</span>
+                </label>
+                
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingOpenLinkInPopup">
+                    <span style="margin-left: 5px;"><strong>Open Direct Link in Pop-up</strong> (Automatically shows template details)</span>
                 </label>
 
                 <label class="radio-label" style="margin-top: 15px;">
@@ -2763,9 +2768,90 @@
                             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             card.classList.add('highlight-target');
                             
-                            setTimeout(() => {
-                                card.classList.remove('highlight-target');
-                            }, 2000);
+                            // Ha a beállítás be van kapcsolva, nyissuk meg a kártyát egy pop-up-ban (előnézeti módban)
+                            if (this.data.settings && this.data.settings.openLinkInPopup) {
+                                const baseZIndex = 2600;
+                                const existingModals = document.querySelectorAll('.dynamic-view-modal');
+                                const newZIndex = baseZIndex + (existingModals.length * 10);
+                                
+                                const overlay = document.createElement('div');
+                                overlay.className = 'modal-overlay dynamic-view-modal';
+                                overlay.style.zIndex = newZIndex;
+                                overlay.style.display = 'flex';
+                                overlay.style.alignItems = 'center';
+                                overlay.style.justifyContent = 'center';
+                                
+                                // Klónozzuk a kártyát, hogy pont úgy nézzen ki, mint a gridben
+                                const cardClone = card.cloneNode(true);
+                                cardClone.style.width = '380px';
+                                cardClone.style.maxWidth = '95%';
+                                cardClone.style.margin = '0';
+                                cardClone.style.cursor = 'default';
+                                cardClone.style.transform = 'none'; 
+                                cardClone.classList.remove('highlight-target');
+                                
+                                // A menü gomb meghagyása és az id-k egyedivé tétele a klónon, hogy ne az eredeti kártyát nyissa
+                                const menu = cardClone.querySelector('.dropdown-menu');
+                                const menuBtn = cardClone.querySelector('.card-menu-btn');
+                                if (menu && menuBtn) {
+                                    menu.id = 'menu-clone-' + id;
+                                    menuBtn.setAttribute('onclick', `app.toggleMenu(event, 'clone-${id}')`);
+                                }
+
+                                // Egyedi bezáró gomb a háttér (overlay) jobb felső sarkába
+                                const closeBtn = document.createElement('button');
+                                closeBtn.innerHTML = '✕';
+                                closeBtn.style.position = 'absolute';
+                                closeBtn.style.top = '25px';
+                                closeBtn.style.right = '30px';
+                                closeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                                closeBtn.style.color = '#fff';
+                                closeBtn.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+                                closeBtn.style.borderRadius = '50%';
+                                closeBtn.style.width = '40px';
+                                closeBtn.style.height = '40px';
+                                closeBtn.style.cursor = 'pointer';
+                                closeBtn.style.zIndex = '100';
+                                closeBtn.style.display = 'flex';
+                                closeBtn.style.alignItems = 'center';
+                                closeBtn.style.justifyContent = 'center';
+                                closeBtn.style.fontSize = '18px';
+                                closeBtn.style.transition = 'all 0.2s';
+                                closeBtn.onmouseover = () => { closeBtn.style.background = 'rgba(255, 255, 255, 0.4)'; closeBtn.style.transform = 'scale(1.1)'; };
+                                closeBtn.onmouseout = () => { closeBtn.style.background = 'rgba(255, 255, 255, 0.2)'; closeBtn.style.transform = 'scale(1)'; };
+                                
+                                closeBtn.onclick = function(e) {
+                                    e.stopPropagation();
+                                    overlay.remove();
+                                };
+                                overlay.onclick = function(e) {
+                                    if (e.target === overlay) overlay.remove();
+                                };
+                                
+                                // Gombkattintáskor vagy menüpont választásakor zárjuk be automatikusan a pop-upot
+                                cardClone.addEventListener('click', (e) => {
+                                    const isButton = e.target.tagName === 'BUTTON' && !e.target.classList.contains('card-view-btn') && !e.target.classList.contains('card-menu-btn') && !e.target.classList.contains('close-dynamic-btn');
+                                    const isDropdownItem = e.target.classList.contains('dropdown-item');
+                                    
+                                    if(isButton || isDropdownItem) {
+                                        setTimeout(() => overlay.remove(), 100);
+                                    }
+                                });
+
+                                // A gombot az overlay-hez adjuk hozzá, nem a kártyához
+                                overlay.appendChild(closeBtn);
+                                overlay.appendChild(cardClone);
+                                document.body.appendChild(overlay);
+                            }
+                            
+                            // Kattintás eseményfigyelő a végtelen animáció leállításához (kattintás után még 1mp-ig fut)
+                            const removeHighlight = () => {
+                                setTimeout(() => {
+                                    card.classList.remove('highlight-target');
+                                }, 1000); 
+                                document.removeEventListener('mousedown', removeHighlight);
+                            };
+                            document.addEventListener('mousedown', removeHighlight);
                             
                             // Eltávolítjuk a paramétert az URL-ből
                             window.history.replaceState({}, document.title, window.location.pathname);
@@ -4583,6 +4669,7 @@
             document.getElementById('settingHoverPreview').checked = !!this.data.settings.hoverPreview;
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
+            document.getElementById('settingOpenLinkInPopup').checked = !!this.data.settings.openLinkInPopup;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
             document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
 
@@ -4632,6 +4719,7 @@
             this.data.settings.hoverPreview = document.getElementById('settingHoverPreview').checked;
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
+            this.data.settings.openLinkInPopup = document.getElementById('settingOpenLinkInPopup').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
             const parsedLimit = parseInt(document.getElementById('settingVarHistoryLimit').value);
             this.data.settings.varHistoryLimit = isNaN(parsedLimit) ? 5 : parsedLimit;
