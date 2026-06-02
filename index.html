@@ -45,7 +45,7 @@
             width: 300px;
             background: var(--sidebar-bg-color, #bcbce4);
             color: var(--sidebar-text, var(--app-text, #323130));
-            border-right: 1px solid var(--border);
+            border-right: none;
             padding: 10px;
             display: flex;
             flex-direction: column;
@@ -135,22 +135,56 @@
 
         /* Modernized Edit and Language switcher buttons inside Categories */
         .cat-header button,
-        .sidebar .lang-switcher button {
+        .sidebar .lang-switcher button,
+        .sidebar-bottom-btn {
             background-color: var(--cat-btn-bg, #f3f2f1) !important;
-            color: var(--sidebar-text, #323130) !important;
-            border: 1px solid rgba(0, 0, 0, 0.15) !important;
-            border-radius: 4px !important;
-            padding: 3px 8px !important;
-            font-size: 0.8rem !important;
+            color: var(--sidebar-text, var(--text)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 6px !important;
+            padding: 4px 8px !important;
+            font-size: 0.85rem !important;
             font-weight: 600 !important;
             cursor: pointer;
             transition: all 0.2s ease;
+        }
+
+        .cat-header button:hover,
+        .sidebar .lang-switcher button:hover,
+        .sidebar-bottom-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.2) !important;
+            filter: brightness(1.02);
         }
         
         .sidebar .lang-switcher button.active {
             color: #0078d4 !important;
             border-color: #0078d4 !important;
-            box-shadow: 0 0 4px rgba(0,120,212,0.3);
+            box-shadow: 0 0 4px rgba(0,120,212,0.3) !important;
+        }
+
+        /* Category Search Field Modernization */
+        #catSearchInput {
+            background-color: transparent !important;
+            color: var(--sidebar-text, var(--text)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 6px !important;
+            transition: all 0.2s ease;
+        }
+        #catSearchInput::placeholder {
+            color: var(--sidebar-text, var(--text)) !important;
+            opacity: 0.6 !important;
+        }
+        #catSearchInput:focus {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2) !important;
+            outline: none;
         }
         .btn-cat-edit {
             background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
@@ -1391,11 +1425,11 @@
     </div>
 
     <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-        <button class="btn btn-sm btn-secondary" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px; border: 1px solid var(--border);">◀</button>
-        <button class="btn btn-sm btn-secondary" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
-		<button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.toggleVariablesView()" title="Manage Variables">🔠</button>
-        <button class="btn btn-sm btn-secondary" style="padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
-        <button class="btn btn-sm btn-secondary" style="display: block; padding: 0 10px; font-size: 1.1rem; border: 1px solid var(--border);" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
+        <button class="sidebar-bottom-btn" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px !important;">◀</button>
+        <button class="sidebar-bottom-btn" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
+		<button class="sidebar-bottom-btn" style="padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.toggleVariablesView()" title="Manage Variables">🔠</button>
+        <button class="sidebar-bottom-btn" style="padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
+        <button class="sidebar-bottom-btn" style="display: block; padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
     </div>
 </div>
 
