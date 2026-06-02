@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v209</title>
+    <title>SD Helper v221</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -33,8 +33,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #faf9f8;
-            color: var(--text);
+            background-color: var(--body-bg, #faf9f8);
+            color: var(--app-text, var(--text));
             display: flex;
             height: 100vh;
             overflow: hidden;
@@ -43,7 +43,8 @@
         /* --- Sidebar Styles (Left Main Navigation) --- */
         .sidebar {
             width: 300px;
-            background-color: #bcbce4;
+            background: var(--sidebar-bg-color, #bcbce4);
+            color: var(--sidebar-text, var(--app-text, #323130));
             border-right: 1px solid var(--border);
             padding: 10px;
             display: flex;
@@ -73,7 +74,7 @@
             font-size: 1.0rem;
             font-weight: bold;
             margin-bottom: 15px;
-            color: #1a1a1a;
+            color: var(--title-color, #1a1a1a);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -130,7 +131,27 @@
         .cat-header {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
         }
-        .cat-header h3 { margin: 0; font-size: 1rem; }
+        .cat-header h3 { margin: 0; font-size: 1rem; color: var(--cat-title-color, #1a1a1a); }
+
+        /* Modernized Edit and Language switcher buttons inside Categories */
+        .cat-header button,
+        .sidebar .lang-switcher button {
+            background-color: var(--cat-btn-bg, #f3f2f1) !important;
+            color: var(--sidebar-text, #323130) !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            border-radius: 4px !important;
+            padding: 3px 8px !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar .lang-switcher button.active {
+            color: #0078d4 !important;
+            border-color: #0078d4 !important;
+            box-shadow: 0 0 4px rgba(0,120,212,0.3);
+        }
         .btn-cat-edit {
             background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
             font-size: 0.8rem; padding: 2px 6px; color: #444;
@@ -143,7 +164,7 @@
             flex: 1;
             overflow-y: auto;
             margin-bottom: 15px;
-            background-color: #d0d0ff;
+            background: var(--cat-bg, #d0d0ff);
             border: 1px solid rgba(0,0,0,0.1);
             border-radius: 4px;
             padding-top: 0;
@@ -160,11 +181,20 @@
             justify-content: space-between;
             align-items: center;
             position: relative;
-            color: #201f1e;
+            color: var(--sidebar-cat-item-text, #201f1e);
             font-weight: 600;
             border-bottom: 1px solid rgba(255,255,255,0.3);
             min-height: 32px;
             font-size: 0.9rem;
+            background-color: var(--sidebar-cat-item-bg, #a0dfec);
+        }
+
+        .category-item span, .category-item i {
+            color: var(--sidebar-cat-item-text, #201f1e);
+        }
+        
+        .category-item.active span, .category-item.active i {
+            color: white; 
         }
 
         .category-item span, .folder-item span {
@@ -175,12 +205,12 @@
             flex: 1;
         }
 
-        .category-item:nth-child(odd) { background-color: #a6e7f4; }
-        .category-item:nth-child(even) { background-color: #a0dfec; }
-        .category-item:hover { filter: brightness(0.95); }
+        .category-item:nth-child(odd) { background-color: var(--sidebar-cat-odd-bg, #a6e7f4); }
+        .category-item:nth-child(even) { background-color: var(--sidebar-cat-even-bg, #a0dfec); }
+        .category-item:hover { background-color: var(--sidebar-cat-hover-bg, #8fd4e6) !important; filter: brightness(0.95); }
 
         .category-item.active {
-            background-color: var(--primary) !important;
+            background-color: var(--sidebar-cat-active-bg, var(--primary)) !important;
             color: white;
         }
 
@@ -211,8 +241,8 @@
             justify-content: space-between;
             align-items: center;
             position: relative;
-            background-color: var(--folder-bg);
-            color: #4e342e;
+            background-color: var(--sidebar-folder-bg, var(--folder-bg));
+            color: var(--sidebar-folder-text, #4e342e);
             font-size: 0.85rem;
             border-bottom: 1px solid rgba(0,0,0,0.05);
             transition: background 0.1s;
@@ -220,20 +250,20 @@
 
         .folder-icon-tree { margin-right: 5px; color: #f9a825; font-weight: normal; }
 
-        .folder-item:hover { background-color: var(--folder-hover); }
+        .folder-item:hover { background-color: var(--sidebar-folder-hover-bg, #fff59d); }
         .folder-item.active {
-            background-color: var(--folder-active);
+            background-color: var(--sidebar-folder-active-bg, #fdd835);
             color: black;
             font-weight: bold;
         }
 
         .category-item.trash-item {
             margin-top: 0;
-            background-color: #fde7e9 !important;
-            color: var(--danger);
+            background-color: var(--sidebar-trash-bg, #fde7e9) !important;
+            color: var(--sidebar-trash-text, #a80000);
             border-top: 2px solid #ccc;
         }
-        .category-item.trash-item.active { background-color: var(--danger) !important; color: white; }
+        .category-item.trash-item.active { background-color: var(--sidebar-trash-text, #a80000) !important; color: white; }
 
         .sidebar-delete-btn {
             background: transparent;
@@ -292,7 +322,7 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            background-color: #d0d0e8;
+            background: var(--main-bg, #d0d0e8);
             transition: margin-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), padding-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), padding-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
 
@@ -459,7 +489,7 @@
             margin: 5px 0 -10px 0;
             padding-bottom: 2px;
             border-bottom: 1px solid rgba(0,0,0,0.15);
-            color: var(--primary);
+            color: var(--subtitle-color, var(--primary));
             font-size: 0.95rem;
             font-weight: bold;
             text-transform: uppercase;
@@ -729,7 +759,7 @@
 
         .quick-sidebar {
             position: fixed; top: 0; right: 0; height: 100vh;
-            background-color: var(--sidebar-bg); box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            background-color: var(--app-bg, var(--sidebar-bg)); box-shadow: -5px 0 15px rgba(0,0,0,0.1);
             z-index: 2000; transform: translateX(100%); display: flex; flex-direction: column;
             border-left: 1px solid var(--border); transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
@@ -1284,7 +1314,7 @@
 <div class="main">
     <div class="header-actions">
         <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-            <h2 id="currentCategoryTitle" style="margin:0;">All Templates</h2>
+            <h2 id="currentCategoryTitle" style="margin:0; color: var(--title-color, #1a1a1a);">All Templates</h2>
             <div id="headerButtons"></div>
         </div>
         
@@ -1808,6 +1838,9 @@
             </div>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            
+            <div class="settings-section-title">Themes</div>
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 15px;" onclick="app.openThemeModal()">🎨 Manage Themes</button>
 
             <div class="settings-section-title">Sidebars & Panels</div>
             <div class="form-group">
@@ -2037,6 +2070,215 @@
         </div>
     </div>
 </div>
+
+<div class="modal-overlay" id="themeModal" style="z-index: 4000; background: rgba(0,0,0,0.05); pointer-events: none;">
+    <div class="modal" style="width: 440px; position: absolute; right: 25px; top: 25px; pointer-events: auto; max-height: 92vh; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.08); background: #ffffff; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="modal-header" style="background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #eef0f2; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 1.1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">🎨 Theme Builder</span>
+            <button class="btn btn-sm btn-secondary" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="app.closeModal('themeModal'); app.applyCurrentTheme();">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-weight: 600; color: #475569; margin-bottom: 6px; display: block; font-size: 0.85rem;">Select Active Theme</label>
+                <select id="themeSelect" class="form-control" style="border-radius: 8px; border: 1px solid #cbd5e1; padding: 8px 12px; height: auto;" onchange="app.loadSelectedTheme()"></select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="font-weight: 600; color: #475569; margin-bottom: 6px; display: block; font-size: 0.85rem;">Theme Custom Name</label>
+                <input type="text" id="themeName" class="form-control" style="border-radius: 8px; border: 1px solid #cbd5e1; padding: 8px 12px;" placeholder="Type new theme name here...">
+            </div>
+
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Main Page Settings</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Subtitle Header</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSubtitle" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSubtitle')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0; grid-column: span 2;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Main Area Bg (Solid or Gradient)</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <input type="hidden" id="themeMainBg">
+                            <input type="color" id="themeMainBg_1" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeMainBg')">
+                            <span style="font-size: 0.8rem; color: #64748b;">to</span>
+                            <input type="color" id="themeMainBg_2" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeMainBg')">
+                            <input type="number" id="themeMainBg_angle" value="135" style="width: 50px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; text-align: center;" title="Szög (fok)" oninput="app.updateGradient('themeMainBg')"><span style="font-size: 0.8rem; color: #64748b; margin-left: -4px;">°</span>
+                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 3px; cursor: pointer;" title="Visszatérés az első színhez"><input type="checkbox" id="themeMainBg_bounce" onchange="app.updateGradient('themeMainBg')"> 🪃 3-color</label>
+                            <button class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-weight: 600; font-size: 0.75rem;" onclick="app.matchGradient('themeMainBg')" title="Második szín megegyezik az elsővel">🔗 Match</button>
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold; margin-left: auto;" onclick="app.acceptColor('themeMainBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">General Text</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Main Headings</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeTitle" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeTitle')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Use / Primary Btn</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themePrimary" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themePrimary')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Button</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeViewBtn" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewBtn')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0;">
+                <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Sidebar Settings</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin: 0; grid-column: span 2;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sidebar Bg (Solid or Gradient)</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <input type="hidden" id="themeSidebarBg">
+                            <input type="color" id="themeSidebarBg_1" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeSidebarBg')">
+                            <span style="font-size: 0.8rem; color: #64748b;">to</span>
+                            <input type="color" id="themeSidebarBg_2" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeSidebarBg')">
+                            <input type="number" id="themeSidebarBg_angle" value="135" style="width: 50px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; text-align: center;" title="Szög (fok)" oninput="app.updateGradient('themeSidebarBg')"><span style="font-size: 0.8rem; color: #64748b; margin-left: -4px;">°</span>
+                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 3px; cursor: pointer;" title="Visszatérés az első színhez"><input type="checkbox" id="themeSidebarBg_bounce" onchange="app.updateGradient('themeSidebarBg')"> 🪃 3-color</label>
+                            <button class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-weight: 600; font-size: 0.75rem;" onclick="app.matchGradient('themeSidebarBg')" title="Második szín megegyezik az elsővel">🔗 Match</button>
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold; margin-left: auto;" onclick="app.acceptColor('themeSidebarBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sidebar Text</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0; grid-column: span 2;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Categories Container (Solid or Gradient)</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <input type="hidden" id="themeCatBg">
+                            <input type="color" id="themeCatBg_1" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeCatBg')">
+                            <span style="font-size: 0.8rem; color: #64748b;">to</span>
+                            <input type="color" id="themeCatBg_2" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeCatBg')">
+                            <input type="number" id="themeCatBg_angle" value="135" style="width: 50px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; text-align: center;" title="Szög (fok)" oninput="app.updateGradient('themeCatBg')"><span style="font-size: 0.8rem; color: #64748b; margin-left: -4px;">°</span>
+                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 3px; cursor: pointer;" title="Visszatérés az első színhez"><input type="checkbox" id="themeCatBg_bounce" onchange="app.updateGradient('themeCatBg')"> 🪃 3-color</label>
+                            <button class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-weight: 600; font-size: 0.75rem;" onclick="app.matchGradient('themeCatBg')" title="Második szín megegyezik az elsővel">🔗 Match</button>
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold; margin-left: auto;" onclick="app.acceptColor('themeCatBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Categories Title</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeCatTitle" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeCatTitle')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cat. Odd Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarCatOddBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarCatOddBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cat. Even Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarCatEvenBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarCatEvenBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cat. Hover Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarCatHoverBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarCatHoverBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cat. Active Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarCatActiveBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarCatActiveBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Folders Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarFolderBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarFolderBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Folder Hover Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarFolderHoverBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarFolderHoverBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Folder Active Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarFolderActiveBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarFolderActiveBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cat. Text Color</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarCatItemText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarCatItemText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Folder Text</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarFolderText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarFolderText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trash Bg</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarTrashBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarTrashBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trash Text</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeSidebarTrashText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeSidebarTrashText')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0; grid-column: span 2;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Edit & Lang Buttons</label>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <input type="color" id="themeCatBtnBg" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
+                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeCatBtnBg')" title="Elfogadás">✓</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="background: #f8f9fa; padding: 15px 20px; border-top: 1px solid #eef0f2; display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn btn-danger" style="border-radius: 8px; padding: 8px 16px;" onclick="app.deleteTheme()">Delete</button>
+            <button id="btnSaveTheme" class="btn btn-primary" style="border-radius: 8px; padding: 8px 18px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background-color 0.3s ease, color 0.3s ease;" onclick="app.saveTheme()">💾 Save Theme</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast">Copied to clipboard!</div>
 
 <script type="module">
@@ -2084,6 +2326,8 @@
         data: {
             currentMode: 'templates', // <-- EZT ADD HOZZÁ IDE
             currentLang: 'en',
+            themes: [],
+            currentThemeId: 'default',
             currentCategory: 'All',
             currentFolderId: null,
             isRearranging: false,
@@ -2402,6 +2646,24 @@
                     if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                     this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
 
+                    if(savedData.themes) {
+                        this.data.themes = savedData.themes;
+                    } else {
+                        this.data.themes = [{
+                            id: 'default', name: 'Default Theme',
+                            subtitle: '#0078d4', mainBg: '#d0d0e8', sidebarBg: '#bcbce4',
+                            sidebarText: '#323130', catBg: '#d0d0ff', catTitle: '#1a1a1a', catBtnBg: '#f3f2f1',
+                            text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c',
+                            sidebarCatOddBg: '#a6e7f4', sidebarCatEvenBg: '#a0dfec', sidebarCatHoverBg: '#8fd4e6', sidebarCatActiveBg: '#0078d4',
+                            sidebarFolderBg: '#fff9c4', sidebarFolderHoverBg: '#fff59d', sidebarFolderActiveBg: '#fdd835', sidebarFolderText: '#4e342e', sidebarCatItemText: '#201f1e',
+                            sidebarTrashBg: '#fde7e9', sidebarTrashText: '#a80000'
+                        }];
+                    }
+                    if(savedData.currentThemeId) {
+                        this.data.currentThemeId = savedData.currentThemeId;
+                    }
+                    this.applyCurrentTheme();
+
                     if(savedData.settings) {
                         this.data.settings = savedData.settings;
                         if(!this.data.settings.colorLabels) this.data.settings.colorLabels = {};
@@ -2434,6 +2696,17 @@
                 this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
                     this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, varHistoryLimit: 5 };
+                    this.data.themes = [{
+                    id: 'default', name: 'Default Theme',
+                    subtitle: '#0078d4', mainBg: '#d0d0e8', sidebarBg: '#bcbce4',
+                    sidebarText: '#323130', catBg: '#d0d0ff', catTitle: '#1a1a1a', catBtnBg: '#f3f2f1',
+                    text: '#323130', title: '#1a1a1a', primary: '#0078d4', viewBtn: '#605e5c',
+                    sidebarCatOddBg: '#a6e7f4', sidebarCatEvenBg: '#a0dfec', sidebarCatHoverBg: '#8fd4e6', sidebarCatActiveBg: '#0078d4',
+                    sidebarFolderBg: '#fff9c4', sidebarFolderHoverBg: '#fff59d', sidebarFolderActiveBg: '#fdd835', sidebarFolderText: '#4e342e', sidebarCatItemText: '#201f1e',
+                    sidebarTrashBg: '#fde7e9', sidebarTrashText: '#a80000'
+                }];
+                    this.data.currentThemeId = 'default';
+                    this.applyCurrentTheme();
                     this.saveData();
                 }
 
@@ -2469,7 +2742,9 @@
             currentLang: this.data.currentLang,
             colorOrder: this.data.colorOrder,
             settings: this.data.settings,
-            variableHistory: this.data.variableHistory
+            variableHistory: this.data.variableHistory,
+            themes: this.data.themes,
+            currentThemeId: this.data.currentThemeId
         };
 
     try {
@@ -4317,6 +4592,309 @@
             this.saveData();
             this.closeModal('settingsModal');
             this.renderTemplates();
+        },
+
+        openThemeModal: function() {
+            this.closeModal('settingsModal');
+            document.getElementById('themeModal').style.display = 'flex';
+            this.renderThemeSelect();
+            this.loadSelectedTheme(this.data.currentThemeId);
+        },
+
+        renderThemeSelect: function() {
+            const select = document.getElementById('themeSelect');
+            select.innerHTML = '';
+            this.data.themes.forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${this.escapeHtml(t.name)}</option>`;
+            });
+            select.value = this.data.currentThemeId;
+        },
+
+        loadSelectedTheme: function(overrideId) {
+            const id = overrideId || document.getElementById('themeSelect').value;
+            const theme = this.data.themes.find(t => t.id === id) || this.data.themes[0];
+            
+            document.getElementById('themeSelect').value = theme.id;
+            
+            if (theme.id === 'default') {
+                document.getElementById('themeName').value = '';
+                document.getElementById('themeName').placeholder = "Create new theme from this config...";
+            } else {
+                document.getElementById('themeName').value = theme.name;
+            }
+            
+            const setVal = (elId, val) => {
+                const el = document.getElementById(elId);
+                if (el) { el.value = val; el.setAttribute('data-accepted', val); }
+            };
+
+            const setGradientVal = (elId, val) => {
+                const hiddenEl = document.getElementById(elId);
+                const color1El = document.getElementById(elId + '_1');
+                const color2El = document.getElementById(elId + '_2');
+                const angleEl = document.getElementById(elId + '_angle');
+                const bounceEl = document.getElementById(elId + '_bounce');
+
+                if (hiddenEl) { hiddenEl.value = val; hiddenEl.setAttribute('data-accepted', val); }
+                
+                if (val && val.includes('linear-gradient')) {
+                    const hexMatches = val.match(/#[0-9a-fA-F]{6}/g);
+                    if (hexMatches && hexMatches.length >= 2) {
+                        if(color1El) color1El.value = hexMatches[0];
+                        if(color2El) color2El.value = hexMatches[1];
+                        if(bounceEl) bounceEl.checked = (hexMatches.length >= 3 && hexMatches[0].toLowerCase() === hexMatches[2].toLowerCase());
+                    }
+                    const angleMatch = val.match(/linear-gradient\(\s*(-?\d+)deg/);
+                    if (angleMatch && angleMatch[1] && angleEl) {
+                        angleEl.value = angleMatch[1];
+                    } else if (angleEl) {
+                        angleEl.value = '135';
+                    }
+                } else {
+                    if(color1El) color1El.value = val || '#ffffff';
+                    if(color2El) color2El.value = val || '#ffffff';
+                    if(bounceEl) bounceEl.checked = false;
+                    if(angleEl) angleEl.value = '135';
+                }
+            };
+
+            setVal('themeSubtitle', theme.subtitle || '#0078d4');
+            setGradientVal('themeMainBg', theme.mainBg || '#d0d0e8');
+            setGradientVal('themeSidebarBg', theme.sidebarBg || '#bcbce4');
+            setVal('themeSidebarText', theme.sidebarText || '#323130');
+            setGradientVal('themeCatBg', theme.catBg || '#d0d0ff');
+            setVal('themeCatTitle', theme.catTitle || '#1a1a1a');
+            setVal('themeCatBtnBg', theme.catBtnBg || '#f3f2f1');
+            setVal('themeText', theme.text || '#323130');
+            setVal('themeTitle', theme.title || '#1a1a1a');
+            setVal('themePrimary', theme.primary || '#0078d4');
+            setVal('themeViewBtn', theme.viewBtn || '#605e5c');
+            
+            setVal('themeSidebarCatOddBg', theme.sidebarCatOddBg || '#a6e7f4');
+            setVal('themeSidebarCatEvenBg', theme.sidebarCatEvenBg || '#a0dfec');
+            setVal('themeSidebarCatHoverBg', theme.sidebarCatHoverBg || '#8fd4e6');
+            setVal('themeSidebarCatActiveBg', theme.sidebarCatActiveBg || '#0078d4');
+            setVal('themeSidebarFolderBg', theme.sidebarFolderBg || '#fff9c4');
+            setVal('themeSidebarFolderHoverBg', theme.sidebarFolderHoverBg || '#fff59d');
+            setVal('themeSidebarFolderActiveBg', theme.sidebarFolderActiveBg || '#fdd835');
+            setVal('themeSidebarFolderText', theme.sidebarFolderText || '#4e342e');
+            setVal('themeSidebarCatItemText', theme.sidebarCatItemText || '#201f1e');
+            setVal('themeSidebarTrashBg', theme.sidebarTrashBg || '#fde7e9');
+            setVal('themeSidebarTrashText', theme.sidebarTrashText || '#a80000');
+            
+            this.livePreviewTheme();
+        },
+
+        acceptColor: function(inputId) {
+            const el = document.getElementById(inputId);
+            if (el) {
+                el.setAttribute('data-accepted', el.value);
+                this.livePreviewTheme();
+            }
+        },
+
+        revertColor: function(el) {
+            setTimeout(() => {
+                const accepted = el.getAttribute('data-accepted');
+                if (accepted && el.value !== accepted) {
+                    el.value = accepted;
+                    app.livePreviewTheme();
+                }
+            }, 150);
+        },
+
+        matchGradient: function(baseId) {
+            const c1 = document.getElementById(baseId + '_1').value;
+            document.getElementById(baseId + '_2').value = c1;
+            this.updateGradient(baseId);
+        },
+
+        updateGradient: function(baseId) {
+            const c1 = document.getElementById(baseId + '_1').value;
+            const c2 = document.getElementById(baseId + '_2').value;
+            const angleEl = document.getElementById(baseId + '_angle');
+            const bounceEl = document.getElementById(baseId + '_bounce');
+            const angle = angleEl ? angleEl.value : '135';
+            const bounce = bounceEl ? bounceEl.checked : false;
+            const hiddenInput = document.getElementById(baseId);
+            if (!hiddenInput) return;
+            
+            if (c1.toLowerCase() === c2.toLowerCase()) {
+                hiddenInput.value = c1;
+            } else {
+                if (bounce) {
+                    hiddenInput.value = `linear-gradient(${angle}deg, ${c1} 0%, ${c2} 50%, ${c1} 100%)`;
+                } else {
+                    hiddenInput.value = `linear-gradient(${angle}deg, ${c1} 0%, ${c2} 100%)`;
+                }
+            }
+            this.livePreviewTheme();
+        },
+
+        livePreviewTheme: function() {
+            const subtitleColor = document.getElementById('themeSubtitle')?.value || '#0078d4';
+            const mainBg = document.getElementById('themeMainBg')?.value || '#d0d0e8';
+            const sidebarBg = document.getElementById('themeSidebarBg')?.value || '#bcbce4';
+            const sidebarText = document.getElementById('themeSidebarText')?.value || '#323130';
+            const catBg = document.getElementById('themeCatBg')?.value || '#d0d0ff';
+            const catTitle = document.getElementById('themeCatTitle')?.value || '#1a1a1a';
+            const catBtnBg = document.getElementById('themeCatBtnBg')?.value || '#f3f2f1';
+            const text = document.getElementById('themeText')?.value || '#323130';
+            const title = document.getElementById('themeTitle')?.value || '#1a1a1a';
+            const primary = document.getElementById('themePrimary')?.value || '#0078d4';
+            const viewBtn = document.getElementById('themeViewBtn')?.value || '#605e5c';
+            
+            const sidebarCatOddBg = document.getElementById('themeSidebarCatOddBg')?.value || '#a6e7f4';
+            const sidebarCatEvenBg = document.getElementById('themeSidebarCatEvenBg')?.value || '#a0dfec';
+            const sidebarCatHoverBg = document.getElementById('themeSidebarCatHoverBg')?.value || '#8fd4e6';
+            const sidebarCatActiveBg = document.getElementById('themeSidebarCatActiveBg')?.value || '#0078d4';
+            const sidebarFolderBg = document.getElementById('themeSidebarFolderBg')?.value || '#fff9c4';
+            const sidebarFolderHoverBg = document.getElementById('themeSidebarFolderHoverBg')?.value || '#fff59d';
+            const sidebarFolderActiveBg = document.getElementById('themeSidebarFolderActiveBg')?.value || '#fdd835';
+            const sidebarFolderText = document.getElementById('themeSidebarFolderText')?.value || '#4e342e';
+            const sidebarCatItemText = document.getElementById('themeSidebarCatItemText')?.value || '#201f1e';
+            const sidebarTrashBg = document.getElementById('themeSidebarTrashBg')?.value || '#fde7e9';
+            const sidebarTrashText = document.getElementById('themeSidebarTrashText')?.value || '#a80000';
+
+            document.documentElement.style.setProperty('--subtitle-color', subtitleColor);
+            document.documentElement.style.setProperty('--main-bg', mainBg);
+            document.documentElement.style.setProperty('--sidebar-bg-color', sidebarBg);
+            document.documentElement.style.setProperty('--sidebar-text', sidebarText);
+            document.documentElement.style.setProperty('--cat-bg', catBg);
+            document.documentElement.style.setProperty('--cat-title-color', catTitle);
+            document.documentElement.style.setProperty('--cat-btn-bg', catBtnBg);
+            document.documentElement.style.setProperty('--app-text', text);
+            document.documentElement.style.setProperty('--title-color', title);
+            document.documentElement.style.setProperty('--primary', primary);
+            document.documentElement.style.setProperty('--view-mode', viewBtn);
+            
+            document.documentElement.style.setProperty('--sidebar-cat-odd-bg', sidebarCatOddBg);
+            document.documentElement.style.setProperty('--sidebar-cat-even-bg', sidebarCatEvenBg);
+            document.documentElement.style.setProperty('--sidebar-cat-hover-bg', sidebarCatHoverBg);
+            document.documentElement.style.setProperty('--sidebar-cat-active-bg', sidebarCatActiveBg);
+            document.documentElement.style.setProperty('--sidebar-folder-bg', sidebarFolderBg);
+            document.documentElement.style.setProperty('--sidebar-folder-hover-bg', sidebarFolderHoverBg);
+            document.documentElement.style.setProperty('--sidebar-folder-active-bg', sidebarFolderActiveBg);
+            document.documentElement.style.setProperty('--sidebar-folder-text', sidebarFolderText);
+            document.documentElement.style.setProperty('--sidebar-cat-item-text', sidebarCatItemText);
+            document.documentElement.style.setProperty('--sidebar-trash-bg', sidebarTrashBg);
+            document.documentElement.style.setProperty('--sidebar-trash-text', sidebarTrashText);
+        },
+
+        applyCurrentTheme: function() {
+            if(!this.data.themes || this.data.themes.length === 0) return;
+            const theme = this.data.themes.find(t => t.id === this.data.currentThemeId) || this.data.themes[0];
+            
+            document.documentElement.style.setProperty('--subtitle-color', theme.subtitle || '#0078d4');
+            document.documentElement.style.setProperty('--main-bg', theme.mainBg || '#d0d0e8');
+            document.documentElement.style.setProperty('--sidebar-bg-color', theme.sidebarBg || '#bcbce4');
+            document.documentElement.style.setProperty('--sidebar-text', theme.sidebarText || '#323130');
+            document.documentElement.style.setProperty('--cat-bg', theme.catBg || '#d0d0ff');
+            document.documentElement.style.setProperty('--cat-title-color', theme.catTitle || '#1a1a1a');
+            document.documentElement.style.setProperty('--cat-btn-bg', theme.catBtnBg || '#f3f2f1');
+            document.documentElement.style.setProperty('--app-text', theme.text || '#323130');
+            document.documentElement.style.setProperty('--title-color', theme.title || '#1a1a1a');
+            document.documentElement.style.setProperty('--primary', theme.primary || '#0078d4');
+            document.documentElement.style.setProperty('--view-mode', theme.viewBtn || '#605e5c');
+            
+            document.documentElement.style.setProperty('--sidebar-cat-odd-bg', theme.sidebarCatOddBg || '#a6e7f4');
+            document.documentElement.style.setProperty('--sidebar-cat-even-bg', theme.sidebarCatEvenBg || '#a0dfec');
+            document.documentElement.style.setProperty('--sidebar-cat-hover-bg', theme.sidebarCatHoverBg || '#8fd4e6');
+            document.documentElement.style.setProperty('--sidebar-cat-active-bg', theme.sidebarCatActiveBg || '#0078d4');
+            document.documentElement.style.setProperty('--sidebar-folder-bg', theme.sidebarFolderBg || '#fff9c4');
+            document.documentElement.style.setProperty('--sidebar-folder-hover-bg', theme.sidebarFolderHoverBg || '#fff59d');
+            document.documentElement.style.setProperty('--sidebar-folder-active-bg', theme.sidebarFolderActiveBg || '#fdd835');
+            document.documentElement.style.setProperty('--sidebar-folder-text', theme.sidebarFolderText || '#4e342e');
+            document.documentElement.style.setProperty('--sidebar-cat-item-text', theme.sidebarCatItemText || '#201f1e');
+            document.documentElement.style.setProperty('--sidebar-trash-bg', theme.sidebarTrashBg || '#fde7e9');
+            document.documentElement.style.setProperty('--sidebar-trash-text', theme.sidebarTrashText || '#a80000');
+        },
+
+        saveTheme: function() {
+            const selectId = document.getElementById('themeSelect').value;
+            let name = document.getElementById('themeName').value.trim();
+            
+            if (!name && selectId !== 'default') {
+                alert("Kérlek, adj meg egy nevet a témának!");
+                return;
+            }
+
+            const themeObj = {
+                subtitle: document.getElementById('themeSubtitle').value,
+                mainBg: document.getElementById('themeMainBg').value,
+                sidebarBg: document.getElementById('themeSidebarBg').value,
+                sidebarText: document.getElementById('themeSidebarText').value,
+                catBg: document.getElementById('themeCatBg').value,
+                catTitle: document.getElementById('themeCatTitle').value,
+                catBtnBg: document.getElementById('themeCatBtnBg').value,
+                text: document.getElementById('themeText').value,
+                title: document.getElementById('themeTitle').value,
+                primary: document.getElementById('themePrimary').value,
+                viewBtn: document.getElementById('themeViewBtn').value,
+                sidebarCatOddBg: document.getElementById('themeSidebarCatOddBg').value,
+                sidebarCatEvenBg: document.getElementById('themeSidebarCatEvenBg').value,
+                sidebarCatHoverBg: document.getElementById('themeSidebarCatHoverBg').value,
+                sidebarCatActiveBg: document.getElementById('themeSidebarCatActiveBg').value,
+                sidebarFolderBg: document.getElementById('themeSidebarFolderBg').value,
+                sidebarFolderHoverBg: document.getElementById('themeSidebarFolderHoverBg').value,
+                sidebarFolderActiveBg: document.getElementById('themeSidebarFolderActiveBg').value,
+                sidebarFolderText: document.getElementById('themeSidebarFolderText').value,
+                sidebarCatItemText: document.getElementById('themeSidebarCatItemText').value,
+                sidebarTrashBg: document.getElementById('themeSidebarTrashBg').value,
+                sidebarTrashText: document.getElementById('themeSidebarTrashText').value
+            };
+
+            if (selectId === 'default') {
+                const finalName = name || 'New Custom Theme';
+                const newId = 'theme_' + Date.now();
+                themeObj.id = newId;
+                themeObj.name = finalName;
+                this.data.themes.push(themeObj);
+                this.data.currentThemeId = newId;
+            } else {
+                const idx = this.data.themes.findIndex(t => t.id === selectId);
+                if (idx > -1) {
+                    this.data.themes[idx] = { ...this.data.themes[idx], ...themeObj, name: name };
+                }
+                this.data.currentThemeId = selectId;
+            }
+
+            this.saveData();
+            this.renderThemeSelect();
+            this.applyCurrentTheme();
+            this.loadSelectedTheme(this.data.currentThemeId);
+            
+            const saveBtn = document.getElementById('btnSaveTheme');
+            if (saveBtn) {
+                const originalHtml = saveBtn.innerHTML;
+                const originalBg = saveBtn.style.backgroundColor;
+                const currentWidth = saveBtn.getBoundingClientRect().width;
+                saveBtn.style.width = currentWidth + 'px';
+                
+                saveBtn.innerHTML = "✅ Saved!";
+                saveBtn.style.backgroundColor = "#107c10";
+                
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalHtml;
+                    saveBtn.style.backgroundColor = originalBg;
+                    saveBtn.style.width = '';
+                }, 2000);
+            }
+        },
+
+        deleteTheme: function() {
+            const id = document.getElementById('themeSelect').value;
+            if (id === 'default') {
+                alert("Az alapértelmezett témát nem törölheted.");
+                return;
+            }
+            if (confirm("Biztosan törölni szeretnéd ezt a témát?")) {
+                this.data.themes = this.data.themes.filter(t => t.id !== id);
+                this.data.currentThemeId = 'default';
+                this.saveData();
+                this.renderThemeSelect();
+                this.loadSelectedTheme('default');
+            }
         },
 
         showPreviewClone: function(originalDiv) {
