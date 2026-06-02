@@ -2721,9 +2721,40 @@
                 this.updateEditorColorSwatches();
                 this.applyAppearanceSettings();
                 this.renderPinnedTodo();
+                
+                this.checkUrlParams();
 
             } catch (error) {
                 console.error("Error loading doc:", error);
+            }
+        },
+
+        checkUrlParams: function() {
+            const params = new URLSearchParams(window.location.search);
+            const templateId = params.get('templateId');
+            if (templateId) {
+                const id = parseInt(templateId);
+                const target = this.data.templates.find(t => t.id === id && !t.deleted);
+                
+                if (target) {
+                    // Különböző típusú kártyák megfelelő megnyitása
+                    if (target.isTodo) {
+                        this.viewTodo(target.id);
+                    } else if (target.isDatabase) {
+                        this.viewDbTemplate(target.id);
+                    } else if (target.isTicket) {
+                        this.viewTicketTemplate(target.id);
+                    } else if (target.isViewOnly) {
+                        this.viewTemplate(target.id);
+                    } else {
+                        this.prepareTemplate(target.id);
+                    }
+                    
+                    // Eltávolítjuk a paramétert az URL-ből, hogy egy sima frissítés (F5) ne nyissa meg újra automatikusan
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    console.warn("A hivatkozott templateId nem található vagy már törölve lett: " + templateId);
+                }
             }
         },
 
