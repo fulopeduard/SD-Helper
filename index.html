@@ -1140,6 +1140,16 @@
             margin-bottom: 0; /* Eltüntetjük a felesleges alsó margót */
             max-height: 125px; /* Kicsit kompaktabb lista */
         }
+
+        @keyframes highlightTemplatePulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); border-color: var(--primary); transform: scale(1.02); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); border-color: var(--primary); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); border-color: var(--border); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: highlightTemplatePulse 2s ease-out;
+            z-index: 100 !important;
+        }
     </style>
 </head>
 <body>
@@ -2735,26 +2745,47 @@
             if (templateId) {
                 const id = parseInt(templateId);
                 const target = this.data.templates.find(t => t.id === id && !t.deleted);
-                
+
                 if (target) {
-                    // Különböző típusú kártyák megfelelő megnyitása
-                    if (target.isTodo) {
-                        this.viewTodo(target.id);
-                    } else if (target.isDatabase) {
-                        this.viewDbTemplate(target.id);
-                    } else if (target.isTicket) {
-                        this.viewTicketTemplate(target.id);
-                    } else if (target.isViewOnly) {
-                        this.viewTemplate(target.id);
-                    } else {
-                        this.prepareTemplate(target.id);
+                    // Ha a template egy másik kategóriában/mappában van, először navigáljunk oda
+                    if (this.data.currentCategory !== target.category || this.data.currentFolderId !== target.folderId) {
+                        this.data.currentCategory = target.category || 'General';
+                        this.data.currentFolderId = target.folderId || null;
+                        this.updateHeaderButtons(this.data.currentCategory);
+                        this.renderCategories();
+                        this.renderTemplates(); // Újra rendereli a kártyákat a cél helyen
                     }
-                    
-                    // Eltávolítjuk a paramétert az URL-ből, hogy egy sima frissítés (F5) ne nyissa meg újra automatikusan
-                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // Várjunk egy picit, hogy a kártya biztosan a DOM-ban legyen
+                    setTimeout(() => {
+                        const card = document.querySelector(`.card[data-id="${id}"]`);
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            card.classList.add('highlight-target');
+                            
+                            setTimeout(() => {
+                                card.classList.remove('highlight-target');
+                            }, 2000);
+                            
+                            // Eltávolítjuk a paramétert az URL-ből
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    }, 300);
                 } else {
                     console.warn("A hivatkozott templateId nem található vagy már törölve lett: " + templateId);
                 }
+            }
+        },
+
+        copyDirectUrl: function(id) {
+            const url = window.location.origin + window.location.pathname + '?templateId=' + id;
+            this.copyToClipboard(url, "Direct Template URL", "#ffffff");
+            
+            const menu = document.getElementById(`menu-${id}`);
+            if(menu) {
+                menu.classList.remove('show');
+                const parentCard = menu.closest('.card');
+                if(parentCard) parentCard.classList.remove('menu-open');
             }
         },
 
@@ -5404,6 +5435,7 @@
                                 <div class="dropdown-item" onclick="app.cloneTodo(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
                                 <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
+                                <div class="dropdown-item" onclick="app.copyDirectUrl(${t.id})">🌐 Copy Direct URL</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
                             </div>
@@ -5432,6 +5464,7 @@
                                 <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
                                 <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-item" onclick="app.copyDirectUrl(${t.id})">🌐 Copy Direct URL</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
                             </div>
@@ -5466,6 +5499,7 @@
                                 <div class="dropdown-item" onclick="app.openDbEditor(${t.id})">✏️ Edit Database</div>
                                 <div class="dropdown-item" onclick="app.cloneDbTemplate(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
+                                <div class="dropdown-item" onclick="app.copyDirectUrl(${t.id})">🌐 Copy Direct URL</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
                             </div>
@@ -5510,6 +5544,7 @@
                                 <div class="dropdown-item" onclick="app.moveToSnippets(${t.id})">⚡ Move to Snippets</div>
                                 <div class="dropdown-item" onclick="app.copyTemplateHyperlink(${t.id})">🔗 Copy Hyperlink</div>
                                 <div class="dropdown-item" onclick="app.copyInstructionVar(${t.id})">ℹ️ Copy as Instruction Var</div>
+                                <div class="dropdown-item" onclick="app.copyDirectUrl(${t.id})">🌐 Copy Direct URL</div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id})">🗑️ Delete</div>
                             </div>
