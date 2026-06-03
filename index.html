@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v235</title>
+    <title>SD Helper v236</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -2814,8 +2814,14 @@
                     if(savedData.currentLang) this.data.currentLang = savedData.currentLang;
                     this.data.colorOrder = savedData.colorOrder || JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
 
+                    // Automatikus javítás: Ha a betöltött adatokban még a régi szürke (vagy a régi HEX kódok) szerepelnek,
+                    // felülírjuk a teljes listát az új alapértelmezett színekkel, és azonnal elmentjük.
+                    if (this.data.colorOrder.some(c => c.name === 'Grey' || c.hex === '#cfd8dc')) {
+                        this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
+                        this.saveData(); // Mentés a felhőbe, hogy többet ne a régit töltse be
+                    }
+
                     if(savedData.themes) {
-                        this.data.themes = savedData.themes;
                     } else {
                         this.data.themes = [{
                             id: 'default', name: 'Default Theme',
