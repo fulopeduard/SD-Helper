@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v237</title>
+    <title>SD Helper v238</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1806,7 +1806,6 @@
 
             <div class="form-group" id="varChecklistBuilderNew" style="display:none;">
                 <label>Checklist Items (Label vs Content)</label>
-                <p style="font-size:0.8rem; color:#666; margin-bottom:5px;">If 'Content' is empty, Label will be used as content.</p>
                 <div id="varChecklistRowsNew"></div>
                 <button class="btn btn-sm btn-secondary" style="margin-top:5px;" onclick="app.addChecklistRowNew()">+ Add Item</button>
             </div>
@@ -4811,7 +4810,7 @@
                 rows.forEach(row => {
                     const l = row.querySelector('input').value.trim();
                     let v = row.querySelector('textarea').value;
-                    if(l) options.push({ label: l, value: v || l });
+                    if(l) options.push({ label: l, value: v });
                 });
                 if(options.length === 0) return alert("Please fill in the checklist items.");
 
@@ -6701,7 +6700,7 @@
                     const l = row.querySelector('input').value.trim();
                     let v = row.querySelector('textarea').value;
                     if(l) {
-                        options.push({ label: l, value: v || l });
+                        options.push({ label: l, value: v });
                     }
                 });
                 if(options.length === 0) return alert("Please fill in the checklist items.");
