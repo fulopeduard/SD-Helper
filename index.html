@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v239</title>
+    <title>SD Helper v240</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1313,11 +1313,22 @@
         const lastVersion = lastVersionMatch ? lastVersionMatch[0] : lastVersionFull;
         
         loadingTextEl.innerHTML = `SD Helper <span class="version-old">${lastVersion}</span><span class="version-arrow">&#10142;</span><span class="version-update-anim">${currentVersion}</span>`;
+        window.isUpdateAnimationRunning = true;
+        setTimeout(() => { window.isUpdateAnimationRunning = false; }, 3000);
     } else {
         loadingTextEl.innerText = currentVersionFull;
     }
     
     localStorage.setItem('sdHelperVersionFull', currentVersionFull);
+
+    window.hideLoadingScreen = function() {
+        if (window.isUpdateAnimationRunning) {
+            setTimeout(window.hideLoadingScreen, 200);
+        } else {
+            const ls = document.getElementById('loading-screen');
+            if (ls) ls.classList.add('hidden');
+        }
+    };
 </script>
 
 <div class="modal-overlay" id="ticketEditorModal">
@@ -2803,7 +2814,7 @@
                     this.renderTemplates();
                     
                     // Loading képernyő lágy eltüntetése, ha nincs bejelentkezve
-                    setTimeout(() => { document.getElementById('loading-screen').classList.add('hidden'); }, 300);
+                    setTimeout(() => { window.hideLoadingScreen(); }, 300);
                 }
             });
         },
@@ -2966,12 +2977,12 @@
 
                 // Adatok betöltve, loading képernyő eltüntetése. 
                 // Adunk neki 400ms késleltetést, hogy az üveg animáció egy pillanatra biztosan érvényesüljön, ha túl gyors volt a net.
-                setTimeout(() => { document.getElementById('loading-screen').classList.add('hidden'); }, 400);
+                setTimeout(() => { window.hideLoadingScreen(); }, 400);
 
             } catch (error) {
                 console.error("Error loading doc:", error);
                 // Hibánál is engedjük be az alkalmazásba
-                setTimeout(() => { document.getElementById('loading-screen').classList.add('hidden'); }, 400);
+                setTimeout(() => { window.hideLoadingScreen(); }, 400);
             }
         },
 
