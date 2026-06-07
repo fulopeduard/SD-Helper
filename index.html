@@ -1429,7 +1429,7 @@
         <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
     </div>
 
-    <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()">
+    <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()" onkeydown="app.handleSearchKeydown(event)">
 
     <div class="category-container">
         <ul class="category-list" id="categoryList"></ul>
@@ -1452,7 +1452,7 @@
         </div>
         
         <div class="search-box" style="margin-left: auto;">
-            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search templates..." onkeyup="app.renderTemplates()">
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search templates..." onkeyup="app.renderTemplates()" onkeydown="app.handleSearchKeydown(event)">
         </div>
     </div>
 
@@ -1524,9 +1524,19 @@
                     </div>
                 </div>
             </div>
-			<div class="form-group">
-                <label>Tags (vesszővel elválasztva)</label>
-                <input type="text" class="form-control" id="inputTags" placeholder="pl. citrix, follow-up, urgent">
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>Tags (vesszővel elválasztva)</label>
+                        <input type="text" class="form-control" id="inputTags" placeholder="pl. citrix, follow-up, urgent">
+                    </div>
+                </div>
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label>Run Tag</label>
+                        <input type="text" class="form-control" id="inputRunTag" placeholder="pl. 1">
+                    </div>
+                </div>
             </div>
             <div class="form-group">
                 <label>Color Coding</label>
@@ -5557,6 +5567,52 @@
             }
         },
 
+        handleSearchKeydown: function(e) {
+            if (e.key === 'Enter') {
+                const term = e.target.value.trim();
+                if (!term) return;
+                
+                const t = this.data.templates.find(x => !x.deleted && x.runTag && x.runTag.toLowerCase() === term.toLowerCase());
+                if (t) {
+                    e.preventDefault();
+                    
+                    if (t.folderId) {
+                        this.selectFolder(t.folderId, t.category);
+                    } else if (t.category) {
+                        this.selectCategory(t.category);
+                    }
+                    
+                    if (t.isTodo) {
+                        let hasTemplateMarkers = false;
+                        if (t.todoItems) {
+                            hasTemplateMarkers = t.todoItems.some(item =>
+                                (item.text.includes('[') && item.text.includes(']')) ||
+                                (item.text.includes('{') && item.text.includes('}'))
+                            );
+                        }
+                        if (hasTemplateMarkers) {
+                            this.generateTodoTemplate(t.id);
+                        } else {
+                            this.viewTodo(t.id);
+                        }
+                    } else if (t.isTicket) {
+                        this.viewTicketTemplate(t.id);
+                    } else if (t.isDatabase) {
+                        this.viewDbTemplate(t.id);
+                    } else {
+                        if (t.isViewOnly) {
+                            this.viewTemplate(t.id);
+                        } else {
+                            this.prepareTemplate(t.id);
+                        }
+                    }
+                    
+                    e.target.value = '';
+                    this.renderTemplates();
+                }
+            }
+        },
+
         renderTemplates: function() {
             if (this.data.currentMode === 'variables') {
                 return this.renderVariables();
@@ -5633,9 +5689,15 @@
                 const selectionClass = isSelected ? ' selected' : '';
                 
                 let tagsHtml = '';
+                let tagsListHtml = '';
+                if (t.runTag) {
+                    tagsListHtml += `<span style="display:inline-block; background:var(--primary); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">&lt;${this.escapeHtml(t.runTag)}&gt;</span>`;
+                }
                 if (t.tags && t.tags.length > 0) {
-                    const tagsList = t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
-                    tagsHtml = `<div style="margin-bottom: 8px;">${tagsList}</div>`;
+                    tagsListHtml += t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
+                }
+                if (tagsListHtml) {
+                    tagsHtml = `<div style="margin-bottom: 8px;">${tagsListHtml}</div>`;
                 }
 
                 const div = document.createElement('div');
@@ -6088,6 +6150,9 @@
             
             const tagsRaw = document.getElementById('inputTags').value;
             const tags = tagsRaw.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+            
+            const runTagRaw = document.getElementById('inputRunTag').value || '';
+            const runTag = runTagRaw.trim();
 
             const recommendedIds = this.currentRecommendedIds || [];
 
@@ -6102,7 +6167,8 @@
                     extraContents: extraContents,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
-                    tags: tags
+                    tags: tags,
+                    runTag: runTag
                 };
             } else {
                 this.data.templates.push({
@@ -6113,7 +6179,8 @@
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
-                    tags: tags
+                    tags: tags,
+                    runTag: runTag
                 });
             }
 
@@ -6211,6 +6278,7 @@
 
                 document.getElementById('inputViewOnly').checked = t.isViewOnly || false;
                 document.getElementById('inputTags').value = t.tags ? t.tags.join(', ') : '';
+                document.getElementById('inputRunTag').value = t.runTag || '';
 
                 const color = t.color || '#ffffff';
                 document.getElementById('inputColor').value = color;
@@ -6248,6 +6316,7 @@
 
                 document.getElementById('inputViewOnly').checked = false;
                 document.getElementById('inputTags').value = '';
+                document.getElementById('inputRunTag').value = '';
 
                 document.getElementById('inputColor').value = '#ffffff';
                 document.querySelector('.color-swatch.none').classList.add('selected');
