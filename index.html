@@ -4764,8 +4764,8 @@
                 lblEl.disabled = true;
                 lblEl.value = '';
                 lblEl.placeholder = "Auto-generated from Key";
-                if (type === 'fixed') optEl.placeholder = 'Enter your text (e.g. Best Regards,\\nName)';
-                else optEl.placeholder = 'Option 1\\nOption 2\\nOption 3';
+                if (type === 'fixed') optEl.placeholder = 'Enter your text (e.g. Best Regards,\nName)';
+                else optEl.placeholder = 'Option 1\nOption 2\nOption 3';
             }
         },
 
@@ -7223,6 +7223,22 @@
                     }
                 }
             });
+
+            let newRegex = /{{(.*?)}}/g;
+            let stillHasVars = (txt.match(newRegex) || (txtExtras && txtExtras.join('\n').match(newRegex)));
+            if (stillHasVars && stillHasVars.length > 0) {
+                this.tempContent = txt;
+                this.tempExtraContents = txtExtras;
+                
+                document.getElementById('fillerModal').style.display = 'none';
+                
+                setTimeout(() => {
+                    this.processAndShowFiller(this.tempContent, this.currentProcessingTemplateId);
+                }, 100);
+                
+                if (historyChanged) this.saveData();
+                return;
+            }
 
             if (historyChanged) this.saveData();
             
