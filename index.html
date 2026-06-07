@@ -1574,7 +1574,7 @@
                     <button class="editor-toolbar-btn" onclick="app.toggleVarTray('variableTray')" id="btnTray">📦 Variables</button>
                     <button class="editor-toolbar-btn" onclick="app.openLinkBuilder()" id="btnLinkTemplate" style="display:none;">🔗 Link Template</button>
                     
-                    <div id="formatToolbar" style="display:none; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
+                    <div id="formatToolbar" style="display:flex; align-items:center; gap:5px; border-left: 1px solid #ccc; padding-left: 10px; margin-left: 5px;">
                         <button class="editor-toolbar-btn" onclick="app.formatText('title')" title="Cím"><b>H1</b></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('subtitle')" title="Alcím"><b>H2</b></button>
                         <button class="editor-toolbar-btn" onclick="app.formatText('bold')" title="Vastag"><b>B</b></button>
@@ -6357,9 +6357,7 @@
         toggleLinkButton: function() {
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const btn = document.getElementById('btnLinkTemplate');
-            const formatBar = document.getElementById('formatToolbar');
             btn.style.display = isViewOnly ? 'flex' : 'none';
-            if (formatBar) formatBar.style.display = isViewOnly ? 'flex' : 'none';
         },
 
         toggleVarTray: function(trayId) {
