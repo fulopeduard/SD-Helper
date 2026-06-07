@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v243</title>
+    <title>SD Helper v244</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -2599,6 +2599,16 @@
             selectedIds: [],
             clipboardHistory: [],
             variableHistory: { date: new Date().toISOString().split('T')[0], values: {} }
+        },
+
+        toggleFavorite: function(event, id) {
+            if(event) event.stopPropagation();
+            const t = this.data.templates.find(x => x.id === id);
+            if (t) {
+                t.isFavorite = !t.isFavorite;
+                this.saveData();
+                this.renderTemplates();
+            }
         },
 		
 		openTicketEditor: function(id) {
@@ -5740,6 +5750,10 @@
             });
 
             filtered.sort((a, b) => {
+                const favA = a.isFavorite ? 1 : 0;
+                const favB = b.isFavorite ? 1 : 0;
+                if (favA !== favB) return favB - favA;
+
                 const orderA = (a.orderIndex !== undefined) ? a.orderIndex : 999999;
                 const orderB = (b.orderIndex !== undefined) ? b.orderIndex : 999999;
                 return orderA - orderB;
@@ -5845,6 +5859,7 @@
                         menu = `
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
                                 <div class="dropdown-item" onclick="app.viewTodo(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.pinTodo(${t.id})">${pinText}</div>
                                 <div class="dropdown-item" onclick="app.openTodoModal(${t.id})">✏️ Edit To-Do</div>
@@ -5877,6 +5892,7 @@
 						menu = `
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
                                 <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
                                 <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
@@ -5911,6 +5927,7 @@
                         menu = `
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
                                 <div class="dropdown-item" onclick="app.viewDbTemplate(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.openDbEditor(${t.id})">✏️ Edit Database</div>
                                 <div class="dropdown-item" onclick="app.cloneDbTemplate(${t.id})">📄 Create a copy</div>
@@ -5952,6 +5969,7 @@
                         menu = `
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
+                                <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
                                 <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
                                 <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
@@ -6085,7 +6103,28 @@
 
                 ungrouped.forEach(t => grid.appendChild(createCardNode(t)));
             } else {
-                filtered.forEach(t => grid.appendChild(createCardNode(t)));
+                if (currentCat === 'All' && !term && !isTrash && !rearranging) {
+                    const favs = filtered.filter(t => t.isFavorite);
+                    const others = filtered.filter(t => !t.isFavorite);
+                    
+                    if (favs.length > 0) {
+                        const headerFav = document.createElement('h3');
+                        headerFav.className = 'template-group-header';
+                        headerFav.innerHTML = '⭐ Pinned Favorites';
+                        grid.appendChild(headerFav);
+                        favs.forEach(t => grid.appendChild(createCardNode(t)));
+                    }
+                    if (others.length > 0) {
+                        const headerAll = document.createElement('h3');
+                        headerAll.className = 'template-group-header';
+                        headerAll.innerHTML = '📁 All Templates';
+                        if (favs.length > 0) headerAll.style.marginTop = '15px';
+                        grid.appendChild(headerAll);
+                        others.forEach(t => grid.appendChild(createCardNode(t)));
+                    }
+                } else {
+                    filtered.forEach(t => grid.appendChild(createCardNode(t)));
+                }
             }
 			if (currentCat !== 'All' && currentCat !== 'Trash' && !rearranging && !term) {
                 let activeTags = [];
