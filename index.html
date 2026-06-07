@@ -4665,8 +4665,8 @@
                     const safeLabel = this.escapeHtml(v.label || '(No Label)');
                     
                     let contentPreview = '';
-                    if ((v.type === 'checklist' || v.type === 'database') && Array.isArray(v.options)) {
-                        contentPreview = v.options.map(o => `• ${this.escapeHtml(o.label)}`).join('<br>');
+                    if ((v.type === 'checklist' || v.type === 'database' || v.type === 'radio') && Array.isArray(v.options)) {
+                        contentPreview = v.options.map(o => `• ${this.escapeHtml(typeof o === 'string' ? o : o.label)}`).join('<br>');
                     } else if (v.type === 'fixed') {
                         contentPreview = this.escapeHtml(v.options || '');
                     } else if (Array.isArray(v.options)) {
@@ -4719,10 +4719,13 @@
                 document.getElementById('varLabelNew').value = v.label;
                 document.getElementById('newVarType').value = v.type || 'text';
 
-                if (v.type === 'checklist' || v.type === 'database') {
+                if (v.type === 'checklist' || v.type === 'database' || v.type === 'radio') {
                     document.getElementById('varChecklistRowsNew').innerHTML = '';
                     if(Array.isArray(v.options)) {
-                        v.options.forEach(opt => this.addChecklistRowNew(opt.label, opt.value));
+                        v.options.forEach(opt => {
+                            if (typeof opt === 'string') this.addChecklistRowNew(opt, opt);
+                            else this.addChecklistRowNew(opt.label, opt.value);
+                        });
                     }
                 } else {
                     let optsStr = Array.isArray(v.options) ? v.options.join('\\n') : (v.options || "");
@@ -4753,7 +4756,7 @@
             lblEl.disabled = false;
             lblEl.placeholder = "Question (e.g. Ticket Number?)";
 
-            if (type === 'checklist' || type === 'database') {
+            if (type === 'checklist' || type === 'database' || type === 'radio') {
                 optContainer.style.display = 'none';
                 builderContainer.style.display = 'block';
                 lblEl.placeholder = type === 'database' ? "Database Title" : "Title (e.g. Software List)";
@@ -4801,7 +4804,7 @@
 
             let options = [];
 
-            if (type === 'checklist' || type === 'database') {
+            if (type === 'checklist' || type === 'database' || type === 'radio') {
                 const rows = document.querySelectorAll('.var-builder-row-new');
                 if(rows.length === 0) return alert("Please add at least one item to the checklist.");
 
@@ -7068,7 +7071,11 @@
                         html += `</select>`;
                     } else if (v.type === 'radio') {
                         html += `<div class="radio-group">`;
-                        v.options.forEach((o, i) => html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(o)}" ${i===0?'checked':''}> ${this.escapeHtml(o)}</label>`);
+                        v.options.forEach((o, i) => {
+                            const val = typeof o === 'string' ? o : o.value;
+                            const lbl = typeof o === 'string' ? o : o.label;
+                            html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
+                        });
                         html += `</div>`;
                     }
                     html += `</div>`;
