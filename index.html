@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v242</title>
+    <title>SD Helper v243</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1321,9 +1321,12 @@
         const lastVersionMatch = lastVersionFull.match(/v\d+/);
         const lastVersion = lastVersionMatch ? lastVersionMatch[0] : lastVersionFull;
         
-        loadingTextEl.innerHTML = `SD Helper <span class="version-wrapper"><span class="version-spinner"><span class="version-old-item">${lastVersion}</span><span class="version-new-item">${currentVersion}</span></span></span><div class="update-label">Update Successful</div>`;
+        loadingTextEl.classList.remove('glass-text');
+        loadingTextEl.style.color = '#ffffff';
+        loadingTextEl.style.textShadow = '0px 4px 8px rgba(0,0,0,0.5)';
+        loadingTextEl.innerHTML = `SD Helper <span style="opacity:0.6; text-decoration:line-through; font-size:0.7em; margin-right:10px;">${lastVersion}</span><span style="color:#4ade80;">&#10142; ${currentVersion}</span>`;
         window.isUpdateAnimationRunning = true;
-        setTimeout(() => { window.isUpdateAnimationRunning = false; }, 3000);
+        setTimeout(() => { window.isUpdateAnimationRunning = false; }, 1500);
     } else {
         loadingTextEl.innerText = currentVersionFull;
     }
