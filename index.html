@@ -4207,6 +4207,9 @@
             this.data.currentCategory = cat;
             this.data.currentFolderId = null;
             
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
+            
             // Normál nézetben az újonnan kiválasztott kategória mindig nyíljon le
             if (!this.data.isCategoryEditing) {
                 this.data.expandedSidebarCats = [cat];
@@ -4222,6 +4225,9 @@
             this.data.currentCategory = catName;
 			this.data.currentMode = 'templates';
             this.data.currentFolderId = folderId;
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
             
             // Normál nézet védelem
             if (!this.data.isCategoryEditing) {
@@ -4682,6 +4688,8 @@
             } else {
                 this.data.currentMode = 'templates'; // Ha még egyszer rákattint, visszamegy
             }
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
             this.updateHeaderButtons(this.data.currentCategory);
             this.renderTemplates(); // Ez automatikusan átirányít a renderVariables-re
         },
@@ -4896,7 +4904,7 @@
                 options = opts;
             } else if (type !== 'text') {
                 if (!opts) return alert("Options are required.");
-                options = opts.split('\\n').map(s => s.trim()).filter(s => s.length > 0);
+                options = opts.split('\n').map(s => s.trim()).filter(s => s.length > 0);
             }
 
             const newVarObj = { key, label, type, options };
