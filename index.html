@@ -5914,7 +5914,7 @@
                         if (t.dbItems) {
                             t.dbItems.forEach((item, idx) => {
                     const label = item.label || item.content;
-                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'modal')" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #000000 !important;">${this.escapeHtml(label)}</div>`;
+                    dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'card')" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #000000 !important;">${this.escapeHtml(label)}</div>`;
                 });
                         }
                         dbItemsHtml += `</div>`;
