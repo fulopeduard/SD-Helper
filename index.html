@@ -712,6 +712,39 @@
         #clipboardHistoryModal { z-index: 1300; }
         #snippetModal { z-index: 2500; }
         #todoModal { z-index: 1400; }
+        
+        /* --- Taskbar --- */
+        .taskbar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            flex-direction: row-reverse;
+            flex-wrap: wrap-reverse;
+            justify-content: flex-end;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .taskbar-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-weight: bold;
+            color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .taskbar-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
 
         .template-link {
             color: var(--view-link-color, var(--primary)) !important;
@@ -2248,7 +2281,10 @@
 </div>
 <div class="modal-overlay" id="fillerModal" style="z-index: 3500;">
     <div class="modal">
-        <div class="modal-header">Fill Details</div>
+        <div class="modal-header">
+            <span id="fillerModalTitle">Fill Details</span>
+            <button class="btn btn-sm btn-secondary" style="margin-left: auto;" onclick="app.minimizeModal('fillerModal')">_ Minimize</button>
+        </div>
         <div class="modal-body" id="fillerInputs"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('fillerModal')">Cancel</button>
@@ -2259,8 +2295,11 @@
 <div class="modal-overlay" id="recommendationModal" style="z-index: 1250;">
     <div class="modal" style="width: 800px; max-width: 95%;">
         <div class="modal-header">
-            <span>🚀 Process Completed</span>
-            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('recommendationModal')">Back to Main</button>
+            <span id="recommendationModalTitle">🚀 Process Completed</span>
+            <div>
+                <button class="btn btn-sm btn-secondary" style="margin-right: 10px;" onclick="app.minimizeModal('recommendationModal')">_ Minimize</button>
+                <button class="btn btn-sm btn-secondary" onclick="app.closeModal('recommendationModal')">Back to Main</button>
+            </div>
         </div>
         <div class="modal-body">
             <div id="recInstructionsWrapper" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
@@ -7009,9 +7048,23 @@
             </div>`;
         },
 
-        processAndShowFiller: function(contentToProcess, templateId = null) {
+        processAndShowFiller: function(contentToProcess, templateId = null, restoreTaskId = null) {
+            this.activeModals = this.activeModals || {};
+            if (this.activeModals['fillerModal'] && !restoreTaskId) {
+                this.minimizeModal('fillerModal');
+            }
+
             this.currentProcessingTemplateId = templateId;
             this.tempContent = contentToProcess;
+            
+            const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
+            const titleText = t ? t.title + " - Fill details" : "Fill Details";
+            document.getElementById('fillerModalTitle').innerText = titleText;
+            
+            this.activeModals['fillerModal'] = {
+                taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
+                title: titleText
+            };
 
             const h = new Date().getHours();
             const s = this.data.timeSettings;
@@ -7218,6 +7271,11 @@
                 container.innerHTML += html;
             });
 
+            this.minimizedModals = this.minimizedModals || {};
+            if (this.minimizedModals['fillerModal']) {
+                delete this.minimizedModals['fillerModal'];
+                this.renderTaskbar();
+            }
             document.getElementById('fillerModal').style.display = 'flex';
             setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
         },
@@ -7361,7 +7419,7 @@
             this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt, txtExtras);
         },
 
-        checkAndShowRecommendations: function(templateId, copiedText, extraContents = []) {
+        checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null) {
             if(!templateId && (!this.unplacedInstructions || this.unplacedInstructions.length === 0)) return;
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
             
@@ -7370,6 +7428,19 @@
             const hasUnplaced = this.unplacedInstructions && this.unplacedInstructions.length > 0;
             
             if(!hasRecs && !hasExtras && !hasUnplaced) return;
+
+            this.activeModals = this.activeModals || {};
+            if (this.activeModals['recommendationModal'] && !restoreTaskId) {
+                this.minimizeModal('recommendationModal');
+            }
+
+            const titleText = t ? t.title + " - Process Completed" : "?? Process Completed";
+            document.getElementById('recommendationModalTitle').innerText = titleText;
+            
+            this.activeModals['recommendationModal'] = {
+                taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
+                title: titleText
+            };
 
             document.getElementById('recCopiedText').innerText = copiedText;
 
@@ -7500,6 +7571,11 @@
                 recSection.style.display = 'none';
             }
 
+            this.minimizedModals = this.minimizedModals || {};
+            if (this.minimizedModals['recommendationModal']) {
+                delete this.minimizedModals['recommendationModal'];
+                this.renderTaskbar();
+            }
             document.getElementById('recommendationModal').style.display = 'flex';
         },
 
@@ -7840,7 +7916,124 @@
             window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${encodeURIComponent(text)}&op=translate`, '_blank');
         },
 
-        closeModal: function(id) { document.getElementById(id).style.display = 'none'; },
+        closeModal: function(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            this.activeModals = this.activeModals || {};
+            if (this.activeModals[id]) {
+                delete this.activeModals[id];
+            }
+        },
+
+        minimizeModal: function(modalId) {
+            this.activeModals = this.activeModals || {};
+            const active = this.activeModals[modalId];
+            if (!active) return;
+            
+            const taskId = active.taskId;
+            this.minimizedStates = this.minimizedStates || {};
+            
+            let state = {
+                modalId: modalId,
+                title: active.title,
+                taskId: taskId
+            };
+            
+            if (modalId === 'fillerModal') {
+                state.templateId = this.currentProcessingTemplateId;
+                state.tempContent = this.tempContent;
+                state.tempExtraContents = this.tempExtraContents;
+                state.tempInstructions = this.tempInstructions;
+                state.unplacedInstructions = this.unplacedInstructions;
+                
+                const container = document.getElementById('fillerInputs');
+                state.html = container.innerHTML;
+                
+                const inputs = container.querySelectorAll('input, select, textarea');
+                state.values = Array.from(inputs).map(el => {
+                    if (el.type === 'radio' || el.type === 'checkbox') return el.checked;
+                    return el.value;
+                });
+            } else if (modalId === 'recommendationModal') {
+                state.templateId = this.currentProcessingTemplateId;
+                state.copiedText = document.getElementById('recCopiedText').innerText;
+                state.unplacedInstructions = this.unplacedInstructions;
+                
+                state.htmlInstructions = document.getElementById('recInstructionsWrapper').innerHTML;
+                state.displayInstructions = document.getElementById('recInstructionsWrapper').style.display;
+                state.htmlExtras = document.getElementById('recExtrasWrapper').innerHTML;
+                state.displayExtras = document.getElementById('recExtrasWrapper').style.display;
+                state.htmlRecs = document.getElementById('recTemplatesSection').innerHTML;
+                state.displayRecs = document.getElementById('recTemplatesSection').style.display;
+            }
+            
+            this.minimizedStates[taskId] = state;
+            document.getElementById(modalId).style.display = 'none';
+            delete this.activeModals[modalId];
+            this.renderTaskbar();
+        },
+
+        restoreModal: function(taskId) {
+            this.minimizedStates = this.minimizedStates || {};
+            const state = this.minimizedStates[taskId];
+            if (!state) return;
+            
+            const modalId = state.modalId;
+            
+            this.activeModals = this.activeModals || {};
+            if (this.activeModals[modalId]) {
+                this.minimizeModal(modalId);
+            }
+            
+            if (modalId === 'fillerModal') {
+                this.currentProcessingTemplateId = state.templateId;
+                this.tempContent = state.tempContent;
+                this.tempExtraContents = state.tempExtraContents;
+                this.tempInstructions = state.tempInstructions;
+                this.unplacedInstructions = state.unplacedInstructions;
+                
+                document.getElementById('fillerModalTitle').innerText = state.title;
+                const container = document.getElementById('fillerInputs');
+                container.innerHTML = state.html;
+                
+                const inputs = container.querySelectorAll('input, select, textarea');
+                Array.from(inputs).forEach((el, index) => {
+                    if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
+                    else el.value = state.values[index];
+                });
+            } else if (modalId === 'recommendationModal') {
+                this.currentProcessingTemplateId = state.templateId;
+                this.unplacedInstructions = state.unplacedInstructions;
+                document.getElementById('recommendationModalTitle').innerText = state.title;
+                document.getElementById('recCopiedText').innerText = state.copiedText;
+                document.getElementById('recInstructionsWrapper').innerHTML = state.htmlInstructions;
+                document.getElementById('recInstructionsWrapper').style.display = state.displayInstructions;
+                document.getElementById('recExtrasWrapper').innerHTML = state.htmlExtras;
+                document.getElementById('recExtrasWrapper').style.display = state.displayExtras;
+                document.getElementById('recTemplatesSection').innerHTML = state.htmlRecs;
+                document.getElementById('recTemplatesSection').style.display = state.displayRecs;
+            }
+            
+            this.activeModals[modalId] = { taskId: state.taskId, title: state.title };
+            document.getElementById(modalId).style.display = 'flex';
+            
+            delete this.minimizedStates[taskId];
+            this.renderTaskbar();
+        },
+
+        renderTaskbar: function() {
+            this.minimizedStates = this.minimizedStates || {};
+            const taskbar = document.getElementById('taskbar');
+            if (!taskbar) return;
+            
+            taskbar.innerHTML = '';
+            for (const taskId in this.minimizedStates) {
+                const title = this.minimizedStates[taskId].title;
+                taskbar.innerHTML += `<div class="taskbar-btn" onclick="app.restoreModal('${taskId}')" title="Restore window">
+                    <span>${this.escapeHtml(title)}</span>
+                    <span style="font-size: 1.2rem; margin-top:-2px;">🗖</span>
+                </div>`;
+            }
+        },
 
         showConfirm: function(title, message, onConfirm, onCancel, confirmText = "Yes", confirmClass = "btn-danger", cancelText = "Cancel", cancelClass = "btn-secondary") {
             document.getElementById('confirmModalTitle').innerText = title;
@@ -8625,5 +8818,6 @@
         };
     });
 </script>
+<div id="taskbar" class="taskbar"></div>
 </body>
 </html>
