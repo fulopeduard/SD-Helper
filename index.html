@@ -2280,12 +2280,20 @@
     </div>
 </div>
 <div class="modal-overlay" id="fillerModal" style="z-index: 3500;">
-    <div class="modal">
+    <div class="modal" style="width: 1000px; max-width: 95%;">
         <div class="modal-header">
             <span id="fillerModalTitle">Fill Details</span>
             <button class="btn btn-sm btn-secondary" style="margin-left: auto;" onclick="app.minimizeModal('fillerModal')">_ Minimize</button>
         </div>
-        <div class="modal-body" id="fillerInputs"></div>
+        <div class="modal-body" style="display: flex; gap: 20px; align-items: flex-start;">
+            <div id="fillerPreviewSide" style="flex: 1; border-right: 1px solid #ddd; padding-right: 20px; overflow-y: auto; max-height: 60vh; display: none;">
+                <h4 id="fillerPreviewTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;"></h4>
+                <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #555; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef;"></div>
+            </div>
+            <div id="fillerInputsSide" style="flex: 1; overflow-y: auto; max-height: 60vh; padding-right: 10px;">
+                <div id="fillerInputs"></div>
+            </div>
+        </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="app.closeModal('fillerModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.processAndCopy()">Copy</button>
@@ -7061,6 +7069,17 @@
             const titleText = t ? t.title + " - Fill details" : "Fill Details";
             document.getElementById('fillerModalTitle').innerText = titleText;
             
+            if (t) {
+                document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
+                let previewHtml = this.escapeHtml(t.content || '');
+                previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
+                document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
+                document.getElementById('fillerPreviewSide').style.display = 'block';
+            } else {
+                document.getElementById('fillerPreviewSide').style.display = 'none';
+            }
+            
             this.activeModals['fillerModal'] = {
                 taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
                 title: titleText
@@ -7992,6 +8011,19 @@
                 this.unplacedInstructions = state.unplacedInstructions;
                 
                 document.getElementById('fillerModalTitle').innerText = state.title;
+                
+                const t = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
+                if (t) {
+                    document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
+                    let previewHtml = this.escapeHtml(t.content || '');
+                    previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                    document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
+                    document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
+                    document.getElementById('fillerPreviewSide').style.display = 'block';
+                } else {
+                    document.getElementById('fillerPreviewSide').style.display = 'none';
+                }
+                
                 const container = document.getElementById('fillerInputs');
                 container.innerHTML = state.html;
                 
