@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v244</title>
+    <title>SD Helper v250</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -693,7 +693,19 @@
             background: white; padding: 25px; border-radius: 8px; width: 650px; max-width: 90%;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;
             transition: background-color 0.3s ease;
+            position: relative;
         }
+        .win-controls {
+            position: absolute; top: 0; right: 0; display: flex; border-top-right-radius: 8px; overflow: hidden;
+        }
+        .win-btn {
+            width: 45px; height: 32px; border: none; background: transparent; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; color: #555; transition: background-color 0.15s, color 0.15s;
+        }
+        .win-btn:hover { background-color: rgba(0,0,0,0.1); }
+        .win-btn.close-btn:hover { background-color: #e81123; color: white; }
+        .win-btn svg { width: 10px; height: 10px; }
+        .win-btn.minimize-btn svg { margin-bottom: -10px; }
         .modal-body { overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
         .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
         .form-group { margin-bottom: 15px; }
@@ -2158,6 +2170,11 @@
                 </label>
 
                 <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingAutoFillVars">
+                    <span style="margin-left: 5px;"><strong>Automatic Variable Autofill</strong> (Fills last used variables)</span>
+                </label>
+
+                <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingShowTitle">
                     <span style="margin-left: 5px;">Show "SD Helper Cloud" title</span>
                 </label>
@@ -2280,34 +2297,56 @@
     </div>
 </div>
 <div class="modal-overlay" id="fillerModal" style="z-index: 3500;">
-    <div class="modal" style="width: 1000px; max-width: 95%;">
-        <div class="modal-header">
+    <style>
+        #fillerModal .modal-header { border-bottom: none; padding-bottom: 0; min-height: 40px; }
+        #fillerInputsSide .form-control { background-color: #e6f2ff !important; }
+        #fillerInputsSide textarea.form-control { background-color: #e6f2ff !important; }
+        #fillerInputsSide select.form-control { background-color: #e6f2ff !important; }
+        #fillerModalTitle { display: none; }
+    </style>
+    <div class="modal" style="width: 1000px; max-width: 95%; background-color: #cbefff;">
+        <div class="win-controls">
+            <button class="win-btn minimize-btn" onclick="app.minimizeModal('fillerModal')" title="Minimize">
+                <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+            </button>
+            <button class="win-btn close-btn" onclick="app.closeModal('fillerModal')" title="Close">
+                <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+        </div>
+        <div class="modal-header" style="margin-top: -10px;">
             <span id="fillerModalTitle">Fill Details</span>
-            <button class="btn btn-sm btn-secondary" style="margin-left: auto;" onclick="app.minimizeModal('fillerModal')">_ Minimize</button>
         </div>
         <div class="modal-body" style="display: flex; gap: 20px; align-items: flex-start;">
-            <div id="fillerPreviewSide" style="flex: 1; border-right: 1px solid #ddd; padding-right: 20px; overflow-y: auto; max-height: 60vh; display: none;">
-                <h4 id="fillerPreviewTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;"></h4>
-                <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #555; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef;"></div>
+            <div id="fillerPreviewSide" style="flex: 1; overflow-y: auto; max-height: 60vh; display: none;">
+                <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff;">
+                    <h4 id="fillerPreviewTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;"></h4>
+                    <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
+                </div>
             </div>
-            <div id="fillerInputsSide" style="flex: 1; overflow-y: auto; max-height: 60vh; padding-right: 10px;">
-                <div id="fillerInputs"></div>
+            <div id="fillerInputsSide" style="flex: 1; overflow-y: auto; max-height: 60vh;">
+                <div id="fillerInputsCard" style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
+                    <h4 id="fillerInputsTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; display: none; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;">Fill Details</h4>
+                    <div id="fillerInputs"></div>
+                </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="app.closeModal('fillerModal')">Cancel</button>
             <button class="btn btn-primary" onclick="app.processAndCopy()">Copy</button>
         </div>
     </div>
 </div>
 <div class="modal-overlay" id="recommendationModal" style="z-index: 1250;">
-    <div class="modal" style="width: 800px; max-width: 95%;">
-        <div class="modal-header">
+    <div class="modal" style="width: 800px; max-width: 95%; background-color: #caedfd;">
+        <div class="win-controls">
+            <button class="win-btn minimize-btn" onclick="app.minimizeModal('recommendationModal')" title="Minimize">
+                <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+            </button>
+            <button class="win-btn close-btn" onclick="app.closeModal('recommendationModal')" title="Close">
+                <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+        </div>
+        <div class="modal-header" style="margin-top: -10px;">
             <span id="recommendationModalTitle">🚀 Process Completed</span>
-            <div>
-                <button class="btn btn-sm btn-secondary" style="margin-right: 10px;" onclick="app.minimizeModal('recommendationModal')">_ Minimize</button>
-                <button class="btn btn-sm btn-secondary" onclick="app.closeModal('recommendationModal')">Back to Main</button>
-            </div>
         </div>
         <div class="modal-body">
             <div id="recInstructionsWrapper" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
@@ -5001,6 +5040,23 @@
                 "btn-danger"
             );
         },
+        
+        deleteVarHistory: function(key, val, btnId) {
+            if (this.data.variableHistory && this.data.variableHistory.values && this.data.variableHistory.values[key]) {
+                const arr = this.data.variableHistory.values[key];
+                const idx = arr.findIndex(item => (typeof item === 'string' ? item : item.v) === val);
+                if (idx !== -1) {
+                    arr.splice(idx, 1);
+                    this.saveData();
+                }
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    // if it was the currently active first pill, clear the input?
+                    // well the user can just clear the input themselves if they want.
+                    btn.remove();
+                }
+            }
+        },
 		
         openSettingsModal: function() {
 			document.getElementById('settingAutoHide').checked = !!this.data.settings.autoHideSidebars;
@@ -5018,6 +5074,7 @@
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
             document.getElementById('settingOpenLinkInPopup').checked = !!this.data.settings.openLinkInPopup;
+            document.getElementById('settingAutoFillVars').checked = this.data.settings.autoFillVars !== false;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
             document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
 
@@ -5068,6 +5125,7 @@
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
             this.data.settings.openLinkInPopup = document.getElementById('settingOpenLinkInPopup').checked;
+            this.data.settings.autoFillVars = document.getElementById('settingAutoFillVars').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
             const parsedLimit = parseInt(document.getElementById('settingVarHistoryLimit').value);
             this.data.settings.varHistoryLimit = isNaN(parsedLimit) ? 5 : parsedLimit;
@@ -7050,10 +7108,35 @@
             });
 
             return `
-            <div class="form-group" style="background-color: #e6f2ff; border-left: 4px solid var(--primary); padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-                <label style="color: var(--primary); font-weight: bold; margin-bottom: 5px;">${label}</label>
-                <div class="view-content" style="white-space: pre-wrap; font-size: 0.95rem; color: #333; line-height: 1.5;">${safeInfo}</div>
+            <div class="form-group" style="display: flex; background-color: #e6f2ff; border-left: 4px solid #bbe0ff61; border-radius: 4px; margin-bottom: 15px; overflow: hidden; padding: 0;">
+                <div style="flex: 1; padding: 10px;">
+                    ${label !== "ℹ️" ? `<label style="color: var(--primary); font-weight: bold; margin-bottom: 5px; display: block;">${label}</label>` : ''}
+                    <div class="view-content" style="white-space: pre-wrap; font-size: 0.95rem; color: #333; line-height: 1.5;">${safeInfo}</div>
+                </div>
+                <div style="width: 25px; background-color: #bbe0ff61; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                    ℹ️
+                </div>
             </div>`;
+        },
+
+        stripInfoVariables: function(text) {
+            if (!text) return text;
+            let result = text;
+            const regex = /\{\{\s*(info\d+|info:[^}]+)\s*\}\}/gi;
+            const matches = result.match(regex);
+            if (matches) {
+                [...new Set(matches)].forEach(m => {
+                    const escapedM = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    let lineRegex = new RegExp(`^\\s*${escapedM}\\s*\\r?\\n`, 'gm');
+                    let endRegex = new RegExp(`\\r?\\n\\s*${escapedM}\\s*$`, 'gm');
+                    let inlineRegex = new RegExp(`\\s*${escapedM}\\s*`, 'g');
+                    
+                    if (lineRegex.test(result)) result = result.replace(lineRegex, '');
+                    else if (endRegex.test(result)) result = result.replace(endRegex, '');
+                    else result = result.replace(inlineRegex, ' ');
+                });
+            }
+            return result;
         },
 
         processAndShowFiller: function(contentToProcess, templateId = null, restoreTaskId = null) {
@@ -7069,24 +7152,25 @@
             this.tempContent = contentToProcess;
             
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
-            const titleText = t ? t.title + " - Fill details" : "Fill Details";
+            const titleText = t ? t.title : "Fill Details";
             document.getElementById('fillerModalTitle').innerText = titleText;
+            document.getElementById('fillerInputsTitle').style.display = 'block';
             
             if (t) {
-                document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
-                let previewHtml = this.escapeHtml(contentToProcess || t.content || '');
+                document.getElementById('fillerPreviewTitle').innerText = t.title;
+                let strippedText = this.stripInfoVariables(contentToProcess || t.content || '');
+                let previewHtml = this.escapeHtml(strippedText);
                 previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                 document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
-                document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
+                const baseColor = t.color || '#f8f9fa';
+                document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
+                document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
                 document.getElementById('fillerPreviewSide').style.display = 'block';
             } else {
                 document.getElementById('fillerPreviewSide').style.display = 'none';
             }
             
-            this.activeModals['fillerModal'] = {
-                taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
-                title: titleText
-            };
+
 
             const h = new Date().getHours();
             const s = this.data.timeSettings;
@@ -7157,14 +7241,51 @@
                 });
             }
 
-            if (!matches || matches.length === 0) {
-                this.copyToClipboard(this.tempContent);
-                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.tempContent, this.tempExtraContents);
+            let realMatches = [];
+            if (matches && matches.length > 0) {
+                matches.forEach(m => {
+                    const key = m.replace(/[{}]/g, '').trim().toLowerCase();
+                    const isInfo = key.match(/^info\d*$/) || key.startsWith('info:');
+                    if (isInfo) {
+                        const infoMatch = key.match(/^info(\d+)$/i);
+                        if (infoMatch) {
+                            const instIdx = parseInt(infoMatch[1]) - 1;
+                            if (this.tempInstructions && this.tempInstructions[instIdx] && this.tempInstructions[instIdx].trim() !== "") {
+                                this.unplacedInstructions.push({ text: this.tempInstructions[instIdx], index: instIdx + 1 });
+                            }
+                        } else if (key.startsWith('info:')) {
+                            const tplName = key.substring(5).trim();
+                            const tpl = this.data.templates.find(x => !x.deleted && x.title.toLowerCase() === tplName);
+                            if (tpl) {
+                                this.unplacedInstructions.push({ text: tpl.content, index: 999, label: tplName });
+                            } else {
+                                this.unplacedInstructions.push({ text: `❌ Nem található a megadott utasítás sablon: ${tplName}`, index: 999 });
+                            }
+                        }
+                    } else {
+                        realMatches.push(m);
+                    }
+                });
+            }
+
+            if (realMatches.length === 0) {
+                const finalContent = this.stripInfoVariables(this.tempContent);
+                const finalExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
+                this.copyToClipboard(finalContent);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, finalContent, finalExtras);
                 return;
             }
+            // Swap matches to only contain real variables for input rendering
+            matches = realMatches;
 
             const container = document.getElementById('fillerInputs');
             container.innerHTML = '';
+            
+            if (this.unplacedInstructions && this.unplacedInstructions.length > 0) {
+                this.unplacedInstructions.forEach(instObj => {
+                    container.innerHTML += this.renderInstructionHtml(instObj.text, "ℹ️");
+                });
+            }
 
             matches.forEach(m => {
                 const key = m.replace(/[{}]/g, '').trim();
@@ -7175,7 +7296,7 @@
                 if (infoMatch) {
                     const instIdx = parseInt(infoMatch[1]) - 1;
                     if (this.tempInstructions && this.tempInstructions[instIdx] && this.tempInstructions[instIdx].trim() !== "") {
-                        container.innerHTML += this.renderInstructionHtml(this.tempInstructions[instIdx], "ℹ️ Beépített Útmutató " + (instIdx + 1));
+                        container.innerHTML += this.renderInstructionHtml(this.tempInstructions[instIdx], "ℹ️");
                     }
                 } else if (key.toLowerCase().startsWith('info:')) {
                     const tplName = key.substring(5).trim();
@@ -7230,20 +7351,23 @@
                             const lastItem = hArr[0];
                             lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
                         }
+                        const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                         
-                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
+                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                         
                         if (hasHistory) {
                             html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                             hArr.slice(0, varLimit).forEach((item, i) => {
                                 const valStr = typeof item === 'string' ? item : item.v;
-                                const timeStr = typeof item === 'string' ? '' : ` <span style="color:#888; font-size:0.75rem;">(${item.t})</span>`;
+                                const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
                                 const safeVal = this.escapeHtml(valStr);
                                 const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
                                 const isFirst = (i === 0);
-                                const displayStyle = isFirst ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                                const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                                const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                                const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
                                 
-                                html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';">${displayVal}${timeStr}</button>`;
+                                html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
                             });
                             html += `</div>`;
                         }
@@ -7271,20 +7395,23 @@
                         const lastItem = hArr[0];
                         lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
                     }
+                    const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                     
-                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared')) { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(lastVal)}</textarea>`;
+                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                     
                     if (hasHistory) {
                         html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                         hArr.slice(0, varLimit).forEach((item, i) => {
                             const valStr = typeof item === 'string' ? item : item.v;
-                            const timeStr = typeof item === 'string' ? '' : ` <span style="color:#888; font-size:0.75rem;">(${item.t})</span>`;
+                            const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
                             const safeVal = this.escapeHtml(valStr);
                             const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
                             const isFirst = (i === 0);
-                            const displayStyle = isFirst ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                            const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                            const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                            const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
                             
-                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';">${displayVal}${timeStr}</button>`;
+                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
                         });
                         html += `</div>`;
                     }
@@ -7298,6 +7425,12 @@
                 delete this.minimizedModals['fillerModal'];
                 this.renderTaskbar();
             }
+            
+            this.activeModals['fillerModal'] = {
+                taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
+                title: titleText
+            };
+            
             document.getElementById('fillerModal').style.display = 'flex';
             setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
         },
@@ -7327,8 +7460,8 @@
         },
 		
         processAndCopy: function() {
-            let txt = this.tempContent;
-            let txtExtras = this.tempExtraContents ? [...this.tempExtraContents] : [];
+            let txt = this.stripInfoVariables(this.tempContent);
+            let txtExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
             const regex = /{{(.*?)}}/g;
             
             const combinedText = txt + "\n" + txtExtras.join('\n');
@@ -7463,7 +7596,7 @@
                 this.minimizeModal('fillerModal');
             }
 
-            const titleText = t ? t.title + " - Process Completed" : "?? Process Completed";
+            const titleText = t ? t.title : "🚀 Process Completed";
             document.getElementById('recommendationModalTitle').innerText = titleText;
             
             this.activeModals['recommendationModal'] = {
@@ -7471,13 +7604,76 @@
                 title: titleText
             };
 
+            const recBody = document.querySelector('#recommendationModal .modal-body');
+            if (recBody && !document.getElementById('recDynamicLayout')) {
+                const layout = document.createElement('div');
+                layout.id = 'recDynamicLayout';
+                layout.style.display = 'grid';
+                layout.style.gridTemplateColumns = '1fr 1fr';
+                layout.style.gap = '20px';
+                layout.style.marginBottom = '20px';
+                
+                const instWrap = document.getElementById('recInstructionsWrapper');
+                const justWrap = document.getElementById('recJustCopiedBox');
+                const extWrap = document.getElementById('recExtrasWrapper');
+                
+                if (instWrap && justWrap && extWrap) {
+                    // Remove old wrapper display if it exists, although we don't have its ref, we can just hide it
+                    const oldWrap = document.getElementById('recContentsWrapper');
+                    if(oldWrap) oldWrap.style.display = 'none';
+                    
+                    // Reset margins that clash with grid gap
+                    instWrap.style.marginBottom = '0';
+                    justWrap.style.marginBottom = '0';
+                    extWrap.style.marginBottom = '0';
+                    
+                    recBody.insertBefore(layout, recBody.firstChild);
+                    layout.appendChild(instWrap);
+                    layout.appendChild(justWrap);
+                    layout.appendChild(extWrap);
+                }
+            }
+
+            let infoOrder = 1;
+            if (this.tempContent) {
+                let firstInfo = this.tempContent.search(/\{\{info/i);
+                if (firstInfo !== -1) {
+                    let totalLen = this.tempContent.length;
+                    let pos = firstInfo / totalLen;
+                    if (pos < 0.3) infoOrder = 1; // Top
+                    else if (pos > 0.7) infoOrder = 3; // Bottom
+                    else infoOrder = 2; // Middle
+                }
+            }
+            
+            const dynInst = document.getElementById('recInstructionsWrapper');
+            const dynJust = document.getElementById('recJustCopiedBox');
+            const dynExt = document.getElementById('recExtrasWrapper');
+            
+            if (dynInst && dynJust && dynExt) {
+                if (infoOrder === 1) { // TOP
+                    dynInst.style.gridColumn = '1 / 3'; dynInst.style.order = 1;
+                    dynJust.style.gridColumn = hasExtras ? '1 / 2' : '1 / 3'; dynJust.style.order = 2;
+                    dynExt.style.gridColumn = '2 / 3'; dynExt.style.order = 3;
+                } else if (infoOrder === 2) { // MIDDLE
+                    dynJust.style.gridColumn = hasUnplaced ? '1 / 2' : '1 / 3'; dynJust.style.order = 1;
+                    dynInst.style.gridColumn = '2 / 3'; dynInst.style.order = 2;
+                    dynExt.style.gridColumn = '1 / 3'; dynExt.style.order = 3;
+                } else { // BOTTOM
+                    dynJust.style.gridColumn = hasExtras ? '1 / 2' : '1 / 3'; dynJust.style.order = 1;
+                    dynExt.style.gridColumn = '2 / 3'; dynExt.style.order = 2;
+                    dynInst.style.gridColumn = '1 / 3'; dynInst.style.order = 3;
+                }
+            }
+
             const instWrapper = document.getElementById('recInstructionsWrapper');
             if (instWrapper) {
                 instWrapper.innerHTML = '';
                 if (hasUnplaced) {
                     instWrapper.style.display = 'flex';
                     this.unplacedInstructions.forEach(instObj => {
-                        instWrapper.innerHTML += this.renderInstructionHtml(instObj.text, "ℹ️ Beépített Útmutató " + instObj.index);
+                        let lbl = instObj.label ? "ℹ️ Utasítás / Info: " + this.escapeHtml(instObj.label) : "ℹ️";
+                        instWrapper.innerHTML += this.renderInstructionHtml(instObj.text, lbl);
                     });
                 } else {
                     instWrapper.style.display = 'none';
@@ -8022,14 +8218,18 @@
                 this.unplacedInstructions = state.unplacedInstructions;
                 
                 document.getElementById('fillerModalTitle').innerText = state.title;
+                document.getElementById('fillerInputsTitle').style.display = 'block';
                 
                 const t = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
                 if (t) {
-                    document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
-                    let previewHtml = this.escapeHtml(state.tempContent || t.content || '');
+                    document.getElementById('fillerPreviewTitle').innerText = t.title;
+                    let strippedText = this.stripInfoVariables(state.tempContent || t.content || '');
+                    let previewHtml = this.escapeHtml(strippedText);
                     previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                     document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
-                    document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
+                    const baseColor = t.color || '#f8f9fa';
+                    document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
+                    document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
                     document.getElementById('fillerPreviewSide').style.display = 'block';
                 } else {
                     document.getElementById('fillerPreviewSide').style.display = 'none';
