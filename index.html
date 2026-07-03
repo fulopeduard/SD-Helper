@@ -2312,9 +2312,9 @@
         <div class="modal-body">
             <div id="recInstructionsWrapper" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
             <div style="display: flex; gap: 15px; margin-bottom: 20px;" id="recContentsWrapper">
-                <div style="flex: 1; background: #e6f2ff; padding: 15px; border-radius: 8px; border: 1px solid #005a9e;">
+                <div id="recJustCopiedBox" style="flex: 1; background: #e6f2ff; padding: 15px; border-radius: 8px; border: 1px solid #005a9e;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="margin: 0; color: #005a9e;">Just Copied:</h4>
+                        <h4 id="recJustCopiedTitle" style="margin: 0; color: #333;">Just Copied:</h4>
                         <button class="btn btn-sm btn-primary" onclick="app.copyToClipboard(document.getElementById('recCopiedText').innerText)">📋 Copy Again</button>
                     </div>
                     <div id="recCopiedText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;"></div>
@@ -7071,7 +7071,7 @@
             
             if (t) {
                 document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
-                let previewHtml = this.escapeHtml(t.content || '');
+                let previewHtml = this.escapeHtml(contentToProcess || t.content || '');
                 previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                 document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
                 document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
@@ -7446,6 +7446,10 @@
             const hasExtras = extraContents && extraContents.length > 0 && extraContents.some(e => e.trim() !== "");
             const hasUnplaced = this.unplacedInstructions && this.unplacedInstructions.length > 0;
             
+            document.getElementById('recCopiedText').innerText = copiedText;
+            document.getElementById('recJustCopiedBox').style.backgroundColor = t ? (t.color || '#e6f2ff') : '#e6f2ff';
+            document.getElementById('recJustCopiedBox').style.borderColor = t ? (t.color || '#005a9e') : '#005a9e';
+
             if(!hasRecs && !hasExtras && !hasUnplaced) return;
 
             this.activeModals = this.activeModals || {};
@@ -7460,8 +7464,6 @@
                 taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
                 title: titleText
             };
-
-            document.getElementById('recCopiedText').innerText = copiedText;
 
             const instWrapper = document.getElementById('recInstructionsWrapper');
             if (instWrapper) {
@@ -8015,7 +8017,7 @@
                 const t = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
                 if (t) {
                     document.getElementById('fillerPreviewTitle').innerText = "Preview: " + t.title;
-                    let previewHtml = this.escapeHtml(t.content || '');
+                    let previewHtml = this.escapeHtml(state.tempContent || t.content || '');
                     previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                     document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
                     document.getElementById('fillerPreviewContent').style.backgroundColor = t.color || '#f8f9fa';
@@ -8037,6 +8039,9 @@
                 this.unplacedInstructions = state.unplacedInstructions;
                 document.getElementById('recommendationModalTitle').innerText = state.title;
                 document.getElementById('recCopiedText').innerText = state.copiedText;
+                const recT = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
+                document.getElementById('recJustCopiedBox').style.backgroundColor = recT ? (recT.color || '#e6f2ff') : '#e6f2ff';
+                document.getElementById('recJustCopiedBox').style.borderColor = recT ? (recT.color || '#005a9e') : '#005a9e';
                 document.getElementById('recInstructionsWrapper').innerHTML = state.htmlInstructions;
                 document.getElementById('recInstructionsWrapper').style.display = state.displayInstructions;
                 document.getElementById('recExtrasWrapper').innerHTML = state.htmlExtras;
