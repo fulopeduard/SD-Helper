@@ -7061,6 +7061,9 @@
             if (this.activeModals['fillerModal'] && !restoreTaskId) {
                 this.minimizeModal('fillerModal');
             }
+            if (this.activeModals['recommendationModal'] && !restoreTaskId) {
+                this.minimizeModal('recommendationModal');
+            }
 
             this.currentProcessingTemplateId = templateId;
             this.tempContent = contentToProcess;
@@ -7455,6 +7458,9 @@
             this.activeModals = this.activeModals || {};
             if (this.activeModals['recommendationModal'] && !restoreTaskId) {
                 this.minimizeModal('recommendationModal');
+            }
+            if (this.activeModals['fillerModal'] && !restoreTaskId) {
+                this.minimizeModal('fillerModal');
             }
 
             const titleText = t ? t.title + " - Process Completed" : "?? Process Completed";
@@ -8001,8 +8007,11 @@
             const modalId = state.modalId;
             
             this.activeModals = this.activeModals || {};
-            if (this.activeModals[modalId]) {
-                this.minimizeModal(modalId);
+            if (this.activeModals['fillerModal']) {
+                this.minimizeModal('fillerModal');
+            }
+            if (this.activeModals['recommendationModal']) {
+                this.minimizeModal('recommendationModal');
             }
             
             if (modalId === 'fillerModal') {
