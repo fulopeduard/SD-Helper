@@ -189,7 +189,7 @@
         }
 
         /* View Only Window Theme Styling */
-        .view-mode, .view-modal, [id*="view" i] .modal, [id*="preview" i] .modal, .viewer-modal, .dynamic-view-modal .modal {
+        .view-mode, .view-modal, [id*="view" i] .modal, [id*="preview" i] .modal, .viewer-modal {
             background: var(--view-mode) !important;
             color: var(--view-text) !important;
         }
@@ -2303,6 +2303,22 @@
         #fillerInputsSide textarea.form-control { background-color: #e6f2ff !important; }
         #fillerInputsSide select.form-control { background-color: #e6f2ff !important; }
         #fillerModalTitle { display: none; }
+        .variable-box {
+            background: rgba(0, 0, 0, 0.035);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .variable-box > label:first-child {
+            margin-top: 0;
+            color: #005a9e;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 6px;
+            display: block;
+        }
     </style>
     <div class="modal" style="width: 1000px; max-width: 95%; background-color: #cbefff;">
         <div class="win-controls">
@@ -2318,10 +2334,11 @@
         </div>
         <div class="modal-body" style="display: flex; gap: 20px; align-items: flex-start;">
             <div id="fillerPreviewSide" style="flex: 1; overflow-y: auto; max-height: 60vh; display: none;">
-                <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff;">
+                <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; margin-bottom: 15px;">
                     <h4 id="fillerPreviewTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;"></h4>
                     <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
                 </div>
+                <div id="fillerPreviewExtrasWrapper" style="display: none; flex-direction: column; gap: 15px;"></div>
             </div>
             <div id="fillerInputsSide" style="flex: 1; overflow-y: auto; max-height: 60vh;">
                 <div id="fillerInputsCard" style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
@@ -2453,33 +2470,7 @@
                             <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewBtn')" title="Elfogadás">✓</button>
                         </div>
                     </div>
-                    <div class="form-group" style="margin: 0; grid-column: span 2;">
-                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Bg (Solid or Gradient)</label>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
-                            <input type="hidden" id="themeViewBg">
-                            <input type="color" id="themeViewBg_1" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeViewBg')">
-                            <span style="font-size: 0.8rem; color: #64748b;">to</span>
-                            <input type="color" id="themeViewBg_2" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.updateGradient('themeViewBg')">
-                            <input type="number" id="themeViewBg_angle" value="135" style="width: 50px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; text-align: center;" title="Szög (fok)" oninput="app.updateGradient('themeViewBg')"><span style="font-size: 0.8rem; color: #64748b; margin-left: -4px;">°</span>
-                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 3px; cursor: pointer;" title="Visszatérés az első színhez"><input type="checkbox" id="themeViewBg_bounce" onchange="app.updateGradient('themeViewBg')"> 🪃 3-color</label>
-                            <button class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-weight: 600; font-size: 0.75rem;" onclick="app.matchGradient('themeViewBg')" title="Második szín megegyezik az elsővel">🔗 Match</button>
-                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold; margin-left: auto;" onclick="app.acceptColor('themeViewBg')" title="Elfogadás">✓</button>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Text</label>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                            <input type="color" id="themeViewText" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
-                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewText')" title="Elfogadás">✓</button>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">View Window Link</label>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                            <input type="color" id="themeViewLink" style="width: 38px; height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; cursor: pointer;" oninput="app.livePreviewTheme()" onblur="app.revertColor(this)">
-                            <button class="btn btn-sm btn-success" style="padding: 2px 8px; font-weight: bold;" onclick="app.acceptColor('themeViewLink')" title="Elfogadás">✓</button>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -3907,6 +3898,10 @@
                 this.currentProcessingTitle = obj.description || obj.subCategory || "Quick Snippet";
                 this.currentProcessingColor = obj.color || "#ffffff";
             }
+            this.tempExtraContents = [];
+            this.tempExtraTitles = [];
+            this.tempExtraTriggers = [];
+            this.tempInstructions = [];
             this.processAndShowFiller(text);
         },
 
@@ -4894,6 +4889,10 @@
             if(!v) return;
             this.currentProcessingTitle = "Preview Variable: " + v.label;
             this.currentProcessingColor = "#ffffff";
+            this.tempExtraContents = [];
+            this.tempExtraTitles = [];
+            this.tempExtraTriggers = [];
+            this.tempInstructions = [];
             // Lényegében szimuláljuk a template futtatását úgy, hogy csak ezt az egy változót hívjuk meg
             this.processAndShowFiller(`{{${v.key}}}`, null);
         },
@@ -5225,9 +5224,9 @@
             setVal('themeTitle', theme.title || '#1a1a1a');
             setVal('themePrimary', theme.primary || '#0078d4');
             setVal('themeViewBtn', theme.viewBtn || '#605e5c');
-            setGradientVal('themeViewBg', theme.viewBg || '#605e5c');
-            setVal('themeViewText', theme.viewText || '#323130');
-            setVal('themeViewLink', theme.viewLink || '#93c5fd');
+            
+            
+            
             
             setVal('themeSidebarCatOddBg', theme.sidebarCatOddBg || '#a6e7f4');
             setVal('themeSidebarCatEvenBg', theme.sidebarCatEvenBg || '#a0dfec');
@@ -5302,9 +5301,9 @@
             const title = document.getElementById('themeTitle')?.value || '#1a1a1a';
             const primary = document.getElementById('themePrimary')?.value || '#0078d4';
             const viewBtn = document.getElementById('themeViewBtn')?.value || '#605e5c';
-            const viewBg = document.getElementById('themeViewBg')?.value || '#605e5c';
-            const viewText = document.getElementById('themeViewText')?.value || '#323130';
-            const viewLink = document.getElementById('themeViewLink')?.value || '#93c5fd';
+            
+            
+            
             
             const sidebarCatOddBg = document.getElementById('themeSidebarCatOddBg')?.value || '#a6e7f4';
             const sidebarCatEvenBg = document.getElementById('themeSidebarCatEvenBg')?.value || '#a0dfec';
@@ -5329,8 +5328,8 @@
             document.documentElement.style.setProperty('--title-color', title);
             document.documentElement.style.setProperty('--primary', primary);
             document.documentElement.style.setProperty('--view-btn', viewBtn);
-            document.documentElement.style.setProperty('--view-mode', viewBg);
-            document.documentElement.style.setProperty('--view-text', viewText);
+            
+            
             document.documentElement.style.setProperty('--view-link-color', viewLink);
             
             document.documentElement.style.setProperty('--sidebar-cat-odd-bg', sidebarCatOddBg);
@@ -5355,8 +5354,8 @@
 
             document.documentElement.style.setProperty('--subtitle-color', theme.subtitle || '#0078d4');
             document.documentElement.style.setProperty('--main-bg', theme.mainBg || '#d0d0e8');
-            document.documentElement.style.setProperty('--view-mode', theme.viewBg || '#605e5c');
-            document.documentElement.style.setProperty('--view-text', theme.viewText || '#323130');
+            
+            
             document.documentElement.style.setProperty('--view-link-color', theme.viewLink || '#93c5fd');
             document.documentElement.style.setProperty('--sidebar-bg-color', theme.sidebarBg || '#bcbce4');
             document.documentElement.style.setProperty('--sidebar-text', theme.sidebarText || '#323130');
@@ -5367,8 +5366,8 @@
             document.documentElement.style.setProperty('--title-color', theme.title || '#1a1a1a');
             document.documentElement.style.setProperty('--primary', theme.primary || '#0078d4');
             document.documentElement.style.setProperty('--view-btn', theme.viewBtn || '#605e5c');
-            document.documentElement.style.setProperty('--view-mode', theme.viewBg || '#605e5c');
-            document.documentElement.style.setProperty('--view-text', theme.viewText || '#323130');
+            
+            
             
             document.documentElement.style.setProperty('--sidebar-cat-odd-bg', theme.sidebarCatOddBg || '#a6e7f4');
             document.documentElement.style.setProperty('--sidebar-cat-even-bg', theme.sidebarCatEvenBg || '#a0dfec');
@@ -5404,9 +5403,9 @@
                 title: document.getElementById('themeTitle').value,
                 primary: document.getElementById('themePrimary').value,
                 viewBtn: document.getElementById('themeViewBtn').value,
-                viewBg: document.getElementById('themeViewBg').value,
-                viewText: document.getElementById('themeViewText').value,
-                viewLink: document.getElementById('themeViewLink').value,
+
+
+
                 sidebarCatOddBg: document.getElementById('themeSidebarCatOddBg').value,
                 sidebarCatEvenBg: document.getElementById('themeSidebarCatEvenBg').value,
                 sidebarCatHoverBg: document.getElementById('themeSidebarCatHoverBg').value,
@@ -6390,6 +6389,8 @@
             const content = document.getElementById('inputContent').value;
             const instructions = Array.from(document.querySelectorAll('.instruction-textarea')).map(ta => ta.value);
             const extraContents = Array.from(document.querySelectorAll('.extra-content-textarea')).map(ta => ta.value);
+            const extraTitles = Array.from(document.querySelectorAll('.extra-content-title-input')).map(inp => inp.value);
+            const extraTriggers = Array.from(document.querySelectorAll('.extra-content-trigger-input')).map(inp => inp.value.trim());
             
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const color = document.getElementById('inputColor').value;
@@ -6412,6 +6413,8 @@
                     title, subtitle, category, lang, content, isViewOnly, color,
                     instructions: instructions,
                     extraContents: extraContents,
+                    extraTitles: extraTitles,
+                    extraTriggers: extraTriggers,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
                     tags: tags,
@@ -6423,6 +6426,8 @@
                     title, subtitle, category, lang, content,
                     instructions: instructions,
                     extraContents: extraContents,
+                    extraTitles: extraTitles,
+                    extraTriggers: extraTriggers,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
@@ -6471,14 +6476,24 @@
             });
         },
 		
-		addExtraContent: function(val = '') {
+		addExtraContent: function(val = '', title = '', trigger = '') {
             const container = document.getElementById('extraContentsContainer');
+            const newIndex = container.children.length + 1;
+            const defaultTitle = "Extra Content " + newIndex;
+            
             const div = document.createElement('div');
             div.className = 'extra-content-block';
             div.style.cssText = 'margin-top:15px; border-top: 2px dashed var(--border); padding-top: 15px; position: relative;';
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                    <label style="color: var(--primary);">Extra Content (Not auto-copied)</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px; flex-wrap: wrap; gap: 10px;">
+                    <input type="text" class="extra-content-title-input" value="${this.escapeHtml(title)}" placeholder="${defaultTitle}" 
+                        style="border: none; border-bottom: 1px dashed var(--primary); background: transparent; color: var(--primary); font-weight: bold; font-size: 0.95rem; outline: none; flex: 1; min-width: 150px;"
+                        onclick="this.select()"
+                    >
+                    <input type="text" class="extra-content-trigger-input" value="${this.escapeHtml(trigger)}" placeholder="Trigger keyword (if main content contains...)" 
+                        style="border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; font-size: 0.85rem; outline: none; flex: 2; min-width: 200px;"
+                        title="If set, this extra content will ONLY be processed and displayed if the generated main content contains this keyword."
+                    >
                     <button class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" onclick="this.parentElement.parentElement.remove()" title="Remove this content">✖</button>
                 </div>
                 <textarea class="form-control extra-content-textarea" placeholder="Secondary content..." style="min-height: 100px; border-color: var(--primary);">${this.escapeHtml(val)}</textarea>
@@ -6518,7 +6533,11 @@
                 // Extra tartalmak betöltése
                 document.getElementById('extraContentsContainer').innerHTML = '';
                 if (t.extraContents && t.extraContents.length > 0) {
-                    t.extraContents.forEach(ext => this.addExtraContent(ext));
+                    t.extraContents.forEach((ext, idx) => {
+                        const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
+                        const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
+                        this.addExtraContent(ext, title, trigger);
+                    });
                 } else if (t.content2) { // Visszafelé kompatibilitás a régivel
                     this.addExtraContent(t.content2);
                 }
@@ -6765,7 +6784,11 @@
 
             document.getElementById('extraContentsContainer').innerHTML = '';
             if (t.extraContents && t.extraContents.length > 0) {
-                t.extraContents.forEach(ext => this.addExtraContent(ext));
+                t.extraContents.forEach((ext, idx) => {
+                    const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
+                    const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
+                    this.addExtraContent(ext, title, trigger);
+                });
             } else if (t.content2) {
                 this.addExtraContent(t.content2);
             }
@@ -6827,17 +6850,18 @@
 			overlay.style.zIndex = newZIndex;
 			overlay.style.display = 'flex';
 
+			const baseColor = t.color || '#f8f9fa';
 			overlay.innerHTML = `
 				<div class="modal" style="width: 800px; max-width: 95%;">
 					<div class="modal-header">
-						<span>${this.escapeHtml(t.title)}</span>
+						<span>Ticket Visualizer</span>
 						<button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
 					</div>
-					<div class="modal-body">
-						<div class="view-content" style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: var(--view-text);">${safeContent}</div>
-					</div>
-					<div class="modal-footer">
-						<button class="btn btn-primary close-dynamic-btn">Close</button>
+					<div class="modal-body" style="background-color: #f8f9fa;">
+						<div style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}; border-color: ${baseColor};">
+							<h4 style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">${this.escapeHtml(t.title)}</h4>
+							<div class="view-content" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeContent}</div>
+						</div>
 					</div>
 				</div>
 			`;
@@ -7080,6 +7104,8 @@
                 this.tempInstructions = [];
             }
             this.tempExtraContents = t.extraContents ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
+            this.tempExtraTitles = t.extraTitles ? [...t.extraTitles] : [];
+            this.tempExtraTriggers = t.extraTriggers ? [...t.extraTriggers] : [];
             this.processAndShowFiller(t.content, id);
         },
 
@@ -7165,7 +7191,36 @@
                 const baseColor = t.color || '#f8f9fa';
                 document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
                 document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
-                document.getElementById('fillerPreviewSide').style.display = 'block';
+                
+                const extrasWrapper = document.getElementById('fillerPreviewExtrasWrapper');
+                if (extrasWrapper) {
+                    extrasWrapper.innerHTML = '';
+                    if (this.tempExtraContents && this.tempExtraContents.length > 0) {
+                        const validExtras = this.tempExtraContents.filter(e => e.trim() !== "");
+                        if (validExtras.length > 0) {
+                            extrasWrapper.style.display = 'flex';
+                            this.tempExtraContents.forEach((ext, idx) => {
+                                if (ext.trim() !== "") {
+                                    let safeExt = this.escapeHtml(this.stripInfoVariables(ext));
+                                    safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                                    extrasWrapper.innerHTML += `
+                                        <div class="extra-preview-block" style="padding: 20px; border-radius: 8px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor};">
+                                            <h4 style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">${this.tempExtraTitles && this.tempExtraTitles[idx] ? this.escapeHtml(this.tempExtraTitles[idx]) : "Extra Content " + (idx + 1)}</h4>
+                                            <div class="extra-preview-content" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        } else {
+                            extrasWrapper.style.display = 'none';
+                        }
+                    } else {
+                        extrasWrapper.style.display = 'none';
+                    }
+                }
+                
+                document.getElementById('fillerPreviewSide').style.display = 'flex';
+                document.getElementById('fillerPreviewSide').style.flexDirection = 'column';
             } else {
                 document.getElementById('fillerPreviewSide').style.display = 'none';
             }
@@ -7272,13 +7327,15 @@
                 const finalContent = this.stripInfoVariables(this.tempContent);
                 const finalExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
                 this.copyToClipboard(finalContent);
-                this.checkAndShowRecommendations(this.currentProcessingTemplateId, finalContent, finalExtras);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, this.tempExtraTitles);
                 return;
             }
             // Swap matches to only contain real variables for input rendering
             matches = realMatches;
 
             const container = document.getElementById('fillerInputs');
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
             container.innerHTML = '';
             
             if (this.unplacedInstructions && this.unplacedInstructions.length > 0) {
@@ -7288,136 +7345,7 @@
             }
 
             matches.forEach(m => {
-                const key = m.replace(/[{}]/g, '').trim();
-                const v = this.data.customVars.find(cv => cv.key === key);
-                let html = '';
-
-                const infoMatch = key.match(/^info(\d+)$/i);
-                if (infoMatch) {
-                    const instIdx = parseInt(infoMatch[1]) - 1;
-                    if (this.tempInstructions && this.tempInstructions[instIdx] && this.tempInstructions[instIdx].trim() !== "") {
-                        container.innerHTML += this.renderInstructionHtml(this.tempInstructions[instIdx], "ℹ️");
-                    }
-                } else if (key.toLowerCase().startsWith('info:')) {
-                    const tplName = key.substring(5).trim();
-                    const t = this.data.templates.find(x => !x.deleted && x.title === tplName);
-                    if (t) {
-                        html = this.renderInstructionHtml(t.content, "ℹ️ Utasítás / Info: " + this.escapeHtml(tplName));
-                    } else {
-                        html = `<div class="form-group"><div style="color: red; font-weight: bold;">❌ Nem található a megadott utasítás sablon: ${this.escapeHtml(tplName)}</div></div>`;
-                    }
-                } else if (key.toLowerCase() === 'gender') {
-                    html = `<div class="form-group"><label>Gender</label>
-                            <div class="radio-group">
-                                <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
-                                <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
-                            </div></div>`;
-                } else if (v) {
-                    html = `<div class="form-group"><label>${this.escapeHtml(v.label)}</label>`;
-
-                    if (v.type === 'checklist') {
-                        if(Array.isArray(v.options)) {
-                            v.options.forEach(opt => {
-                                html += `
-                                <div class="checklist-item">
-                                    <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
-                                    <span>${this.escapeHtml(opt.label)}</span>
-                                </div>`;
-                            });
-                        }
-                    } else if (v.type === 'database') {
-                        html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value)" style="margin-bottom: 5px;">`;
-                        html += `<select class="form-control db-select" id="val_${key}" size="5" onchange="app.checkDatabaseOther('${key}')">`;
-                        html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
-                        if(Array.isArray(v.options)) {
-                            v.options.forEach(opt => {
-                                html += `<option value="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</option>`;
-                            });
-                        }
-                        html += `</select>`;
-                        html += `<div id="db_other_container_${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
-                                    <label style="font-size: 0.85rem;">New Label:</label>
-                                    <input type="text" class="form-control" id="db_new_label_${key}" style="margin-bottom: 5px;" placeholder="Label">
-                                    <label style="font-size: 0.85rem;">New Content:</label>
-                                    <textarea class="form-control" id="db_new_content_${key}" rows="2" placeholder="Content"></textarea>
-                                 </div>`;
-                    } else if (v.type === 'text') {
-                        const todayStr = new Date().toISOString().split('T')[0];
-                        let lastVal = "";
-                        const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
-                        let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
-                        let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
-                        if (hasHistory) {
-                            const lastItem = hArr[0];
-                            lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
-                        }
-                        const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
-                        
-                        html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
-                        
-                        if (hasHistory) {
-                            html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
-                            hArr.slice(0, varLimit).forEach((item, i) => {
-                                const valStr = typeof item === 'string' ? item : item.v;
-                                const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
-                                const safeVal = this.escapeHtml(valStr);
-                                const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
-                                const isFirst = (i === 0);
-                                const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
-                                const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
-                                const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
-                                
-                                html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
-                            });
-                            html += `</div>`;
-                        }
-                    } else if (v.type === 'select') {
-                        html += `<select class="form-control" id="val_${key}">`;
-                        v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
-                        html += `</select>`;
-                    } else if (v.type === 'radio') {
-                        html += `<div class="radio-group">`;
-                        v.options.forEach((o, i) => {
-                            const val = typeof o === 'string' ? o : o.value;
-                            const lbl = typeof o === 'string' ? o : o.label;
-                            html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
-                        });
-                        html += `</div>`;
-                    }
-                    html += `</div>`;
-                } else {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    let lastVal = "";
-                    const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
-                    let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
-                    let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
-                    if (hasHistory) {
-                        const lastItem = hArr[0];
-                        lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
-                    }
-                    const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
-                    
-                    html = `<div class="form-group"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
-                    
-                    if (hasHistory) {
-                        html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
-                        hArr.slice(0, varLimit).forEach((item, i) => {
-                            const valStr = typeof item === 'string' ? item : item.v;
-                            const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
-                            const safeVal = this.escapeHtml(valStr);
-                            const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
-                            const isFirst = (i === 0);
-                            const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
-                            const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
-                            const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
-                            
-                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block';" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
-                        });
-                        html += `</div>`;
-                    }
-                    html += `</div>`;
-                }
-                container.innerHTML += html;
+                container.innerHTML += this.generateVariableInputHtml(m);
             });
 
             this.minimizedModals = this.minimizedModals || {};
@@ -7432,6 +7360,14 @@
             };
             
             document.getElementById('fillerModal').style.display = 'flex';
+            
+            const inputsContainer = document.getElementById('fillerInputs');
+            if (inputsContainer) {
+                inputsContainer.oninput = () => this.updateLivePreview();
+                inputsContainer.onchange = () => this.updateLivePreview();
+            }
+            this.updateLivePreview();
+            
             setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
         },
 		
@@ -7458,123 +7394,445 @@
                 container.style.display = 'none';
             }
         },
-		
-        processAndCopy: function() {
-            let txt = this.stripInfoVariables(this.tempContent);
-            let txtExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
-            const regex = /{{(.*?)}}/g;
-            
-            const combinedText = txt + "\n" + txtExtras.join('\n');
-            const matchedItems = combinedText.match(regex) || [];
-            const matches = [...new Set(matchedItems)];
+        
+        generateVariableInputHtml: function(m, orderValue = 1) {
+            const key = m.replace(/[{}]/g, '').trim();
+            const v = this.data.customVars ? this.data.customVars.find(cv => cv.key === key) : null;
+            let html = '';
 
-            let historyChanged = false;
-
-            matches.forEach(m => {
-                const key = m.replace(/[{}]/g, '').trim();
-                let val = "";
-
-                if (key.toLowerCase().match(/^info\d+$/i)) {
-                    val = "";
-                } else if (key.toLowerCase().startsWith('info:')) {
-                    val = "";
-                } else if (key.toLowerCase() === 'gender') {
-                    const g = document.querySelector('input[name="val_gender"]:checked').value;
-                    if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
-                    else val = (g === 'm') ? "Mr." : "Ms.";
+            const infoMatch = key.match(/^info(\d+)$/i);
+            if (infoMatch) {
+                const instIdx = parseInt(infoMatch[1]) - 1;
+                if (this.tempInstructions && this.tempInstructions[instIdx] && this.tempInstructions[instIdx].trim() !== "") {
+                    html += `<div class="variable-box" data-key="${key}" style="order: ${orderValue};">${this.renderInstructionHtml(this.tempInstructions[instIdx], "ℹ️")}</div>`;
+                }
+            } else if (key.toLowerCase().startsWith('info:')) {
+                const tplName = key.substring(5).trim();
+                const t = this.data.templates.find(x => !x.deleted && x.title === tplName);
+                if (t) {
+                    html = `<div class="variable-box" data-key="${key}" style="order: ${orderValue};">${this.renderInstructionHtml(t.content, "ℹ️ Utasítás / Info: " + this.escapeHtml(tplName))}</div>`;
                 } else {
-                    const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
-                    if(checkboxes.length > 0) {
-                        let values = [];
-                        checkboxes.forEach(chk => values.push(chk.value));
-                        val = values.join('\n');
+                    html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><div style="color: red; font-weight: bold;">❌ Nem található a megadott utasítás sablon: ${this.escapeHtml(tplName)}</div></div>`;
+                }
+            } else if (key.toLowerCase() === 'gender') {
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>Gender</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
+                            <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
+                        </div></div>`;
+            } else if (v) {
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${this.escapeHtml(v.label)}</label>`;
+
+                if (v.type === 'checklist') {
+                    if(Array.isArray(v.options)) {
+                        v.options.forEach(opt => {
+                            html += `
+                            <div class="checklist-item">
+                                <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
+                                <span>${this.escapeHtml(opt.label)}</span>
+                            </div>`;
+                        });
+                    }
+                } else if (v.type === 'database') {
+                    html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value)" style="margin-bottom: 5px;">`;
+                    html += `<select class="form-control db-select" id="val_${key}" size="5" onchange="app.checkDatabaseOther('${key}')">`;
+                    html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
+                    if(Array.isArray(v.options)) {
+                        v.options.forEach(opt => {
+                            html += `<option value="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</option>`;
+                        });
+                    }
+                    html += `</select>`;
+                    html += `<div id="db_other_container_${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
+                                <label style="font-size: 0.85rem;">New Label:</label>
+                                <input type="text" class="form-control" id="db_new_label_${key}" style="margin-bottom: 5px;" placeholder="Label">
+                                <label style="font-size: 0.85rem;">New Content:</label>
+                                <textarea class="form-control" id="db_new_content_${key}" rows="2" placeholder="Content"></textarea>
+                             </div>`;
+                } else if (v.type === 'text') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let lastVal = "";
+                    const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                    let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                    let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
+                    if (hasHistory) {
+                        const lastItem = hArr[0];
+                        lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
+                    }
+                    const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
+                    
+                    html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                    
+                    if (hasHistory) {
+                        html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
+                        hArr.slice(0, varLimit).forEach((item, i) => {
+                            const valStr = typeof item === 'string' ? item : item.v;
+                            const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
+                            const safeVal = this.escapeHtml(valStr);
+                            const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
+                            const isFirst = (i === 0);
+                            const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                            const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                            const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
+                            
+                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
+                        });
+                        html += `</div>`;
+                    }
+                } else if (v.type === 'select') {
+                    html += `<select class="form-control" id="val_${key}">`;
+                    v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
+                    html += `</select>`;
+                } else if (v.type === 'radio') {
+                    html += `<div class="radio-group">`;
+                    v.options.forEach((o, i) => {
+                        const val = typeof o === 'string' ? o : o.value;
+                        const lbl = typeof o === 'string' ? o : o.label;
+                        html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            } else {
+                const todayStr = new Date().toISOString().split('T')[0];
+                let lastVal = "";
+                const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                let hasHistory = varLimit > 0 && this.data.variableHistory && this.data.variableHistory.date === todayStr && this.data.variableHistory.values[key] && this.data.variableHistory.values[key].length > 0;
+                let hArr = hasHistory ? this.data.variableHistory.values[key] : [];
+                if (hasHistory) {
+                    const lastItem = hArr[0];
+                    lastVal = typeof lastItem === 'string' ? lastItem : lastItem.v;
+                }
+                const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
+                
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                
+                if (hasHistory) {
+                    html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
+                    hArr.slice(0, varLimit).forEach((item, i) => {
+                        const valStr = typeof item === 'string' ? item : item.v;
+                        const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
+                        const safeVal = this.escapeHtml(valStr);
+                        const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
+                        const isFirst = (i === 0);
+                        const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                        const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                        const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
+                        
+                        html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            return html;
+        },
+		
+        updateLivePreview: function() {
+            if (!this.tempContent) return;
+            
+            let safeTxt = this.escapeHtml(this.tempContent);
+            let safeTxtExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.escapeHtml(ext)) : [];
+            
+            const regex = /\{\{([^}]+)\}\}/g;
+                let iteration = 0;
+            let processedMatches = new Set();
+            let mainMatches = new Set();
+            
+            while (iteration < 10) {
+                iteration++;
+                let currentMatches = [];
+                let m = safeTxt.match(regex);
+                if (m) {
+                    currentMatches.push(...m);
+                    m.forEach(x => mainMatches.add(x));
+                }
+                let currentMainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
+
+                safeTxtExtras.forEach((t, idx) => {
+                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                    if (!trigger || currentMainTextLower.includes(trigger)) {
+                        let em = t.match(regex);
+                        if (em) currentMatches.push(...em);
+                    }
+                });
+                
+                currentMatches = [...new Set(currentMatches)].filter(x => !processedMatches.has(x));
+                if (currentMatches.length === 0) break;
+                
+                currentMatches.forEach(m => {
+                    processedMatches.add(m);
+                    const key = m.replace(/[{}]/g, '').trim();
+                    const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
+                    
+                    const existingBox = document.querySelector(`#fillerInputs .variable-box[data-key="${key}"]`);
+                    let isMain = mainMatches.has(m);
+                    
+                    if (!existingBox) {
+                        const html = this.generateVariableInputHtml(m, isMain ? 1 : 2);
+                        const container = document.getElementById('fillerInputs');
+                        if (container && html) {
+                            container.style.display = 'flex';
+                            container.style.flexDirection = 'column';
+                            container.insertAdjacentHTML('beforeend', html);
+                        }
                     } else {
-                        const radio = document.querySelector(`input[name="val_${key}"]:checked`);
-                        if (radio) {
-                            val = radio.value;
+                        existingBox.style.order = isMain ? '1' : '2';
+                    }
+                    
+                    let val = "";
+                    if (isInfo) {
+                        val = "";
+                    } else if (key.toLowerCase() === 'gender') {
+                        const g = document.querySelector('input[name="val_gender"]:checked');
+                        if (g) {
+                            if (this.data.currentLang === 'de') val = (g.value === 'm') ? "Herr" : "Frau";
+                            else val = (g.value === 'm') ? "Mr." : "Ms.";
+                        }
+                    } else {
+                        const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
+                        if (checkboxes.length > 0) {
+                            let values = [];
+                            checkboxes.forEach(chk => values.push(chk.value));
+                            val = values.join('\n');
                         } else {
-                            const el = document.getElementById(`val_${key}`);
-                            if (el) {
-                                if (el.classList.contains('db-select') && el.value === '__OTHER__') {
-                                    const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
-                                    const newContent = document.getElementById(`db_new_content_${key}`).value;
-                                    val = newContent || newLabel;
-                                    const varObj = this.data.customVars.find(cv => cv.key === key);
-                                    if (varObj && newLabel) {
-                                        if (!varObj.options) varObj.options = [];
-                                        varObj.options.push({ label: newLabel, value: val });
-                                        this.saveData(); 
-                                        if (this.data.currentMode === 'variables') this.renderVariables(); 
+                            const radio = document.querySelector(`input[name="val_${key}"]:checked`);
+                            if (radio) {
+                                val = radio.value;
+                            } else {
+                                const el = document.getElementById(`val_${key}`);
+                                if (el) {
+                                    if (el.classList.contains('db-select') && el.value === '__OTHER__') {
+                                        const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
+                                        const newContent = document.getElementById(`db_new_content_${key}`).value;
+                                        val = newContent || newLabel;
+                                    } else {
+                                        val = el.value;
                                     }
-                                } else {
-                                    val = el.value;
                                 }
                             }
                         }
                     }
-                }
-                txt = txt.split(m).join(val);
-                txtExtras = txtExtras.map(ext => ext.split(m).join(val));
-                
-                if (val && val.trim() !== '') {
-                    const isSystem = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:') || key.toLowerCase() === 'gender';
-                    if (!isSystem) {
-                        const today = new Date().toISOString().split('T')[0];
-                        if (!this.data.variableHistory || this.data.variableHistory.date !== today) {
-                            this.data.variableHistory = { date: today, values: {} };
-                        }
-                        if (!this.data.variableHistory.values[key]) {
-                            this.data.variableHistory.values[key] = [];
-                        }
-                        
-                        // Kiszűrjük a korábbi egyezéseket (kezeli a régi string alapú és az új objektum alapú mentést is)
-                        this.data.variableHistory.values[key] = this.data.variableHistory.values[key].filter(item => {
-                            const itemVal = typeof item === 'string' ? item : item.v;
-                            return itemVal !== val;
-                        });
-                        
-                        // Időbélyeg generálása (ÓÓ:PP)
-                        const now = new Date();
-                        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-                        
-                        // Új elem hozzáadása (value és time formátumban)
-                        this.data.variableHistory.values[key].unshift({ v: val, t: timeStr });
-                        
-                        const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
-                        if (varLimit === 0) {
-                            this.data.variableHistory.values[key] = [];
-                        } else if (this.data.variableHistory.values[key].length > varLimit) {
-                            this.data.variableHistory.values[key] = this.data.variableHistory.values[key].slice(0, varLimit);
-                        }
-                        historyChanged = true;
+                    
+                    const safeM = m;
+                    const escapedVal = this.escapeHtml(val);
+                    let replaceText = "";
+                    if (!isInfo) {
+                        replaceText = val ? `<span style="font-weight:bold; color:red;">${escapedVal}</span>` : `<b>${safeM}</b>`;
                     }
-                }
-            });
-
-            let newRegex = /{{(.*?)}}/g;
-            let stillHasVars = (txt.match(newRegex) || (txtExtras && txtExtras.join('\n').match(newRegex)));
-            if (stillHasVars && stillHasVars.length > 0) {
-                this.tempContent = txt;
-                this.tempExtraContents = txtExtras;
-                
-                document.getElementById('fillerModal').style.display = 'none';
-                
-                setTimeout(() => {
-                    this.processAndShowFiller(this.tempContent, this.currentProcessingTemplateId);
-                }, 100);
-                
-                if (historyChanged) this.saveData();
-                return;
+                    
+                    safeTxt = safeTxt.split(safeM).join(replaceText);
+                    safeTxtExtras = safeTxtExtras.map(ext => ext.split(safeM).join(replaceText));
+                });
             }
+            
+            const processedKeys = new Set([...processedMatches].map(m => m.replace(/[{}]/g, '').trim()));
+            const container = document.getElementById('fillerInputs');
+            if (container) {
+                const boxes = container.querySelectorAll('.variable-box');
+                boxes.forEach(box => {
+                    const boxKey = box.getAttribute('data-key');
+                    if (boxKey) {
+                        if (processedKeys.has(boxKey)) {
+                            box.style.display = 'block';
+                        } else {
+                            box.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            const previewContent = document.getElementById('fillerPreviewContent');
+            if (previewContent) {
+                previewContent.innerHTML = this.stripInfoVariables(safeTxt);
+            }
+            
+            const extrasWrapper = document.getElementById('fillerPreviewExtrasWrapper');
+            if (extrasWrapper && safeTxtExtras.length > 0) {
+                const extraContentDivs = extrasWrapper.querySelectorAll('.extra-preview-content');
+                let mainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
+                
+                extraContentDivs.forEach(div => {
+                    const idx = parseInt(div.getAttribute('data-idx'));
+                    if (!isNaN(idx)) {
+                        const ext = safeTxtExtras[idx];
+                        if (ext !== undefined) {
+                            let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                            
+                            if (trigger && !mainTextLower.includes(trigger)) {
+                                div.closest('.extra-preview-block').style.display = 'none';
+                            } else {
+                                div.closest('.extra-preview-block').style.display = 'block';
+                                div.innerHTML = this.stripInfoVariables(ext);
+                            }
+                        }
+                    }
+                });
+            }
+        },
+		
+        processAndCopy: function() {
+            let txt = this.tempContent;
+            let txtExtras = this.tempExtraContents ? [...this.tempExtraContents] : [];
+            
+            let htmlTxt = this.escapeHtml(txt);
+            let htmlTxtExtras = txtExtras.map(ext => this.escapeHtml(ext));
+            
+            const regex = /\{\{([^}]+)\}\}/g;
+            let historyChanged = false;
+            let iteration = 0;
+            let processedMatches = new Set();
+            
+            while (iteration < 10) {
+                iteration++;
+                let currentMatches = [];
+                let m = htmlTxt.match(regex);
+                if (m) currentMatches.push(...m);
+                let currentMainTextLower = txt.replace(/\{\{.*?\}\}/g, '').toLowerCase();
 
+                htmlTxtExtras.forEach((t, idx) => {
+                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                    if (!trigger || currentMainTextLower.includes(trigger)) {
+                        let em = t.match(regex);
+                        if (em) currentMatches.push(...em);
+                    }
+                });
+                
+                currentMatches = [...new Set(currentMatches)].filter(x => !processedMatches.has(x));
+                if (currentMatches.length === 0) break;
+
+                currentMatches.forEach(m => {
+                    processedMatches.add(m);
+                    const key = m.replace(/[{}]/g, '').trim();
+                    const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
+                    let val = "";
+
+                    if (isInfo) {
+                        val = "";
+                    } else if (key.toLowerCase() === 'gender') {
+                        const gElement = document.querySelector('input[name="val_gender"]:checked');
+                        if (gElement) {
+                            const g = gElement.value;
+                            if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
+                            else val = (g === 'm') ? "Mr." : "Ms.";
+                        }
+                    } else {
+                        const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
+                        if(checkboxes.length > 0) {
+                            let values = [];
+                            checkboxes.forEach(chk => values.push(chk.value));
+                            val = values.join('\n');
+                        } else {
+                            const radio = document.querySelector(`input[name="val_${key}"]:checked`);
+                            if (radio) {
+                                val = radio.value;
+                            } else {
+                                const el = document.getElementById(`val_${key}`);
+                                if (el) {
+                                    if (el.classList.contains('db-select') && el.value === '__OTHER__') {
+                                        const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
+                                        const newContent = document.getElementById(`db_new_content_${key}`).value;
+                                        val = newContent || newLabel;
+                                        const varObj = this.data.customVars.find(cv => cv.key === key);
+                                        if (varObj && newLabel) {
+                                            if (!varObj.options) varObj.options = [];
+                                            if (!varObj.options.some(o => o.label === newLabel)) {
+                                                varObj.options.push({ label: newLabel, value: val });
+                                                this.saveData(); 
+                                                if (this.data.currentMode === 'variables') this.renderVariables();
+                                            }
+                                        }
+                                    } else {
+                                        val = el.value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (isInfo) {
+                        txt = txt.split(m).join('');
+                        txtExtras = txtExtras.map(ext => ext.split(m).join(''));
+                        
+                        const safeM = this.escapeHtml(m);
+                        htmlTxt = htmlTxt.split(safeM).join('');
+                        htmlTxtExtras = htmlTxtExtras.map(ext => ext.split(safeM).join(''));
+                    } else {
+                        txt = txt.split(m).join(val);
+                        txtExtras = txtExtras.map(ext => ext.split(m).join(val));
+                        
+                        const safeM = this.escapeHtml(m);
+                        const replaceHtml = val ? `<span style="font-weight:bold; color:red;">${this.escapeHtml(val)}</span>` : "";
+                        htmlTxt = htmlTxt.split(safeM).join(replaceHtml);
+                        htmlTxtExtras = htmlTxtExtras.map(ext => ext.split(safeM).join(replaceHtml));
+                        
+                        if (val && val.trim() !== '') {
+                            const isSystem = key.toLowerCase() === 'gender';
+                            if (!isSystem) {
+                                const today = new Date().toISOString().split('T')[0];
+                                if (!this.data.variableHistory || this.data.variableHistory.date !== today) {
+                                    this.data.variableHistory = { date: today, values: {} };
+                                }
+                                if (!this.data.variableHistory.values[key]) {
+                                    this.data.variableHistory.values[key] = [];
+                                }
+                                
+                                this.data.variableHistory.values[key] = this.data.variableHistory.values[key].filter(item => {
+                                    const itemVal = typeof item === 'string' ? item : item.v;
+                                    return itemVal !== val;
+                                });
+                                
+                                const now = new Date();
+                                const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                                
+                                this.data.variableHistory.values[key].unshift({ v: val, t: timeStr });
+                                
+                                const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+                                if (varLimit === 0) {
+                                    this.data.variableHistory.values[key] = [];
+                                } else if (this.data.variableHistory.values[key].length > varLimit) {
+                                    this.data.variableHistory.values[key] = this.data.variableHistory.values[key].slice(0, varLimit);
+                                }
+                                historyChanged = true;
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Remove the old `stillHasVars` check that caused modal to reload! We resolved everything above!
+            
             if (historyChanged) this.saveData();
+            
+            txt = this.stripInfoVariables(txt);
+            let mainTextLower = txt.replace(/\{\{.*?\}\}/g, '').toLowerCase();
+            
+            let txtExtrasFiltered = [];
+            let htmlTxtExtrasFiltered = [];
+            let extraTitlesFiltered = [];
+            
+            if (this.tempExtraContents) {
+                this.tempExtraContents.forEach((ext, idx) => {
+                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                    if (!trigger || mainTextLower.includes(trigger)) {
+                        if (txtExtras[idx] !== undefined) {
+                            txtExtrasFiltered.push(txtExtras[idx]);
+                            htmlTxtExtrasFiltered.push(htmlTxtExtras[idx]);
+                            extraTitlesFiltered.push((this.tempExtraTitles && this.tempExtraTitles[idx]) ? this.tempExtraTitles[idx] : "");
+                        }
+                    }
+                });
+            }
+            
+            txtExtras = txtExtrasFiltered;
+            htmlTxtExtras = htmlTxtExtrasFiltered;
             
             this.copyToClipboard(txt);
             this.closeModal('fillerModal');
-            this.checkAndShowRecommendations(this.currentProcessingTemplateId, txt, txtExtras);
+            this.checkAndShowRecommendations(this.currentProcessingTemplateId, htmlTxt, htmlTxtExtras, null, extraTitlesFiltered);
         },
 
-        checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null) {
+        checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null, extraTitles = []) {
             if(!templateId && (!this.unplacedInstructions || this.unplacedInstructions.length === 0)) return;
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
             
@@ -7582,7 +7840,7 @@
             const hasExtras = extraContents && extraContents.length > 0 && extraContents.some(e => e.trim() !== "");
             const hasUnplaced = this.unplacedInstructions && this.unplacedInstructions.length > 0;
             
-            document.getElementById('recCopiedText').innerText = copiedText;
+            document.getElementById('recCopiedText').innerHTML = copiedText;
             document.getElementById('recJustCopiedBox').style.backgroundColor = t ? (t.color || '#e6f2ff') : '#e6f2ff';
             document.getElementById('recJustCopiedBox').style.borderColor = t ? (t.color || '#005a9e') : '#005a9e';
 
@@ -7687,14 +7945,13 @@
                 extrasWrapper.style.display = 'flex';
                 extraContents.forEach((ext, idx) => {
                     if (ext.trim() === "") return;
-                    const safeExt = this.escapeHtml(ext);
                     extrasWrapper.innerHTML += `
                         <div style="background: #fff9c4; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h4 style="margin: 0; color: #d83b01;">Extra Content ${idx + 1}:</h4>
+                                <h4 style="margin: 0; color: #d83b01;">${extraTitles && extraTitles[idx] ? this.escapeHtml(extraTitles[idx]) : "Extra Content " + (idx + 1)}:</h4>
                                 <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy Content</button>
                             </div>
-                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;">${safeExt}</div>
+                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;">${ext}</div>
                         </div>
                     `;
                 });
@@ -8165,6 +8422,8 @@
                 state.templateId = this.currentProcessingTemplateId;
                 state.tempContent = this.tempContent;
                 state.tempExtraContents = this.tempExtraContents;
+                state.tempExtraTitles = this.tempExtraTitles;
+                state.tempExtraTriggers = this.tempExtraTriggers;
                 state.tempInstructions = this.tempInstructions;
                 state.unplacedInstructions = this.unplacedInstructions;
                 
@@ -8178,7 +8437,8 @@
                 });
             } else if (modalId === 'recommendationModal') {
                 state.templateId = this.currentProcessingTemplateId;
-                state.copiedText = document.getElementById('recCopiedText').innerText;
+                state.copiedText = document.getElementById('recCopiedText').innerHTML;
+                state.recGrid = document.getElementById('recTemplatesGrid').innerHTML;
                 state.unplacedInstructions = this.unplacedInstructions;
                 
                 state.htmlInstructions = document.getElementById('recInstructionsWrapper').innerHTML;
@@ -8214,6 +8474,8 @@
                 this.currentProcessingTemplateId = state.templateId;
                 this.tempContent = state.tempContent;
                 this.tempExtraContents = state.tempExtraContents;
+                this.tempExtraTitles = state.tempExtraTitles || [];
+                this.tempExtraTriggers = state.tempExtraTriggers || [];
                 this.tempInstructions = state.tempInstructions;
                 this.unplacedInstructions = state.unplacedInstructions;
                 
@@ -8247,7 +8509,7 @@
                 this.currentProcessingTemplateId = state.templateId;
                 this.unplacedInstructions = state.unplacedInstructions;
                 document.getElementById('recommendationModalTitle').innerText = state.title;
-                document.getElementById('recCopiedText').innerText = state.copiedText;
+                document.getElementById('recCopiedText').innerHTML = state.copiedText;
                 const recT = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
                 document.getElementById('recJustCopiedBox').style.backgroundColor = recT ? (recT.color || '#e6f2ff') : '#e6f2ff';
                 document.getElementById('recJustCopiedBox').style.borderColor = recT ? (recT.color || '#005a9e') : '#005a9e';
@@ -8746,9 +9008,6 @@
                     });
                     
                     previewContainer.innerHTML = `
-                        <div style="font-size: 0.75rem; color: #000000 !important; margin-bottom: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
-                            ${this.escapeHtml(item.label || 'Selected Item')}
-                        </div>
                         <div>${formatted}</div>
                     `;
                 }
@@ -8784,6 +9043,8 @@
                 // Változók feldolgozása: ha van {{...}} a szövegben, megnyílik a filler modal
                 this.tempInstructions = [];
                 this.tempExtraContents = [];
+                this.tempExtraTitles = [];
+                this.tempExtraTriggers = [];
                 this.processAndShowFiller(contentToCopy, id);
                 
                 // Vizuális visszajelzés csak akkor, ha nem nyílt meg a modal (azaz nem volt benne változó)
@@ -8805,7 +9066,7 @@
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
 
-            let dbItemsHtml = `<div class="db-template-list" id="db-list-modal-${t.id}" style="max-height: 450px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 6px; overflow-y: auto;">`;
+            let dbItemsHtml = `<div class="db-template-list" id="db-list-modal-${t.id}" style="flex: 1; font-size: 1rem; overflow-y: auto; max-height: unset;">`;
             if (t.dbItems) {
                 t.dbItems.forEach((item, idx) => {
                     const label = item.label || item.content;
@@ -8821,30 +9082,38 @@
             overlay.className = 'modal-overlay dynamic-view-modal';
             overlay.style.zIndex = newZIndex;
             overlay.style.display = 'flex';
+            const uniqueId = 'db-modal-' + t.id + '-' + Date.now();
+            overlay.id = uniqueId;
 
+            const baseColor = t.color || '#f8f9fa';
             overlay.innerHTML = `
-                <div class="modal" style="width: 900px; max-width: 95%;">
-                    <div class="modal-header">
-                        <span>🗄️ ${this.escapeHtml(t.title)}</span>
-                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+                <div class="modal" style="width: 950px; max-width: 95%; display: flex; flex-direction: column; padding: 0;">
+                    <div class="win-controls">
+                        <button class="win-btn minimize-btn" onclick="document.getElementById('${uniqueId}').style.display='none'; app.minimizedStates = app.minimizedStates || {}; app.minimizedStates['${uniqueId}'] = { modalId: '${uniqueId}', title: '🗄️ ${this.escapeHtml(t.title).replace(/'/g, "\\'")}' }; app.renderTaskbar();" title="Minimize">
+                            <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+                        </button>
+                        <button class="win-btn close-btn" onclick="document.getElementById('${uniqueId}').remove(); if(app.activeModals) delete app.activeModals['${uniqueId}'];" title="Close">
+                            <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+                        </button>
                     </div>
-                    <div class="modal-body" style="display: flex; gap: 20px; overflow: hidden; padding-bottom: 10px;">
-                        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
-                            <input type="text" class="form-control" placeholder="🔍 Keresés a listában..." onkeyup="app.filterDbTemplate(${t.id}, this.value, 'modal')" style="margin-bottom: 15px; font-size: 1rem; padding: 10px; border-radius: 6px; border: 2px solid var(--primary);">
-                            ${dbItemsHtml}
-                        </div>
-                        <div style="flex: 1; min-width: 0; border-left: 2px solid var(--border); padding-left: 20px; display: flex; flex-direction: column;">
-                            <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--primary); font-size: 1rem;">👁️ Preview</h4>
-                            <div id="db-preview-modal-${t.id}" style="white-space: pre-wrap; font-family: monospace; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); flex: 1; overflow-y: auto; line-height: 1.5; color: var(--view-text); font-size: 0.95rem;"><div style="color: inherit; opacity: 0.7;">Select an item to see preview...</div>
-							</div>
+                    <div class="modal-header" style="border-bottom: none; min-height: 35px; padding: 0;">
+                        <div style="flex: 1; -webkit-app-region: drag; height: 35px;"></div>
+                    </div>
+                    <div class="modal-body" style="background-color: #f8f9fa; padding: 0 15px 15px 15px; flex: 1; display: flex; flex-direction: column; margin-bottom: 0;">
+                        <div style="display: flex; gap: 20px; overflow: hidden; padding: 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}; border-color: ${baseColor}; height: 450px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                                <input type="text" class="form-control" placeholder="🔍 Keresés itt: ${this.escapeHtml(t.title)}..." onkeyup="app.filterDbTemplate(${t.id}, this.value, 'modal')" style="margin-bottom: 15px; font-size: 1.05rem; padding: 12px; border-radius: 6px; border: 2px solid var(--primary); background: #ffffff;">
+                                <div style="background: rgba(255,255,255,0.7); border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                                    ${dbItemsHtml}
+                                </div>
+                            </div>
+                            <div style="flex: 1.2; min-width: 0; display: flex; flex-direction: column;">
+                                <div id="db-preview-modal-${t.id}" style="white-space: pre-wrap; font-family: monospace; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); flex: 1; overflow-y: auto; line-height: 1.5; color: var(--view-text); font-size: 1rem;"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer" style="display:flex; justify-content: space-between; align-items: center;">
-                        <span style="color:#666; font-size:0.9rem; font-style: italic;">Válassz ki egy sort a másoláshoz!</span>
-                        <div>
-                            <button class="btn btn-secondary close-dynamic-btn">Cancel</button>
-                            <button class="btn btn-success" style="font-size: 1.1rem; padding: 8px 20px;" onclick="app.copyDbTemplate(event, ${t.id}, 'modal')">📋 Copy Selected</button>
-                        </div>
+                    <div class="modal-footer" style="display:flex; justify-content: flex-end; align-items: center; background: white; border-radius: 0 0 8px 8px; margin-top: 0; padding: 15px 25px; border-top: 1px solid #ddd;">
+                        <button class="btn btn-success" style="font-size: 1.1rem; padding: 8px 20px;" onclick="app.copyDbTemplate(event, ${t.id}, 'modal')">📋 Copy Selected</button>
                     </div>
                 </div>
             `;
@@ -8853,6 +9122,27 @@
             closeBtns.forEach(btn => { btn.onclick = function() { overlay.remove(); }; });
             overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
             document.body.appendChild(overlay);
+
+            let initialIdx = 0;
+            const cardList = document.getElementById('db-list-card-' + t.id);
+            if (cardList) {
+                const selectedEl = cardList.querySelector('.db-template-item.selected');
+                if (selectedEl && selectedEl.hasAttribute('data-idx')) {
+                    initialIdx = parseInt(selectedEl.getAttribute('data-idx'));
+                }
+            }
+            if (t.dbItems && t.dbItems.length > initialIdx) {
+                setTimeout(() => {
+                    this.selectDbItem(t.id, initialIdx, 'modal');
+                    const modalList = document.getElementById(`db-list-modal-${t.id}`);
+                    if(modalList) {
+                        const selectedEl = modalList.querySelector(`.db-template-item[data-idx="${initialIdx}"]`);
+                        if(selectedEl) {
+                            selectedEl.scrollIntoView({ block: 'center' });
+                        }
+                    }
+                }, 10);
+            }
         },
 		
         copyToSnippets: function(id) {
