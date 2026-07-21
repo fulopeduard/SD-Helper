@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v250</title>
+    <title>SD Helper v251</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -1844,6 +1844,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>Recommend After Use</label>
+                        <button type="button" class="form-control" style="height: auto; min-height: 36px; text-align: left; background: #fff; border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="app.openRecommendationSelectorModal()" id="dbBtnOpenRecSelector">
+                            <span>Template javaslatok (0)</span>
+                            <span style="color: var(--primary);">✎</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -2335,7 +2344,10 @@
         <div class="modal-body" style="display: flex; gap: 20px; align-items: flex-start;">
             <div id="fillerPreviewSide" style="flex: 1; overflow-y: auto; max-height: 60vh; display: none;">
                 <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; margin-bottom: 15px;">
-                    <h4 id="fillerPreviewTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;"></h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
+                        <h4 id="fillerPreviewTitle" style="color: var(--primary); margin: 0; font-size: 1.1rem;"></h4>
+                        <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(document.getElementById('fillerPreviewContent').innerText)">📋 Copy</button>
+                    </div>
                     <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
                 </div>
                 <div id="fillerPreviewExtrasWrapper" style="display: none; flex-direction: column; gap: 15px;"></div>
@@ -7205,7 +7217,10 @@
                                     safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                                     extrasWrapper.innerHTML += `
                                         <div class="extra-preview-block" style="padding: 20px; border-radius: 8px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor};">
-                                            <h4 style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">${this.tempExtraTitles && this.tempExtraTitles[idx] ? this.escapeHtml(this.tempExtraTitles[idx]) : "Extra Content " + (idx + 1)}</h4>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
+                                                <h4 style="color: var(--primary); margin: 0; font-size: 1.1rem;">${this.tempExtraTitles && this.tempExtraTitles[idx] ? this.escapeHtml(this.tempExtraTitles[idx]) : "Extra Content " + (idx + 1)}</h4>
+                                                <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy</button>
+                                            </div>
                                             <div class="extra-preview-content" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
                                         </div>
                                     `;
@@ -8093,7 +8108,10 @@
             }
             
             // Fejléc gomb szövegének frissítése
-            document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+            const btn1 = document.getElementById('btnOpenRecSelector');
+            if (btn1) btn1.innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+            const btn2 = document.getElementById('dbBtnOpenRecSelector');
+            if (btn2) btn2.innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
             
             // Újrarajzoljuk a listát, hogy a kártyán megjelenjen a "selected" (pipa) dizájn
             this.renderRecommendationSelectorList();
@@ -8116,12 +8134,15 @@
         renderRecommendationSelectorList: function() {
             const term = document.getElementById('searchRecSelector').value.toLowerCase();
             const listContainer = document.getElementById('recSelectorList');
-            const currentCat = document.getElementById('inputCategory').value;
-            const currentFolderId = document.getElementById('inputFolder').value ? parseInt(document.getElementById('inputFolder').value) : null;
-            const currentEditId = document.getElementById('editId').value ? parseInt(document.getElementById('editId').value) : null;
+            const isDb = document.getElementById('dbEditorModal').style.display === 'flex';
+            const currentCat = isDb ? document.getElementById('dbInputCategory').value : document.getElementById('inputCategory').value;
+            const currentFolderStr = isDb ? document.getElementById('dbInputFolder').value : document.getElementById('inputFolder').value;
+            const currentFolderId = currentFolderStr ? parseInt(currentFolderStr) : null;
+            const currentEditStr = isDb ? document.getElementById('dbEditId').value : document.getElementById('editId').value;
+            const currentEditId = currentEditStr ? parseInt(currentEditStr) : null;
 
-            // 1. Szűrés: Törölt, Todo, Ticket és a jelenleg szerkesztett kizárása
-            let validTemplates = this.data.templates.filter(t => !t.deleted && !t.isTodo && !t.isTicket && t.id !== currentEditId);
+            // 1. Szűrés: Törölt, Todo, Ticket kizárása (önmagát is tudja ajánlani)
+            let validTemplates = this.data.templates.filter(t => !t.deleted && !t.isTodo && !t.isTicket);
 
             // 2. Kereső szerinti szűrés
             if (term) {
@@ -8144,6 +8165,20 @@
                     }
                     groupedByCategory[cat].folders[t.folderId].push(t);
                 }
+            });
+
+            // 3.5 Jelenleg szerkesztett template utolsó helyre mozgatása
+            Object.values(groupedByCategory).forEach(catData => {
+                const moveCurrentToEnd = (arr) => {
+                    if (!currentEditId) return;
+                    const idx = arr.findIndex(t => t.id === currentEditId);
+                    if (idx > -1) {
+                        const currentT = arr.splice(idx, 1)[0];
+                        arr.push(currentT);
+                    }
+                };
+                moveCurrentToEnd(catData.root);
+                Object.values(catData.folders).forEach(folderArr => moveCurrentToEnd(folderArr));
             });
 
             // 4. Kategóriák sorrendje (Jelenlegi kategória az első, utána ABC)
@@ -8826,6 +8861,10 @@
                 const t = this.data.templates.find(x => x.id === id);
                 if(!t) return;
                 
+                this.currentRecommendedIds = t.recommendedIds ? [...t.recommendedIds] : [];
+                const recBtn = document.getElementById('dbBtnOpenRecSelector');
+                if (recBtn) recBtn.innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
+                
                 document.getElementById('dbEditorTitle').innerText = "Edit Database Template";
                 document.getElementById('dbEditId').value = t.id;
                 document.getElementById('dbInputTitle').value = t.title;
@@ -8851,6 +8890,10 @@
                     this.addDbRow();
                 }
             } else {
+                this.currentRecommendedIds = [];
+                const recBtn = document.getElementById('dbBtnOpenRecSelector');
+                if (recBtn) recBtn.innerHTML = `<span>Template javaslatok (0)</span><span style="color: var(--primary);">✎</span>`;
+
                 document.getElementById('dbEditorTitle').innerText = "New Database Template";
                 document.getElementById('dbEditId').value = "";
                 document.getElementById('dbInputTitle').value = "";
@@ -8925,13 +8968,16 @@
 
             if (items.length === 0) { alert("Please add at least one item to the database."); return; }
 
+            const recommendedIds = this.currentRecommendedIds || [];
+
             const templateObj = {
                 title, subtitle, category, color,
                 folderId: folderId ? parseInt(folderId) : null,
                 isDatabase: true,
                 dbItems: items,
                 deleted: false,
-                lang: this.data.currentLang
+                lang: this.data.currentLang,
+                recommendedIds: recommendedIds
             };
 
             if (id) {
