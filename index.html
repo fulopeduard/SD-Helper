@@ -47,7 +47,7 @@
             background: var(--sidebar-bg-color, #bcbce4);
             color: var(--sidebar-text, var(--app-text, #323130));
             border-right: none;
-            padding: 10px;
+            padding: 10px 10px 10px 16px;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -58,12 +58,12 @@
         }
 
         .left-side-toggle {
-            position: fixed; left: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
-            background-color: var(--primary); color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px;
-            cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: width 0.2s; font-size: 12px;
+            position: fixed; left: 0; top: 50%; transform: translateY(-50%); width: 11px; height: 60px;
+            background-color: var(--primary); color: white; border-top-right-radius: 6px; border-bottom-right-radius: 6px;
+            cursor: pointer; z-index: 2000; display: flex; align-items: center; justify-content: center;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: background-color 0.2s; font-size: 10px;
         }
-        .left-side-toggle:hover { width: 30px; }
+        .left-side-toggle:hover { background-color: #005a9e; }
 
         .resize-handle-left {
             position: absolute; right: 0; top: 0; bottom: 0; width: 5px;
@@ -130,7 +130,7 @@
 
         /* Category Header with Edit Button */
         .cat-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 4px;
         }
         .cat-header h3 { margin: 0; font-size: 1rem; color: var(--cat-title-color, #1a1a1a); }
 
@@ -164,6 +164,11 @@
             color: #0078d4 !important;
             border-color: #0078d4 !important;
             box-shadow: 0 0 4px rgba(0,120,212,0.3) !important;
+        }
+        .sidebar-bottom-btn.active {
+            background-color: var(--primary, #0078d4) !important;
+            color: white !important;
+            border-color: var(--primary, #0078d4) !important;
         }
 
         /* Category Search Field Modernization */
@@ -199,7 +204,7 @@
         }
         .btn-cat-edit {
             background: none; border: 1px solid #999; border-radius: 4px; cursor: pointer;
-            font-size: 0.8rem; padding: 2px 6px; color: #444;
+            font-size: 1.1rem; padding: 2px 8px; color: #444; line-height: 1;
         }
         .btn-cat-edit:hover { background: white; }
         .btn-cat-edit.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -407,7 +412,7 @@
 
         /* Cards Grid */
         .grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding-bottom: 50px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width, 320px), 1fr)); gap: var(--card-gap, 20px); padding-bottom: 50px;
         }
 
         .card {
@@ -479,8 +484,8 @@
 
         /* --- COMPACT MODE STYLES --- */
         body.compact-mode .grid {
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width, 240px), 1fr));
+            gap: var(--card-gap, 12px);
         }
         body.compact-mode .card {
             padding: 10px;
@@ -659,6 +664,50 @@
         /* View Button Option Styles */
         body:not(.show-view-button) .card-view-btn-bottom { display: none !important; }
         body.show-view-button .card-view-btn-icon { display: none !important; }
+
+        /* Flush / Embedded Card Buttons Option */
+        body.flush-card-buttons-mode .card-preview {
+            -webkit-line-clamp: 7;
+            margin-bottom: 6px !important;
+        }
+        body.compact-mode.flush-card-buttons-mode .card-preview {
+            -webkit-line-clamp: 8;
+            margin-bottom: 4px !important;
+        }
+        body.flush-card-buttons-mode .card-actions {
+            margin-top: auto !important;
+            margin-bottom: -15px !important;
+            margin-left: -15px !important;
+            margin-right: -15px !important;
+            padding-top: 0 !important;
+            gap: 0 !important;
+        }
+        body.compact-mode.flush-card-buttons-mode .card-actions {
+            margin-bottom: -10px !important;
+            margin-left: -10px !important;
+            margin-right: -10px !important;
+            padding-top: 0 !important;
+        }
+        body.flush-card-buttons-mode .card-actions .card-btn {
+            border-radius: 0 !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+            padding: 9px 4px !important;
+        }
+        body.compact-mode.flush-card-buttons-mode .card-actions .card-btn {
+            padding: 6px 4px !important;
+        }
+        body.flush-card-buttons-mode .card-actions .card-btn:first-child {
+            border-bottom-left-radius: 8px !important;
+        }
+        body.flush-card-buttons-mode .card-actions .card-btn:last-child {
+            border-bottom-right-radius: 8px !important;
+        }
+        body.flush-card-buttons-mode .card-actions .card-btn + .card-btn {
+            border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+        }
 
         .dropdown-menu {
             position: absolute; top: 40px; right: 10px;
@@ -840,10 +889,10 @@
 
         /* --- QUICK SIDEBAR STYLES --- */
         .quick-side-toggle {
-            position: fixed; right: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 80px;
-            background-color: var(--primary); color: white; border-top-left-radius: 8px; border-bottom-left-radius: 8px;
+            position: fixed; right: 16px; top: 50%; transform: translateY(-50%); width: 15px; height: 60px;
+            background-color: var(--primary); color: white; border-top-left-radius: 6px; border-bottom-left-radius: 6px;
             cursor: pointer; z-index: 1900; display: flex; align-items: center; justify-content: center;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: background-color 0.2s; font-size: 12px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: background-color 0.2s; font-size: 10px;
         }
         .quick-side-toggle:hover { background-color: #005a9e; }
 
@@ -1472,18 +1521,22 @@
 
 <div class="modal-overlay" id="ticketViewModal" style="z-index: 1050;">
     <div class="modal" style="width: 800px; max-width: 95%;">
+        <div class="win-controls">
+            <button class="win-btn minimize-btn" onclick="app.minimizeModal('ticketViewModal')" title="Minimize">
+                <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+            </button>
+            <button class="win-btn close-btn" onclick="app.closeModal('ticketViewModal')" title="Close">
+                <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+        </div>
         <div class="modal-header">
-            <span>Ticket Visualizer</span>
-            <button class="btn btn-sm btn-secondary" onclick="app.closeModal('ticketViewModal')">Close</button>
+            <span>Template Visualizer</span>
         </div>
         <div class="modal-body" id="ticketViewContainer">
             </div>
     </div>
 </div>
 
-<div class="left-side-toggle" id="leftSideToggle" onclick="app.toggleLeftSidebar()" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')" style="display:none;" title="Show categories panel">
-    ▶
-</div>
 
 <div class="quick-side-toggle" onclick="app.toggleQuickSidebar()" onmouseenter="app.handleSidebarEnter('right')" onmouseleave="app.handleSidebarLeave('right')" title="Quick Snippets">
     ◀
@@ -1526,6 +1579,7 @@
     </div>
 </div>
 
+<div class="left-side-toggle" id="leftSideToggle" onclick="app.toggleLeftSidebar()" title="Hide categories panel">◀</div>
 <div class="sidebar" id="leftSidebar" onmouseenter="app.handleSidebarEnter('left')" onmouseleave="app.handleSidebarLeave('left')">
     <div class="resize-handle-left" id="resizeHandleLeft"></div>
     <div class="app-title" id="sidebarAppTitle">🚀 SD Helper Cloud</div>
@@ -1538,7 +1592,6 @@
             <button class="lang-btn active" id="btnEn" onclick="app.setLang('en')">EN</button>
             <button class="lang-btn" id="btnDe" onclick="app.setLang('de')">DE</button>
         </div>
-        <button class="btn-cat-edit" id="btnCatEdit" onclick="app.toggleCategoryEditMode()">✎ Edit</button>
     </div>
 
     <input type="text" id="catSearchInput" class="form-control" style="margin-bottom: 5px; padding: 4px 8px; font-size: 0.85rem;" placeholder="🔍 Search category..." onkeyup="app.renderCategories()" onkeydown="app.handleSearchKeydown(event)">
@@ -1547,12 +1600,12 @@
         <ul class="category-list" id="categoryList"></ul>
     </div>
 
-    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-        <button class="sidebar-bottom-btn" onclick="app.toggleLeftSidebar()" title="Hide categories panel" style="padding: 0 8px !important;">◀</button>
-        <button class="sidebar-bottom-btn" style="flex: 1;" onclick="app.addNewCategory()">+ New Category</button>
-		<button class="sidebar-bottom-btn" style="padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.toggleVariablesView()" title="Manage Variables">🔠</button>
-        <button class="sidebar-bottom-btn" style="padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.openClipboardHistoryModal()" title="Clipboard history">🕒</button>
-        <button class="sidebar-bottom-btn" style="display: block; padding: 0 10px !important; font-size: 1.1rem !important;" onclick="app.openSettingsModal()" title="Settings">⚙️</button>
+    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+        <button class="sidebar-bottom-btn" onclick="app.addNewCategory()" title="New Category" style="flex: 1; padding: 0 4px !important; min-width: 32px; font-size: 1.2rem !important; font-weight: bold !important;">+</button>
+        <button class="sidebar-bottom-btn" id="btnCatEdit" onclick="app.toggleCategoryEditMode()" title="Edit categories" style="flex: 1; padding: 0 4px !important; min-width: 32px; font-size: 1.1rem !important;">✎</button>
+		<button class="sidebar-bottom-btn" onclick="app.toggleVariablesView()" title="Manage Variables" style="flex: 1; padding: 0 4px !important; min-width: 32px; font-size: 1.1rem !important;">🔠</button>
+        <button class="sidebar-bottom-btn" onclick="app.openClipboardHistoryModal()" title="Clipboard history" style="flex: 1; padding: 0 4px !important; min-width: 32px; font-size: 1.1rem !important;">🕒</button>
+        <button class="sidebar-bottom-btn" onclick="app.openSettingsModal()" title="Settings" style="flex: 1; display: block; padding: 0 4px !important; min-width: 32px; font-size: 1.1rem !important;">⚙️</button>
     </div>
 </div>
 
@@ -2142,6 +2195,16 @@
                     <input type="number" id="settingCardMinHeight" class="form-control" min="100" max="800" step="10" style="width: 80px; padding: 4px;">
                     <span style="font-size:0.85rem; color:#666;">px</span>
                 </div>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 10px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Card Minimum Width:</label>
+                    <input type="number" id="settingCardMinWidth" class="form-control" min="150" max="1000" step="10" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">px (auto)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap: 10px; margin-top: 10px; margin-left: 25px;">
+                    <label style="font-size:0.85rem; color:#666;">Card Gap / Distance:</label>
+                    <input type="number" id="settingCardGap" class="form-control" min="0" max="100" step="2" style="width: 80px; padding: 4px;">
+                    <span style="font-size:0.85rem; color:#666;">px (auto)</span>
+                </div>
 
                 <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingZoomTemplate">
@@ -2171,6 +2234,11 @@
                 <label class="radio-label" style="margin-top: 15px;">
                     <input type="checkbox" id="settingShowViewButton">
                     <span style="margin-left: 5px;"><strong>View button next to Use</strong> (Replaces the eye icon)</span>
+                </label>
+                
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingFlushCardButtons">
+                    <span style="margin-left: 5px;"><strong>Embedded Card Buttons</strong> (Embed Use/View buttons directly into the card bottom without padding)</span>
                 </label>
                 
                 <label class="radio-label" style="margin-top: 15px;">
@@ -3036,6 +3104,8 @@
                         if(this.data.settings.showAppTitle === undefined) this.data.settings.showAppTitle = true;
                         if(this.data.settings.showLangSwitcher === undefined) this.data.settings.showLangSwitcher = true;
                         if(this.data.settings.cardMinHeight === undefined) this.data.settings.cardMinHeight = 250;
+                        if(this.data.settings.cardMinWidth === undefined) this.data.settings.cardMinWidth = null;
+                        if(this.data.settings.cardGap === undefined) this.data.settings.cardGap = null;
                         if(this.data.settings.compactMode === undefined) this.data.settings.compactMode = false;
                         if(this.data.settings.useColorLabelAsSubtitle === undefined) this.data.settings.useColorLabelAsSubtitle = false;
                         if(this.data.settings.zoomTemplate === undefined) this.data.settings.zoomTemplate = false;
@@ -3045,6 +3115,7 @@
                         if(this.data.settings.highlightTitle === undefined) this.data.settings.highlightTitle = false;
                         if(this.data.settings.titleSeparator === undefined) this.data.settings.titleSeparator = false;
                     if(this.data.settings.showViewButton === undefined) this.data.settings.showViewButton = false;
+                    if(this.data.settings.flushCardButtons === undefined) this.data.settings.flushCardButtons = false;
                     if(this.data.settings.varHistoryLimit === undefined) this.data.settings.varHistoryLimit = 5;
                 }
                 
@@ -3278,6 +3349,18 @@
             const minHeight = this.data.settings.cardMinHeight || 250;
             document.documentElement.style.setProperty('--card-min-height', minHeight + 'px');
 
+            if (this.data.settings.cardMinWidth !== null && this.data.settings.cardMinWidth !== undefined) {
+                document.documentElement.style.setProperty('--card-min-width', this.data.settings.cardMinWidth + 'px');
+            } else {
+                document.documentElement.style.removeProperty('--card-min-width');
+            }
+
+            if (this.data.settings.cardGap !== null && this.data.settings.cardGap !== undefined) {
+                document.documentElement.style.setProperty('--card-gap', this.data.settings.cardGap + 'px');
+            } else {
+                document.documentElement.style.removeProperty('--card-gap');
+            }
+
             if (this.data.settings.compactMode) {
                 document.body.classList.add('compact-mode');
             } else {
@@ -3312,6 +3395,12 @@
                 document.body.classList.add('show-view-button');
             } else {
                 document.body.classList.remove('show-view-button');
+            }
+
+            if (this.data.settings.flushCardButtons) {
+                document.body.classList.add('flush-card-buttons-mode');
+            } else {
+                document.body.classList.remove('flush-card-buttons-mode');
             }
         },
 
@@ -3460,15 +3549,19 @@
 
             overlay.innerHTML = `
                 <div class="modal" style="width: 800px; max-width: 95%;">
+                    <div class="win-controls">
+                        <button class="win-btn minimize-btn" onclick="this.closest('.modal-overlay').style.display='none'" title="Minimize">
+                            <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+                        </button>
+                        <button class="win-btn close-btn close-dynamic-btn" title="Close">
+                            <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+                        </button>
+                    </div>
                     <div class="modal-header">
                         <span>${safeTitle}</span>
-                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
                     </div>
                     <div class="modal-body">
                         <div style="white-space: pre-wrap; line-height: 1.5; font-size: 1rem; color: var(--view-text);">${safeContent}</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary close-dynamic-btn">Close</button>
                     </div>
                 </div>
             `;
@@ -3505,16 +3598,24 @@
             if (this.data.isSidebarOpen) {
                 sidebar.style.marginLeft = '0px';
                 main.style.paddingLeft = '10px';
-                if(toggleBtn) toggleBtn.style.display = 'none';
+                if(toggleBtn) {
+                    toggleBtn.style.display = 'flex';
+                    toggleBtn.innerText = '◀';
+                    toggleBtn.title = 'Hide categories panel';
+                }
             } else {
                 // Pontosan a saját szélességével toljuk ki negatív irányba, se többel, se kevesebbel.
                 // Így a .main tartalma pontosan a képernyő bal szélénél (0px) fog kezdődni.
                 sidebar.style.marginLeft = `-${width}px`; 
                 
-                // Adunk a fő tartalomnak 40px belső margót, hogy a 24px széles kinyitó gomb
+                // Adunk a fő tartalomnak 25px belső margót, hogy a 11px széles kinyitó gomb
                 // kényelmesen elférjen, és ne takarja ki a kártyák szélét.
-                main.style.paddingLeft = '40px'; 
-                if(toggleBtn) toggleBtn.style.display = 'flex';
+                main.style.paddingLeft = '25px'; 
+                if(toggleBtn) {
+                    toggleBtn.style.display = 'flex';
+                    toggleBtn.innerText = '▶';
+                    toggleBtn.title = 'Show categories panel';
+                }
             }
         },
 
@@ -4050,12 +4151,14 @@
             const btn = document.getElementById('btnCatEdit');
             if(this.data.isCategoryEditing) {
                 btn.classList.add('active');
-                btn.innerText = "✓ Done";
+                btn.innerText = "✓";
+                btn.title = "Done editing";
                 // Edit módba lépéskor csukjuk össze az összes kategóriát
                 this.data.expandedSidebarCats = [];
             } else {
                 btn.classList.remove('active');
-                btn.innerText = "✎ Edit";
+                btn.innerText = "✎";
+                btn.title = "Edit categories";
                 // Kilépéskor nyissuk vissza azt az egyet, amelyik épp aktív (normál nézet)
                 this.data.expandedSidebarCats = [this.data.currentCategory];
                 this.saveData();
@@ -5084,9 +5187,19 @@
             document.getElementById('settingHoverPreview').checked = !!this.data.settings.hoverPreview;
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
+            document.getElementById('settingFlushCardButtons').checked = !!this.data.settings.flushCardButtons;
             document.getElementById('settingOpenLinkInPopup').checked = !!this.data.settings.openLinkInPopup;
             document.getElementById('settingAutoFillVars').checked = this.data.settings.autoFillVars !== false;
             document.getElementById('settingCardMinHeight').value = this.data.settings.cardMinHeight || 250;
+            const defaultW = this.data.settings.compactMode ? 240 : 320;
+            const minWInput = document.getElementById('settingCardMinWidth');
+            minWInput.placeholder = defaultW;
+            minWInput.value = (this.data.settings.cardMinWidth !== null && this.data.settings.cardMinWidth !== undefined) ? this.data.settings.cardMinWidth : defaultW;
+
+            const defaultGap = this.data.settings.compactMode ? 12 : 20;
+            const gapInput = document.getElementById('settingCardGap');
+            gapInput.placeholder = defaultGap;
+            gapInput.value = (this.data.settings.cardGap !== null && this.data.settings.cardGap !== undefined) ? this.data.settings.cardGap : defaultGap;
             document.getElementById('settingVarHistoryLimit').value = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
 
             document.getElementById('settingDefaultTodoColor').value = this.data.settings.defaultTodoColor || '#ffffff';
@@ -5135,9 +5248,17 @@
             this.data.settings.hoverPreview = document.getElementById('settingHoverPreview').checked;
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
+            this.data.settings.flushCardButtons = document.getElementById('settingFlushCardButtons').checked;
             this.data.settings.openLinkInPopup = document.getElementById('settingOpenLinkInPopup').checked;
             this.data.settings.autoFillVars = document.getElementById('settingAutoFillVars').checked;
             this.data.settings.cardMinHeight = parseInt(document.getElementById('settingCardMinHeight').value) || 250;
+            const defaultW = this.data.settings.compactMode ? 240 : 320;
+            const valW = parseInt(document.getElementById('settingCardMinWidth').value);
+            this.data.settings.cardMinWidth = (!isNaN(valW) && valW !== defaultW) ? valW : null;
+
+            const defaultGap = this.data.settings.compactMode ? 12 : 20;
+            const valGap = parseInt(document.getElementById('settingCardGap').value);
+            this.data.settings.cardGap = (!isNaN(valGap) && valGap !== defaultGap) ? valGap : null;
             const parsedLimit = parseInt(document.getElementById('settingVarHistoryLimit').value);
             this.data.settings.varHistoryLimit = isNaN(parsedLimit) ? 5 : parsedLimit;
 
@@ -5740,15 +5861,19 @@
 
             overlay.innerHTML = `
                 <div class="modal" style="width: 600px; max-width: 95%;">
+                    <div class="win-controls">
+                        <button class="win-btn minimize-btn" onclick="this.closest('.modal-overlay').style.display='none'" title="Minimize">
+                            <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+                        </button>
+                        <button class="win-btn close-btn close-dynamic-btn" title="Close">
+                            <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+                        </button>
+                    </div>
                     <div class="modal-header">
                         <span>${this.escapeHtml(t.title)} (To-Do List)</span>
-                        <button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
                     </div>
                     <div class="modal-body">
                         <div>${safeContent}</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary close-dynamic-btn">Close</button>
                     </div>
                 </div>
             `;
@@ -5911,8 +6036,10 @@
             });
 
             if (filtered.length === 0 && !grid.innerHTML) {
-                grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No items found.</p>';
-                return;
+                if (isTrash || term || currentCat === 'All' || currentFolderId || rearranging) {
+                    grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No items found.</p>';
+                    return;
+                }
             }
 
             const createCardNode = (t) => {
@@ -6069,7 +6196,7 @@
 
                         useBtn = `
                             <div class="card-actions">
-                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${t.id})">👁️ View</button>
+                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${t.id})">View</button>
                                 <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${t.id}, 'card')">📋 Copy</button>
                             </div>
                         `;
@@ -6136,7 +6263,7 @@
                         `;
 
                         if (t.isViewOnly) {
-                            useBtn = `<div class="card-actions"><button class="card-btn use view-only" style="width:100%" onclick="app.viewTemplate(${t.id})">👁️ View</button></div>`;
+                            useBtn = `<div class="card-actions"><button class="card-btn use view-only" style="width:100%" onclick="app.viewTemplate(${t.id})">View</button></div>`;
                         } else {
                             useBtn = `
                                 <div class="card-actions">
@@ -6318,9 +6445,9 @@
                         sep.style.marginTop = '25px';
                         sep.style.marginBottom = '5px';
                         sep.style.paddingTop = '15px';
-                        sep.style.borderTop = '3px solid var(--primary)';
+                        sep.style.borderTop = '3px solid var(--folder-active, #fdd835)';
                         sep.innerHTML = `
-                            <h3 style="margin: 0; color: var(--primary); display:flex; align-items:center; gap:8px;">
+                            <h3 style="margin: 0; color: #f9a825; display:flex; align-items:center; gap:8px;">
                                 🏷️ Kapcsolódó template-ek
                             </h3>
                             <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
@@ -6332,6 +6459,46 @@
                         related.forEach(t => grid.appendChild(createCardNode(t)));
                     }
                 }
+            }
+            
+            if (!isTrash && !term && currentCat !== 'All' && !currentFolderId && !rearranging) {
+                const catFolders = this.data.folders.filter(f => !f.deleted && f.category === currentCat);
+                if (catFolders.length > 0) {
+                    if (grid.children.length > 0 || grid.innerHTML.trim() !== '') {
+                        const sep = document.createElement('div');
+                        sep.style.gridColumn = '1 / -1';
+                        sep.style.marginTop = '25px';
+                        sep.style.marginBottom = '5px';
+                        sep.style.paddingTop = '15px';
+                        sep.style.borderTop = '3px solid var(--folder-active, #fdd835)';
+                        sep.innerHTML = `
+                            <h3 style="margin: 0; color: #f9a825; display:flex; align-items:center; gap:8px;">
+                                📂 Mappák (${this.escapeHtml(currentCat)})
+                            </h3>
+                            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+                                Kattints a mappára a benne lévő sablonok megtekintéséhez
+                            </p>
+                        `;
+                        grid.appendChild(sep);
+                    }
+                    catFolders.forEach(f => {
+                        const folderTemplateCount = this.data.templates.filter(t => !t.deleted && t.folderId === f.id && t.category === currentCat).length;
+                        const html = `
+                            <div class="card folder-card" style="border-top: 4px solid var(--folder-active, #fdd835); cursor: pointer; transition: all 0.2s;" onclick="app.selectFolder(${f.id}, '${this.escapeHtml(currentCat)}')">
+                                <div class="card-title" style="display:flex; align-items:center; gap:8px;"><span class="folder-icon" style="font-size:1.4rem;">📂</span> <span>${this.escapeHtml(f.name)}</span></div>
+                                <div class="card-preview" style="-webkit-line-clamp: 3;">${folderTemplateCount} template${folderTemplateCount !== 1 ? 's' : ''} in this folder</div>
+                                <div class="card-actions">
+                                    <button class="card-btn use" style="width:100%; background: var(--folder-active, #fdd835); color: #3e2723; font-weight: bold;" onclick="event.stopPropagation(); app.selectFolder(${f.id}, '${this.escapeHtml(currentCat)}')">📂 Open Folder</button>
+                                </div>
+                            </div>`;
+                        grid.innerHTML += html;
+                    });
+                }
+            }
+
+            if (grid.children.length === 0 && !grid.innerHTML.trim()) {
+                grid.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">No items found.</p>';
+                return;
             }
             
             if(saveNeededForTodos) {
@@ -6865,9 +7032,13 @@
 			const baseColor = t.color || '#f8f9fa';
 			overlay.innerHTML = `
 				<div class="modal" style="width: 800px; max-width: 95%;">
+					<div class="win-controls">
+						<button class="win-btn close-btn close-dynamic-btn" title="Close">
+							<svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+						</button>
+					</div>
 					<div class="modal-header">
-						<span>Ticket Visualizer</span>
-						<button class="btn btn-sm btn-secondary close-dynamic-btn">Close</button>
+						<span>Template Visualizer</span>
 					</div>
 					<div class="modal-body" style="background-color: #f8f9fa;">
 						<div style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}; border-color: ${baseColor};">
@@ -8011,7 +8182,7 @@
 
                         let useBtn = `
                             <div class="card-actions">
-                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${recT.id})">👁️ View</button>
+                                <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${recT.id})">View</button>
                                 <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${recT.id}, 'rec')">📋 Copy</button>
                             </div>
                         `;
@@ -8044,7 +8215,7 @@
                         
                         let btnHtml = '';
                         if (recT.isViewOnly) {
-                            btnHtml = `<button class="card-btn use view-only" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.viewTemplate(${recT.id})">👁️ View Template</button>`;
+                            btnHtml = `<button class="card-btn use view-only" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.viewTemplate(${recT.id})">View Template</button>`;
                         } else {
                             btnHtml = `<button class="card-btn use" style="flex:1;" onclick="app.closeModal('recommendationModal'); app.prepareTemplate(${recT.id})">Use Template</button>`;
                         }
