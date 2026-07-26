@@ -740,6 +740,35 @@
             background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
             z-index: 1000;
         }
+        #floating-backdrop-close-btn {
+            position: fixed;
+            z-index: 100000;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: #e81123;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.15s ease;
+            outline: none;
+            padding: 0;
+            line-height: 1;
+        }
+        #floating-backdrop-close-btn.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #floating-backdrop-close-btn:hover {
+            background-color: #b90f1b;
+            transform: translate(-50%, -50%) scale(1.15);
+        }
         .modal {
             background: white; padding: 10px; border-radius: 8px; width: 650px; max-width: 90%;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;
@@ -3264,9 +3293,6 @@
                                     e.stopPropagation();
                                     overlay.remove();
                                 };
-                                overlay.onclick = function(e) {
-                                    if (e.target === overlay) overlay.remove();
-                                };
                                 
                                 // Gombkattintáskor vagy menüpont választásakor zárjuk be automatikusan a pop-upot
                                 cardClone.addEventListener('click', (e) => {
@@ -3315,8 +3341,24 @@
             }
         },
 
+        cleanPrimaryTemplates: function() {
+            const seen = new Set();
+            for (let i = this.data.templates.length - 1; i >= 0; i--) {
+                const t = this.data.templates[i];
+                if (t && t.isPrimary && !t.deleted) {
+                    const key = `${t.category || 'General'}___${t.folderId || 'null'}`;
+                    if (seen.has(key)) {
+                        delete t.isPrimary;
+                    } else {
+                        seen.add(key);
+                    }
+                }
+            }
+        },
+
         saveData: async function() {
     if (!this.user) return;
+    this.cleanPrimaryTemplates();
     const userDocRef = doc(db, "users", this.user.uid);
 
     const payload = {
@@ -3590,11 +3632,6 @@
                     overlay.remove();
                 };
             });
-            overlay.onclick = function(e) {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            };
             document.body.appendChild(overlay);
         },
 
@@ -4420,7 +4457,7 @@
             return html;
         },
 
-        selectCategory: function(cat) {
+        selectCategory: function(cat, autoOpenPrimary = true) {
             if(this.data.isCategoryEditing && cat !== 'All' && cat !== 'Trash') return;
             this.data.currentMode = 'templates'; // <-- Új sor
             this.data.currentCategory = cat;
@@ -4438,9 +4475,12 @@
             this.renderCategories();
             this.renderTemplates();
             this.renderQuickTitles();
+            if (autoOpenPrimary !== false) {
+                this.checkAndOpenPrimaryTemplate();
+            }
         },
 
-        selectFolder: function(folderId, catName) {
+        selectFolder: function(folderId, catName, autoOpenPrimary = true) {
             this.data.currentCategory = catName;
 			this.data.currentMode = 'templates';
             this.data.currentFolderId = folderId;
@@ -4457,6 +4497,63 @@
             this.renderCategories();
             this.renderTemplates();
             this.renderQuickTitles();
+            if (autoOpenPrimary !== false) {
+                this.checkAndOpenPrimaryTemplate();
+            }
+        },
+
+        checkAndOpenPrimaryTemplate: function() {
+            if (this.data.currentMode !== 'templates') return;
+            const currentCat = this.data.currentCategory;
+            const currentFolder = this.data.currentFolderId;
+            if (currentCat === 'All' || currentCat === 'Trash') return;
+
+            const primaryTpl = this.data.templates.find(t => !t.deleted && t.isPrimary && t.category === currentCat && (currentFolder ? t.folderId === currentFolder : !t.folderId));
+            if (primaryTpl) {
+                if (primaryTpl.isTodo) {
+                    let hasTemplateMarkers = false;
+                    if (primaryTpl.todoItems) {
+                        hasTemplateMarkers = primaryTpl.todoItems.some(item =>
+                            (item.text.includes('[') && item.text.includes(']')) ||
+                            (item.text.includes('{') && item.text.includes('}'))
+                        );
+                    }
+                    if (hasTemplateMarkers) {
+                        this.generateTodoTemplate(primaryTpl.id);
+                    } else {
+                        this.viewTodo(primaryTpl.id);
+                    }
+                } else if (primaryTpl.isTicket) {
+                    this.viewTicketTemplate(primaryTpl.id);
+                } else if (primaryTpl.isDatabase) {
+                    this.viewDbTemplate(primaryTpl.id);
+                } else {
+                    if (primaryTpl.isViewOnly) {
+                        this.viewTemplate(primaryTpl.id);
+                    } else {
+                        this.prepareTemplate(primaryTpl.id);
+                    }
+                }
+            }
+        },
+
+        togglePrimaryTemplate: function(id) {
+            const t = this.data.templates.find(x => x.id === id);
+            if (!t) return;
+            const willBePrimary = !t.isPrimary;
+            if (willBePrimary) {
+                // Egy kategóriában / folderben csak egyetlen primary template lehet
+                this.data.templates.forEach(x => {
+                    if (x.category === t.category && x.folderId === t.folderId && x.id !== t.id) {
+                        delete x.isPrimary;
+                    }
+                });
+                t.isPrimary = true;
+            } else {
+                delete t.isPrimary;
+            }
+            this.saveData();
+            this.renderTemplates();
         },
 
         updateHeaderButtons: function(cat) {
@@ -5980,7 +6077,6 @@
 
             const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
             closeBtns.forEach(btn => { btn.onclick = function() { overlay.remove(); }; });
-            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
             document.body.appendChild(overlay);
         },
 
@@ -6031,9 +6127,9 @@
                     e.preventDefault();
                     
                     if (t.folderId) {
-                        this.selectFolder(t.folderId, t.category);
+                        this.selectFolder(t.folderId, t.category, false);
                     } else if (t.category) {
-                        this.selectCategory(t.category);
+                        this.selectCategory(t.category, false);
                     }
                     
                     if (t.isTodo) {
@@ -6156,6 +6252,9 @@
                 if (t.tags && t.tags.length > 0) {
                     tagsListHtml += t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
                 }
+                if (t.isPrimary) {
+                    tagsListHtml += `<span style="display:inline-block; background:#fff9c4; color:#f57f17; border:1px solid #fbc02d; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">⭐ Primary</span>`;
+                }
                 if (tagsListHtml) {
                     tagsHtml = `<div style="margin-bottom: 8px;">${tagsListHtml}</div>`;
                 }
@@ -6166,6 +6265,10 @@
                 if(t.isDatabase) div.classList.add('database-card'); /* EZT A SORT KELLETT HOZZÁADNI */
                 if(rearranging) div.draggable = true;
                 div.style.backgroundColor = bgColor;
+                if (t.isPrimary) {
+                    div.style.border = '2px solid #fbc02d';
+                    div.style.boxShadow = '0 0 8px rgba(251, 192, 45, 0.35)';
+                }
                 div.setAttribute('data-id', t.id);
                 if(rearranging) div.setAttribute('onclick', `app.toggleSelection(event, ${t.id})`);
 
@@ -6238,6 +6341,7 @@
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
                                 <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
+                                <div class="dropdown-item" onclick="app.togglePrimaryTemplate(${t.id})">🌟 ${t.isPrimary ? 'Remove as primary template' : 'Select as primary template'}</div>
                                 <div class="dropdown-item" onclick="app.viewTodo(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.pinTodo(${t.id})">${pinText}</div>
                                 <div class="dropdown-item" onclick="app.openTodoModal(${t.id})">✏️ Edit To-Do</div>
@@ -6271,6 +6375,7 @@
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
                                 <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
+                                <div class="dropdown-item" onclick="app.togglePrimaryTemplate(${t.id})">🌟 ${t.isPrimary ? 'Remove as primary template' : 'Select as primary template'}</div>
                                 <div class="dropdown-item" onclick="app.openTicketEditor(${t.id})">✏️ Edit Ticket</div>
                                 <div class="dropdown-item" onclick="app.cloneTicket(${t.id})">📄 Create a copy</div>
                                 <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id})">📂 Move to folder</div>
@@ -6306,6 +6411,7 @@
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
                                 <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
+                                <div class="dropdown-item" onclick="app.togglePrimaryTemplate(${t.id})">🌟 ${t.isPrimary ? 'Remove as primary template' : 'Select as primary template'}</div>
                                 <div class="dropdown-item" onclick="app.viewDbTemplate(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.openDbEditor(${t.id})">✏️ Edit Database</div>
                                 <div class="dropdown-item" onclick="app.cloneDbTemplate(${t.id})">📄 Create a copy</div>
@@ -6348,6 +6454,7 @@
                             <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id})">⋮</button>
                             <div class="dropdown-menu" id="menu-${t.id}">
                                 <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id})">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
+                                <div class="dropdown-item" onclick="app.togglePrimaryTemplate(${t.id})">🌟 ${t.isPrimary ? 'Remove as primary template' : 'Select as primary template'}</div>
                                 <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
                                 <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
                                 <div class="dropdown-item" onclick="app.cloneTemplate(${t.id})">📄 Create a copy</div>
@@ -7207,11 +7314,6 @@
                     overlay.remove();
                 };
             });
-            overlay.onclick = function(e) {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            };
             document.body.appendChild(overlay);
         },
 
@@ -8765,11 +8867,84 @@
         },
 
         closeModal: function(id) { 
-            document.getElementById(id).style.display = 'none'; 
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none'; 
             this.activeModals = this.activeModals || {};
             if (this.activeModals[id]) {
                 delete this.activeModals[id];
             }
+            if (typeof this.removeFloatingBackdropBtn === 'function') {
+                this.removeFloatingBackdropBtn();
+            }
+        },
+
+        initBackdropClose: function() {
+            document.addEventListener('click', (event) => {
+                const closeBtn = event.target.closest('#floating-backdrop-close-btn');
+                if (closeBtn) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    this.closeForegroundModal();
+                    this.removeFloatingBackdropBtn();
+                    return;
+                }
+
+                if (event.target.classList && event.target.classList.contains('modal-overlay')) {
+                    event.stopPropagation();
+                    this.spawnFloatingBackdropBtn(event.clientX, event.clientY);
+                } else {
+                    if (!event.target.closest('#floating-backdrop-close-btn')) {
+                        this.removeFloatingBackdropBtn();
+                    }
+                }
+            }, true);
+        },
+
+        spawnFloatingBackdropBtn: function(x, y) {
+            this.removeFloatingBackdropBtn();
+            const btn = document.createElement('button');
+            btn.id = 'floating-backdrop-close-btn';
+            btn.title = 'Close window';
+            btn.innerHTML = '✕';
+            btn.style.left = x + 'px';
+            btn.style.top = y + 'px';
+            document.body.appendChild(btn);
+            requestAnimationFrame(() => btn.classList.add('show'));
+        },
+
+        removeFloatingBackdropBtn: function() {
+            const btn = document.getElementById('floating-backdrop-close-btn');
+            if (btn) btn.remove();
+        },
+
+        closeForegroundModal: function() {
+            const overlays = Array.from(document.querySelectorAll('.modal-overlay'));
+            const visibleOverlays = overlays.filter(o => {
+                const style = window.getComputedStyle(o);
+                return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+            });
+            if (visibleOverlays.length === 0) return;
+
+            visibleOverlays.sort((a, b) => {
+                const zA = parseInt(window.getComputedStyle(a).zIndex) || 1000;
+                const zB = parseInt(window.getComputedStyle(b).zIndex) || 1000;
+                if (zA !== zB) return zB - zA;
+                return overlays.indexOf(b) - overlays.indexOf(a);
+            });
+
+            const topOverlay = visibleOverlays[0];
+            
+            const closeBtn = topOverlay.querySelector('.close-btn, .close-dynamic-btn, button[title="Close"], button[title="Bezárás"]') ||
+                             topOverlay.querySelector('button[onclick*="closeModal"], button[onclick*="closeRecommendationSelectorModal"], button[onclick*="remove"]');
+            if (closeBtn) {
+                closeBtn.click();
+            } else if (topOverlay.id && typeof this.closeModal === 'function') {
+                this.closeModal(topOverlay.id);
+            } else {
+                topOverlay.remove();
+            }
+            
+            this.removeFloatingBackdropBtn();
         },
 
         minimizeModal: function(modalId) {
@@ -9502,7 +9677,6 @@
 
             const closeBtns = overlay.querySelectorAll('.close-dynamic-btn');
             closeBtns.forEach(btn => { btn.onclick = function() { overlay.remove(); }; });
-            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
             document.body.appendChild(overlay);
 
             let initialIdx = 0;
@@ -9715,6 +9889,7 @@
         app.initQuickSidebar();
         app.initSidebarResize();
         app.initClipboardHistory();
+        app.initBackdropClose();
 
         document.querySelector('.main').addEventListener('scroll', () => {
             if (app.hidePreviewClone) app.hidePreviewClone();
