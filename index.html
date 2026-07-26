@@ -664,6 +664,8 @@
         /* View Button Option Styles */
         body:not(.show-view-button) .card-view-btn-bottom { display: none !important; }
         body.show-view-button .card-view-btn-icon { display: none !important; }
+        body.hide-view-button .card-view-btn-icon,
+        body.hide-view-button .card-view-btn-bottom { display: none !important; }
 
         /* Flush / Embedded Card Buttons Option */
         body.flush-card-buttons-mode .card-preview {
@@ -2158,6 +2160,11 @@
 
 <div class="modal-overlay" id="settingsModal">
     <div class="modal" style="width: 500px;">
+        <div class="win-controls">
+            <button class="win-btn close-btn" onclick="app.closeModal('settingsModal')" title="Close">
+                <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+        </div>
         <div class="modal-header">Settings</div>
         <div class="modal-body">
             <h4 style="margin-top:0;">Account</h4>
@@ -2232,8 +2239,13 @@
                 </div>
 
                 <label class="radio-label" style="margin-top: 15px;">
-                    <input type="checkbox" id="settingShowViewButton">
+                    <input type="checkbox" id="settingShowViewButton" onchange="if(this.checked) document.getElementById('settingHideViewButton').checked = false;">
                     <span style="margin-left: 5px;"><strong>View button next to Use</strong> (Replaces the eye icon)</span>
+                </label>
+                
+                <label class="radio-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="settingHideViewButton" onchange="if(this.checked) document.getElementById('settingShowViewButton').checked = false;">
+                    <span style="margin-left: 5px;"><strong>Hide view button</strong> (Hides the eye icon on templates)</span>
                 </label>
                 
                 <label class="radio-label" style="margin-top: 15px;">
@@ -2347,8 +2359,7 @@
 
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="app.closeModal('settingsModal')">Close</button>
-            <button class="btn btn-primary" onclick="app.saveSettings()">Save Settings</button>
+            <button class="btn btn-secondary" id="settingsUndoBtn" onclick="app.undoSettingsChange()" disabled>↩ Undo</button>
         </div>
     </div>
 </div>
@@ -2754,7 +2765,7 @@
             quickTitles: [],
             timeSettings: { start: 6, end: 11, eve: 17 },
             colorOrder: [],
-            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, autoHideSidebars: false, autoHideDelay: 1.0 },
+            settings: { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, hideViewButton: false, autoHideSidebars: false, autoHideDelay: 1.0 },
             leftSidebarTimer: null,
             rightSidebarTimer: null,
             selectedIds: [],
@@ -2990,7 +3001,7 @@
                     const emailDisplay = document.getElementById('userEmailDisplay');
                     if(emailDisplay) emailDisplay.innerText = "Not Logged In";
 
-                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false };
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, hideViewButton: false };
                     this.applyAppearanceSettings();
 
                     this.data.templates = [];
@@ -3115,6 +3126,7 @@
                         if(this.data.settings.highlightTitle === undefined) this.data.settings.highlightTitle = false;
                         if(this.data.settings.titleSeparator === undefined) this.data.settings.titleSeparator = false;
                     if(this.data.settings.showViewButton === undefined) this.data.settings.showViewButton = false;
+                    if(this.data.settings.hideViewButton === undefined) this.data.settings.hideViewButton = false;
                     if(this.data.settings.flushCardButtons === undefined) this.data.settings.flushCardButtons = false;
                     if(this.data.settings.varHistoryLimit === undefined) this.data.settings.varHistoryLimit = 5;
                 }
@@ -3132,7 +3144,7 @@
             } else {
                 this.data.templates = [{ id: 1, title: "Welcome", category: "General", lang: "en", content: "Welcome to your cloud-synced SD Helper!", deleted: false, isViewOnly: false }];
                     this.data.colorOrder = JSON.parse(JSON.stringify(DEFAULT_COLOR_ORDER));
-                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, varHistoryLimit: 5 };
+                    this.data.settings = { autoSortColor: false, colorLabels: {}, showAppTitle: true, showLangSwitcher: true, cardMinHeight: 250, compactMode: false, useColorLabelAsSubtitle: false, zoomTemplate: false, hoverPreview: false, hoverDelay: 1.0, autoSnippetSubCat: false, highlightTitle: false, titleSeparator: false, showViewButton: false, hideViewButton: false, varHistoryLimit: 5 };
                     this.data.themes = [{
                     id: 'default', name: 'Default Theme',
                     subtitle: '#0078d4', mainBg: '#d0d0e8', sidebarBg: '#bcbce4',
@@ -3395,6 +3407,12 @@
                 document.body.classList.add('show-view-button');
             } else {
                 document.body.classList.remove('show-view-button');
+            }
+
+            if (this.data.settings.hideViewButton) {
+                document.body.classList.add('hide-view-button');
+            } else {
+                document.body.classList.remove('hide-view-button');
             }
 
             if (this.data.settings.flushCardButtons) {
@@ -4014,6 +4032,7 @@
             this.tempExtraContents = [];
             this.tempExtraTitles = [];
             this.tempExtraTriggers = [];
+            this.tempExtraColors = [];
             this.tempInstructions = [];
             this.processAndShowFiller(text);
         },
@@ -5007,6 +5026,7 @@
             this.tempExtraContents = [];
             this.tempExtraTitles = [];
             this.tempExtraTriggers = [];
+            this.tempExtraColors = [];
             this.tempInstructions = [];
             // Lényegében szimuláljuk a template futtatását úgy, hogy csak ezt az egy változót hívjuk meg
             this.processAndShowFiller(`{{${v.key}}}`, null);
@@ -5172,7 +5192,7 @@
             }
         },
 		
-        openSettingsModal: function() {
+        updateSettingsModalDOM: function() {
 			document.getElementById('settingAutoHide').checked = !!this.data.settings.autoHideSidebars;
             document.getElementById('settingAutoHideDelay').value = this.data.settings.autoHideDelay !== undefined ? this.data.settings.autoHideDelay : 1.0;
             document.getElementById('settingAutoSort').checked = this.data.settings.autoSortColor;
@@ -5187,6 +5207,7 @@
             document.getElementById('settingHoverPreview').checked = !!this.data.settings.hoverPreview;
             document.getElementById('settingHoverDelay').value = this.data.settings.hoverDelay !== undefined ? this.data.settings.hoverDelay : 1.0;
             document.getElementById('settingShowViewButton').checked = !!this.data.settings.showViewButton;
+            document.getElementById('settingHideViewButton').checked = !!this.data.settings.hideViewButton;
             document.getElementById('settingFlushCardButtons').checked = !!this.data.settings.flushCardButtons;
             document.getElementById('settingOpenLinkInPopup').checked = !!this.data.settings.openLinkInPopup;
             document.getElementById('settingAutoFillVars').checked = this.data.settings.autoFillVars !== false;
@@ -5229,11 +5250,89 @@
                     </div>
                 `;
             });
+        },
+
+        updateUndoBtnUI: function() {
+            const undoBtn = document.getElementById('settingsUndoBtn');
+            if (!undoBtn) return;
+            const hasHistory = (this.settingsHistory && this.settingsHistory.length > 0);
+            undoBtn.disabled = !hasHistory;
+            if (hasHistory) {
+                undoBtn.className = 'btn btn-success';
+                undoBtn.style.backgroundColor = '#107c10';
+                undoBtn.style.color = '#ffffff';
+                undoBtn.style.cursor = 'pointer';
+            } else {
+                undoBtn.className = 'btn btn-secondary';
+                undoBtn.style.backgroundColor = '#e1dfdd';
+                undoBtn.style.color = '#888888';
+                undoBtn.style.cursor = 'not-allowed';
+            }
+        },
+
+        openSettingsModal: function() {
+            this.settingsHistory = [];
+            this.updateUndoBtnUI();
+
+            this._isUndoing = true;
+            this.updateSettingsModalDOM();
+            this._isUndoing = false;
+
+            if (!this._settingsListenersAttached) {
+                this._settingsListenersAttached = true;
+                const modal = document.getElementById('settingsModal');
+                const handler = (e) => {
+                    if (this._isUndoing) return;
+                    if (!e.target) return;
+                    const tag = e.target.tagName;
+                    const type = e.target.type;
+                    const isTextLike = (tag === 'INPUT' && (type === 'text' || type === 'number' || type === 'color' || type === 'range')) || tag === 'TEXTAREA' || tag === 'SELECT';
+                    if (e.type === 'input' && !isTextLike) return;
+                    if (e.type === 'change' && isTextLike) return;
+
+                    this.onSettingInputChanged();
+                };
+                modal.addEventListener('change', handler);
+                modal.addEventListener('input', handler);
+            }
 
             document.getElementById('settingsModal').style.display = 'flex';
         },
 
-        saveSettings: function() {
+        onSettingInputChanged: function() {
+            if (this._isUndoing) return;
+            this.settingsHistory = this.settingsHistory || [];
+            const currentSnapshot = JSON.stringify({
+                settings: JSON.parse(JSON.stringify(this.data.settings)),
+                timeSettings: JSON.parse(JSON.stringify(this.data.timeSettings))
+            });
+            if (this.settingsHistory.length === 0 || this.settingsHistory[this.settingsHistory.length - 1] !== currentSnapshot) {
+                this.settingsHistory.push(currentSnapshot);
+                this.updateUndoBtnUI();
+            }
+            this.saveSettings(false);
+        },
+
+        undoSettingsChange: function() {
+            if (!this.settingsHistory || this.settingsHistory.length === 0) return;
+            const prevSnapshotStr = this.settingsHistory.pop();
+            const prevSnapshot = JSON.parse(prevSnapshotStr);
+            this.data.settings = prevSnapshot.settings;
+            this.data.timeSettings = prevSnapshot.timeSettings;
+
+            this._isUndoing = true;
+            this.updateSettingsModalDOM();
+            this._isUndoing = false;
+
+            this.applyAppearanceSettings();
+            this.updateEditorColorSwatches();
+            this.saveData();
+            this.renderTemplates();
+
+            this.updateUndoBtnUI();
+        },
+
+        saveSettings: function(closeAfter = false) {
 			this.data.settings.autoHideSidebars = document.getElementById('settingAutoHide').checked;
             this.data.settings.autoHideDelay = parseFloat(document.getElementById('settingAutoHideDelay').value) || 1.0;
             this.data.settings.autoSortColor = document.getElementById('settingAutoSort').checked;
@@ -5248,6 +5347,7 @@
             this.data.settings.hoverPreview = document.getElementById('settingHoverPreview').checked;
             this.data.settings.hoverDelay = parseFloat(document.getElementById('settingHoverDelay').value) || 0;
             this.data.settings.showViewButton = document.getElementById('settingShowViewButton').checked;
+            this.data.settings.hideViewButton = document.getElementById('settingHideViewButton').checked;
             this.data.settings.flushCardButtons = document.getElementById('settingFlushCardButtons').checked;
             this.data.settings.openLinkInPopup = document.getElementById('settingOpenLinkInPopup').checked;
             this.data.settings.autoFillVars = document.getElementById('settingAutoFillVars').checked;
@@ -5278,7 +5378,7 @@
             this.applyAppearanceSettings();
             this.updateEditorColorSwatches();
             this.saveData();
-            this.closeModal('settingsModal');
+            if (closeAfter) this.closeModal('settingsModal');
             this.renderTemplates();
         },
 
@@ -6570,6 +6670,7 @@
             const extraContents = Array.from(document.querySelectorAll('.extra-content-textarea')).map(ta => ta.value);
             const extraTitles = Array.from(document.querySelectorAll('.extra-content-title-input')).map(inp => inp.value);
             const extraTriggers = Array.from(document.querySelectorAll('.extra-content-trigger-input')).map(inp => inp.value.trim());
+            const extraColors = Array.from(document.querySelectorAll('.extra-content-color-input')).map(inp => inp.value);
             
             const isViewOnly = document.getElementById('inputViewOnly').checked;
             const color = document.getElementById('inputColor').value;
@@ -6594,6 +6695,7 @@
                     extraContents: extraContents,
                     extraTitles: extraTitles,
                     extraTriggers: extraTriggers,
+                    extraColors: extraColors,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
                     tags: tags,
@@ -6607,6 +6709,7 @@
                     extraContents: extraContents,
                     extraTitles: extraTitles,
                     extraTriggers: extraTriggers,
+                    extraColors: extraColors,
                     deleted: false, isViewOnly, color,
                     folderId: folderId ? parseInt(folderId) : null,
                     recommendedIds: recommendedIds,
@@ -6655,7 +6758,7 @@
             });
         },
 		
-		addExtraContent: function(val = '', title = '', trigger = '') {
+		addExtraContent: function(val = '', title = '', trigger = '', color = '') {
             const container = document.getElementById('extraContentsContainer');
             const newIndex = container.children.length + 1;
             const defaultTitle = "Extra Content " + newIndex;
@@ -6663,6 +6766,11 @@
             const div = document.createElement('div');
             div.className = 'extra-content-block';
             div.style.cssText = 'margin-top:15px; border-top: 2px dashed var(--border); padding-top: 15px; position: relative;';
+            if (color && color !== '#ffffff') {
+                div.style.backgroundColor = color;
+                div.style.padding = '15px';
+                div.style.borderRadius = '8px';
+            }
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px; flex-wrap: wrap; gap: 10px;">
                     <input type="text" class="extra-content-title-input" value="${this.escapeHtml(title)}" placeholder="${defaultTitle}" 
@@ -6675,9 +6783,39 @@
                     >
                     <button class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" onclick="this.parentElement.parentElement.remove()" title="Remove this content">✖</button>
                 </div>
+                <div style="display:flex; align-items:center; gap: 6px; margin-bottom: 8px;">
+                    <span style="font-size:0.8rem; color:#666;">Color:</span>
+                    <input type="hidden" class="extra-content-color-input" value="${color || ''}">
+                    <div class="color-swatch-mini ${(!color || color === '#ffffff') ? 'none selected' : ''}" data-hex="" style="background:#ffffff; border:1px solid #ccc;" onclick="app.selectExtraColor(this, '')" title="Default (Yellow in preview)"></div>
+                    <div class="color-swatch-mini ${color === '#ffafb8' ? 'selected' : ''}" data-hex="#ffafb8" style="background:#ffafb8;" onclick="app.selectExtraColor(this, '#ffafb8')" title="Red"></div>
+                    <div class="color-swatch-mini ${color === '#f8f1b4' ? 'selected' : ''}" data-hex="#f8f1b4" style="background:#f8f1b4;" onclick="app.selectExtraColor(this, '#f8f1b4')" title="Yellow"></div>
+                    <div class="color-swatch-mini ${color === '#caf7cc' ? 'selected' : ''}" data-hex="#caf7cc" style="background:#caf7cc;" onclick="app.selectExtraColor(this, '#caf7cc')" title="Green"></div>
+                    <div class="color-swatch-mini ${color === '#a1d5ff' ? 'selected' : ''}" data-hex="#a1d5ff" style="background:#a1d5ff;" onclick="app.selectExtraColor(this, '#a1d5ff')" title="Blue"></div>
+                    <div class="color-swatch-mini ${color === '#efb1f9' ? 'selected' : ''}" data-hex="#efb1f9" style="background:#efb1f9;" onclick="app.selectExtraColor(this, '#efb1f9')" title="Purple"></div>
+                    <div class="color-swatch-mini ${color === '#fbc77a' ? 'selected' : ''}" data-hex="#fbc77a" style="background:#fbc77a;" onclick="app.selectExtraColor(this, '#fbc77a')" title="Orange"></div>
+                    <div class="color-swatch-mini ${color === '#95f1e9' ? 'selected' : ''}" data-hex="#95f1e9" style="background:#95f1e9;" onclick="app.selectExtraColor(this, '#95f1e9')" title="Teal"></div>
+                    <div class="color-swatch-mini ${color === '#f8bbd0' ? 'selected' : ''}" data-hex="#f8bbd0" style="background:#f8bbd0;" onclick="app.selectExtraColor(this, '#f8bbd0')" title="Pink"></div>
+                    <div class="color-swatch-mini ${color === '#ebb2a9' ? 'selected' : ''}" data-hex="#ebb2a9" style="background:#ebb2a9;" onclick="app.selectExtraColor(this, '#ebb2a9')" title="Brown"></div>
+                </div>
                 <textarea class="form-control extra-content-textarea" placeholder="Secondary content..." style="min-height: 100px; border-color: var(--primary);">${this.escapeHtml(val)}</textarea>
             `;
             container.appendChild(div);
+        },
+        
+        selectExtraColor: function(el, hex) {
+            const block = el.closest('.extra-content-block');
+            block.querySelectorAll('.color-swatch-mini').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            block.querySelector('.extra-content-color-input').value = hex;
+            if (hex && hex !== '#ffffff') {
+                block.style.backgroundColor = hex;
+                block.style.padding = '15px';
+                block.style.borderRadius = '8px';
+            } else {
+                block.style.backgroundColor = 'transparent';
+                block.style.padding = '15px 0 0 0';
+                block.style.borderRadius = '0';
+            }
         },
 
         openEditor: function(id) {
@@ -6715,7 +6853,8 @@
                     t.extraContents.forEach((ext, idx) => {
                         const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
                         const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
-                        this.addExtraContent(ext, title, trigger);
+                        const color = (t.extraColors && t.extraColors[idx]) ? t.extraColors[idx] : '';
+                        this.addExtraContent(ext, title, trigger, color);
                     });
                 } else if (t.content2) { // Visszafelé kompatibilitás a régivel
                     this.addExtraContent(t.content2);
@@ -6830,7 +6969,11 @@
                 {key: 'DD.MM.YY', label: 'Date (23.03.26.)', type: 'SYS'},
                 {key: 'DD.MM.YYYY', label: 'Date (23.03.2026.)', type: 'SYS'},
                 {key: 'YY.MM.DD', label: 'Date (26.03.23.)', type: 'SYS'},
-                {key: 'YYYY.MM.DD', label: 'Date (2026.03.23.)', type: 'SYS'}
+                {key: 'YYYY.MM.DD', label: 'Date (2026.03.23.)', type: 'SYS'},
+                {key: 'YYYYMMDD', label: 'Date (20260323)', type: 'SYS'},
+                {key: 'YYMMDD', label: 'Date (260323)', type: 'SYS'},
+                {key: 'DDMMYYYY', label: 'Date (23032026)', type: 'SYS'},
+                {key: 'DDMMYY', label: 'Date (230326)', type: 'SYS'}
             ];
 
             const allVars = [...sysVars, ...this.data.customVars];
@@ -6842,7 +6985,15 @@
                 {key: 'daytime', label: 'Morning/Day/Evening', type: 'SYS'},
                 {key: 'gender', label: 'Mr./Ms.', type: 'SYS'},
                 {key: 'name', label: 'Customer Name', type: 'SYS'},
-                {key: 'ticket', label: 'Ticket Number', type: 'SYS'}
+                {key: 'ticket', label: 'Ticket Number', type: 'SYS'},
+                {key: 'DD.MM.YY', label: 'Date (23.03.26.)', type: 'SYS'},
+                {key: 'DD.MM.YYYY', label: 'Date (23.03.2026.)', type: 'SYS'},
+                {key: 'YY.MM.DD', label: 'Date (26.03.23.)', type: 'SYS'},
+                {key: 'YYYY.MM.DD', label: 'Date (2026.03.23.)', type: 'SYS'},
+                {key: 'YYYYMMDD', label: 'Date (20260323)', type: 'SYS'},
+                {key: 'YYMMDD', label: 'Date (260323)', type: 'SYS'},
+                {key: 'DDMMYYYY', label: 'Date (23032026)', type: 'SYS'},
+                {key: 'DDMMYY', label: 'Date (230326)', type: 'SYS'}
             ];
             const allVars = [...sysVars, ...this.data.customVars];
 
@@ -6966,7 +7117,8 @@
                 t.extraContents.forEach((ext, idx) => {
                     const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
                     const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
-                    this.addExtraContent(ext, title, trigger);
+                    const color = (t.extraColors && t.extraColors[idx]) ? t.extraColors[idx] : '';
+                    this.addExtraContent(ext, title, trigger, color);
                 });
             } else if (t.content2) {
                 this.addExtraContent(t.content2);
@@ -7289,6 +7441,7 @@
             this.tempExtraContents = t.extraContents ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
             this.tempExtraTitles = t.extraTitles ? [...t.extraTitles] : [];
             this.tempExtraTriggers = t.extraTriggers ? [...t.extraTriggers] : [];
+            this.tempExtraColors = t.extraColors ? [...t.extraColors] : [];
             this.processAndShowFiller(t.content, id);
         },
 
@@ -7386,8 +7539,9 @@
                                 if (ext.trim() !== "") {
                                     let safeExt = this.escapeHtml(this.stripInfoVariables(ext));
                                     safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                                    const extraBgColor = (this.tempExtraColors && this.tempExtraColors[idx] && this.tempExtraColors[idx] !== '#ffffff') ? this.tempExtraColors[idx] : baseColor;
                                     extrasWrapper.innerHTML += `
-                                        <div class="extra-preview-block" style="padding: 20px; border-radius: 8px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor};">
+                                        <div class="extra-preview-block" style="padding: 20px; border-radius: 8px; border: 1px solid ${extraBgColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${extraBgColor};">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
                                                 <h4 style="color: var(--primary); margin: 0; font-size: 1.1rem;">${this.tempExtraTitles && this.tempExtraTitles[idx] ? this.escapeHtml(this.tempExtraTitles[idx]) : "Extra Content " + (idx + 1)}</h4>
                                                 <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy</button>
@@ -7433,6 +7587,10 @@
                 res = res.replace(/\{\{\s*DD\.MM\.YY\s*\}\}/gi, `${dd}.${mm}.${yy}`);
                 res = res.replace(/\{\{\s*YYYY\.MM\.DD\s*\}\}/gi, `${yyyy}.${mm}.${dd}`);
                 res = res.replace(/\{\{\s*YY\.MM\.DD\s*\}\}/gi, `${yy}.${mm}.${dd}`);
+                res = res.replace(/\{\{\s*YYYYMMDD\s*\}\}/gi, `${yyyy}${mm}${dd}`);
+                res = res.replace(/\{\{\s*YYMMDD\s*\}\}/gi, `${yy}${mm}${dd}`);
+                res = res.replace(/\{\{\s*DDMMYYYY\s*\}\}/gi, `${dd}${mm}${yyyy}`);
+                res = res.replace(/\{\{\s*DDMMYY\s*\}\}/gi, `${dd}${mm}${yy}`);
                 res = res.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
                     const parts = content.split('|');
                     return parts.length > 1 ? parts[1].trim() : parts[0].trim();
@@ -7513,7 +7671,7 @@
                 const finalContent = this.stripInfoVariables(this.tempContent);
                 const finalExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
                 this.copyToClipboard(finalContent);
-                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, this.tempExtraTitles);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, this.tempExtraTitles, this.tempExtraColors);
                 return;
             }
             // Swap matches to only contain real variables for input rendering
@@ -7996,6 +8154,7 @@
             let txtExtrasFiltered = [];
             let htmlTxtExtrasFiltered = [];
             let extraTitlesFiltered = [];
+            let extraColorsFiltered = [];
             
             if (this.tempExtraContents) {
                 this.tempExtraContents.forEach((ext, idx) => {
@@ -8005,6 +8164,7 @@
                             txtExtrasFiltered.push(txtExtras[idx]);
                             htmlTxtExtrasFiltered.push(htmlTxtExtras[idx]);
                             extraTitlesFiltered.push((this.tempExtraTitles && this.tempExtraTitles[idx]) ? this.tempExtraTitles[idx] : "");
+                            extraColorsFiltered.push((this.tempExtraColors && this.tempExtraColors[idx]) ? this.tempExtraColors[idx] : "");
                         }
                     }
                 });
@@ -8015,10 +8175,10 @@
             
             this.copyToClipboard(txt);
             this.closeModal('fillerModal');
-            this.checkAndShowRecommendations(this.currentProcessingTemplateId, htmlTxt, htmlTxtExtras, null, extraTitlesFiltered);
+            this.checkAndShowRecommendations(this.currentProcessingTemplateId, htmlTxt, htmlTxtExtras, null, extraTitlesFiltered, extraColorsFiltered);
         },
 
-        checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null, extraTitles = []) {
+        checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null, extraTitles = [], extraColors = []) {
             if(!templateId && (!this.unplacedInstructions || this.unplacedInstructions.length === 0)) return;
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
             
@@ -8131,13 +8291,15 @@
                 extrasWrapper.style.display = 'flex';
                 extraContents.forEach((ext, idx) => {
                     if (ext.trim() === "") return;
+                    const chosenColor = (extraColors && extraColors[idx] && extraColors[idx] !== '#ffffff') ? extraColors[idx] : '#fff9c4';
+                    const borderColor = (extraColors && extraColors[idx] && extraColors[idx] !== '#ffffff') ? extraColors[idx] : '#fbc02d';
                     extrasWrapper.innerHTML += `
-                        <div style="background: #fff9c4; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d;">
+                        <div style="background: ${chosenColor}; padding: 15px; border-radius: 8px; border: 1px solid ${borderColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h4 style="margin: 0; color: #d83b01;">${extraTitles && extraTitles[idx] ? this.escapeHtml(extraTitles[idx]) : "Extra Content " + (idx + 1)}:</h4>
+                                <h4 style="margin: 0; color: #333;">${extraTitles && extraTitles[idx] ? this.escapeHtml(extraTitles[idx]) : "Extra Content " + (idx + 1)}:</h4>
                                 <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy Content</button>
                             </div>
-                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;">${ext}</div>
+                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 4px;">${ext}</div>
                         </div>
                     `;
                 });
@@ -8630,6 +8792,7 @@
                 state.tempExtraContents = this.tempExtraContents;
                 state.tempExtraTitles = this.tempExtraTitles;
                 state.tempExtraTriggers = this.tempExtraTriggers;
+                state.tempExtraColors = this.tempExtraColors;
                 state.tempInstructions = this.tempInstructions;
                 state.unplacedInstructions = this.unplacedInstructions;
                 
@@ -8682,6 +8845,7 @@
                 this.tempExtraContents = state.tempExtraContents;
                 this.tempExtraTitles = state.tempExtraTitles || [];
                 this.tempExtraTriggers = state.tempExtraTriggers || [];
+                this.tempExtraColors = state.tempExtraColors || [];
                 this.tempInstructions = state.tempInstructions;
                 this.unplacedInstructions = state.unplacedInstructions;
                 
@@ -9262,6 +9426,7 @@
                 this.tempExtraContents = [];
                 this.tempExtraTitles = [];
                 this.tempExtraTriggers = [];
+                this.tempExtraColors = [];
                 this.processAndShowFiller(contentToCopy, id);
                 
                 // Vizuális visszajelzés csak akkor, ha nem nyílt meg a modal (azaz nem volt benne változó)
