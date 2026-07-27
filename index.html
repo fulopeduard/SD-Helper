@@ -8170,8 +8170,8 @@
 
             const allInputs = inputsSide.querySelectorAll('input, select, textarea');
             allInputs.forEach(el => {
-                el.oninput = () => this.updateLivePreview();
-                el.onchange = () => this.updateLivePreview();
+                el.addEventListener('input', () => this.updateLivePreview());
+                el.addEventListener('change', () => this.updateLivePreview());
             });
         },
 
@@ -8504,8 +8504,8 @@
             } else if (key.toLowerCase() === 'gender') {
                 html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>Gender</label>
                         <div class="radio-group">
-                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="m" checked> Male</label>
-                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="f"> Female</label>
+                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="m" checked onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> Male</label>
+                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="f" onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> Female</label>
                         </div></div>`;
             } else if (v) {
                 let labelHtml = this.escapeHtml(v.label);
@@ -8523,34 +8523,38 @@
                                             : [];
 
                         v.options.forEach(opt => {
-                            const isDefault = defaultVals.includes(opt.value);
+                            const val = typeof opt === 'string' ? opt : opt.value;
+                            const lbl = typeof opt === 'string' ? opt : opt.label;
+                            const isDefault = defaultVals.includes(val);
                             const checkedAttr = isDefault ? 'checked' : '';
                             const defaultClass = isDefault ? 'is-default' : '';
                             const badgeHtml = isDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
                             
                             html += `
-                            <div class="checklist-item ${defaultClass}" data-var-key="${key}" data-opt-val="${this.escapeHtml(opt.value)}" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
-                                <input type="checkbox" class="chk_${idPrefix}${key}" value="${this.escapeHtml(opt.value)}" ${checkedAttr} onchange="app.updateLivePreview();">
-                                <span>${this.escapeHtml(opt.label)}</span>
+                            <div class="checklist-item ${defaultClass}" data-var-key="${key}" data-opt-val="${this.escapeHtml(val)}" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
+                                <input type="checkbox" class="chk_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${checkedAttr} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();">
+                                <span>${this.escapeHtml(lbl)}</span>
                                 ${badgeHtml}
                             </div>`;
                         });
                     }
                 } else if (v.type === 'database') {
                     html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value, ${stackIdx})" style="margin-bottom: 5px;">`;
-                    html += `<select class="form-control db-select" id="val_${idPrefix}${key}" size="5" onchange="app.checkDatabaseOther('${key}', ${stackIdx})">`;
+                    html += `<select class="form-control db-select" id="val_${idPrefix}${key}" size="5" onchange="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" onclick="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" oninput="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();">`;
                     html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                     if(Array.isArray(v.options)) {
                         v.options.forEach(opt => {
-                            html += `<option value="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</option>`;
+                            const val = typeof opt === 'string' ? opt : opt.value;
+                            const lbl = typeof opt === 'string' ? opt : opt.label;
+                            html += `<option value="${this.escapeHtml(val)}">${this.escapeHtml(lbl)}</option>`;
                         });
                     }
                     html += `</select>`;
                     html += `<div id="db_other_container_${idPrefix}${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
                                 <label style="font-size: 0.85rem;">New Label:</label>
-                                <input type="text" class="form-control" id="db_new_label_${idPrefix}${key}" style="margin-bottom: 5px;" placeholder="Label">
+                                <input type="text" class="form-control" id="db_new_label_${idPrefix}${key}" style="margin-bottom: 5px;" placeholder="Label" oninput="app.updateLivePreview();" onchange="app.updateLivePreview();">
                                 <label style="font-size: 0.85rem;">New Content:</label>
-                                <textarea class="form-control" id="db_new_content_${idPrefix}${key}" rows="2" placeholder="Content"></textarea>
+                                <textarea class="form-control" id="db_new_content_${idPrefix}${key}" rows="2" placeholder="Content" oninput="app.updateLivePreview();" onchange="app.updateLivePreview();"></textarea>
                              </div>`;
                 } else if (v.type === 'text') {
                     const todayStr = new Date().toISOString().split('T')[0];
@@ -8564,7 +8568,7 @@
                     }
                     const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                     
-                    html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                    html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" oninput="app.updateLivePreview();" onchange="app.updateLivePreview();" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                     
                     if (hasHistory) {
                         html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
@@ -8583,16 +8587,24 @@
                         html += `</div>`;
                     }
                 } else if (v.type === 'select') {
-                    html += `<select class="form-control" id="val_${idPrefix}${key}">`;
-                    v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
+                    html += `<select class="form-control" id="val_${idPrefix}${key}" onchange="app.updateLivePreview();" onclick="app.updateLivePreview();" oninput="app.updateLivePreview();">`;
+                    if (Array.isArray(v.options)) {
+                        v.options.forEach(o => {
+                            const val = typeof o === 'string' ? o : o.value;
+                            const lbl = typeof o === 'string' ? o : o.label;
+                            html += `<option value="${this.escapeHtml(val)}">${this.escapeHtml(lbl)}</option>`;
+                        });
+                    }
                     html += `</select>`;
                 } else if (v.type === 'radio') {
                     html += `<div class="radio-group">`;
-                    v.options.forEach((o, i) => {
-                        const val = typeof o === 'string' ? o : o.value;
-                        const lbl = typeof o === 'string' ? o : o.label;
-                        html += `<label class="radio-label"><input type="radio" name="val_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
-                    });
+                    if (Array.isArray(v.options)) {
+                        v.options.forEach((o, i) => {
+                            const val = typeof o === 'string' ? o : o.value;
+                            const lbl = typeof o === 'string' ? o : o.label;
+                            html += `<label class="radio-label"><input type="radio" name="val_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> ${this.escapeHtml(lbl)}</label>`;
+                        });
+                    }
                     html += `</div>`;
                 }
                 html += `</div>`;
@@ -8608,7 +8620,7 @@
                 }
                 const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                 
-                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" oninput="app.updateLivePreview();" onchange="app.updateLivePreview();" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                 
                 if (hasHistory) {
                     html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
