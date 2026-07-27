@@ -838,6 +838,45 @@
             color: white;
         }
 
+        .taskbar-x-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 900;
+            background-color: #ef4444;
+            color: white !important;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 0;
+            line-height: 1;
+            margin-left: 4px;
+        }
+        .taskbar-x-btn:hover {
+            transform: scale(1.15);
+            background-color: #dc2626;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        .taskbar-x-btn.confirm-yellow {
+            background-color: #facc15;
+            color: #1a1a1a !important;
+            border-color: #ca8a04;
+            animation: pulseYellow 1s infinite;
+        }
+        .taskbar-x-btn.confirm-yellow:hover {
+            background-color: #eab308;
+            box-shadow: 0 0 8px rgba(234, 179, 8, 0.8);
+        }
+        @keyframes pulseYellow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
         .template-link {
             color: var(--view-link-color, var(--primary)) !important;
             text-decoration: underline;
@@ -898,7 +937,13 @@
         .builder-row { display: flex; gap: 5px; margin-bottom: 8px; align-items: flex-start; }
         .builder-row input { flex: 1; font-size: 0.9rem; }
         .builder-row textarea { flex: 2; font-size: 0.85rem; font-family: monospace; height: 36px; min-height: 36px; resize: vertical; }
-        .checklist-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid #eee; border-radius: 4px; transition: background 0.15s; }
+        .checklist-item:hover { background: rgba(0,0,0,0.03); }
+        .checklist-item.is-default { background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(255, 248, 220, 0.4)); border-left: 3px solid #f59e0b; }
+        .checklist-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; transition: all 0.2s; }
+        .checklist-item.is-default input[type="checkbox"] { accent-color: #f59e0b; filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.6)); }
+        .golden-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #ffd700, #f59e0b); color: #000; font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; margin-left: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.2); text-transform: uppercase; letter-spacing: 0.5px; }
+        .checklist-info-icon:hover { transform: scale(1.2); transition: transform 0.2s; }
 
         /* --- EDITOR TOOLBAR --- */
         .editor-toolbar { display: flex; background: #f0f3f5; padding: 5px 8px; border: 1px solid #dbe4ea; border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -2437,7 +2482,7 @@
             display: block;
         }
     </style>
-    <div class="modal" style="width: 1400px; max-width: 95vw; max-height: 98vh; background-color: #cbefff;">
+    <div class="modal" style="width: 1650px; max-width: 98vw; height: 95vh; max-height: 95vh; background-color: #cbefff; display: flex; flex-direction: column;">
         <div class="win-controls">
             <button class="win-btn minimize-btn" onclick="app.minimizeModal('fillerModal')" title="Minimize">
                 <svg viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
@@ -2446,24 +2491,30 @@
                 <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.5"/></svg>
             </button>
         </div>
-        <div class="modal-header" style="margin-top: -10px;">
+        <div class="modal-header" style="margin-top: -10px; flex-shrink: 0;">
             <span id="fillerModalTitle">Fill Details</span>
         </div>
-        <div class="modal-body" style="display: flex; gap: 20px; align-items: flex-start;">
-            <div id="fillerPreviewSide" style="flex: 1; overflow-y: auto; max-height: calc(98vh - 110px); display: none;">
+        <div class="modal-body" style="display: flex; gap: 20px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; margin-bottom: 10px;">
+            <div id="fillerPreviewSide" style="flex: 1; min-height: 0; height: 100%; overflow-y: auto; display: none;">
                 <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
                         <h4 id="fillerPreviewTitle" style="color: var(--primary); margin: 0; font-size: 1.1rem;"></h4>
-                        <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(document.getElementById('fillerPreviewContent').innerText)">📋 Copy</button>
+                        <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(document.getElementById('fillerPreviewContent').innerText))">📋 Copy</button>
                     </div>
                     <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
                 </div>
                 <div id="fillerPreviewExtrasWrapper" style="display: none; flex-direction: column; gap: 15px;"></div>
             </div>
-            <div id="fillerInputsSide" style="flex: 1; overflow-y: auto; max-height: calc(98vh - 110px);">
+            <div id="fillerInputsSide" style="flex: 1; min-width: 0; min-height: 0; height: 100%; overflow-y: auto; padding-right: 8px;">
                 <div id="fillerInputsCard" style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
                     <h4 id="fillerInputsTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; display: none; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;">Fill Details</h4>
                     <div id="fillerInputs"></div>
+                </div>
+            </div>
+            <div id="fillerTemplatesSide" style="width: 360px; min-width: 340px; max-width: 400px; flex-shrink: 0; min-height: 0; height: 100%; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column;">
+                <div style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
+                    <h4 id="fillerTemplatesTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;">📂 Folder Templates</h4>
+                    <div id="fillerTemplatesContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
                 </div>
             </div>
         </div>
@@ -2491,7 +2542,7 @@
                 <div id="recJustCopiedBox" style="flex: 1; background: #e6f2ff; padding: 15px; border-radius: 8px; border: 1px solid #005a9e;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h4 id="recJustCopiedTitle" style="margin: 0; color: #333;">Just Copied:</h4>
-                        <button class="btn btn-sm btn-primary" onclick="app.copyToClipboard(document.getElementById('recCopiedText').innerText)">📋 Copy Again</button>
+                        <button class="btn btn-sm btn-primary" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(document.getElementById('recCopiedText').innerText))">📋 Copy Again</button>
                     </div>
                     <div id="recCopiedText" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto;"></div>
                 </div>
@@ -2990,7 +3041,13 @@
             `;
             
             viewContainer.innerHTML = html;
-            document.getElementById('ticketViewModal').style.display = 'flex';
+            const tvModal = document.getElementById('ticketViewModal');
+            if (tvModal) {
+                this.activeModals = this.activeModals || {};
+                this.activeModals['ticketViewModal'] = { taskId: 'ticket-view-' + t.id, title: '🎫 ' + t.title, templateId: t.id };
+                tvModal.style.zIndex = '3600';
+                tvModal.style.display = 'flex';
+            }
         },
 
         copyTicketField: function(btnElement, textToCopy, templateId = null) {
@@ -3192,6 +3249,7 @@
                 document.getElementById('timeEnd').value = this.data.timeSettings.end;
                 document.getElementById('timeEve').value = this.data.timeSettings.eve;
 
+                this.cleanRecommendedTemplates();
                 this.renderCategories();
                 this.renderTemplates();
                 this.renderQuickTitles();
@@ -3239,7 +3297,7 @@
                             
                             // Ha a beállítás be van kapcsolva, nyissuk meg a kártyát egy pop-up-ban (előnézeti módban)
                             if (this.data.settings && this.data.settings.openLinkInPopup) {
-                                const baseZIndex = 2600;
+                                const baseZIndex = 3600;
                                 const existingModals = document.querySelectorAll('.dynamic-view-modal');
                                 const newZIndex = baseZIndex + (existingModals.length * 10);
                                 
@@ -3356,9 +3414,26 @@
             }
         },
 
+        cleanRecommendedTemplates: function() {
+            if (!this.data || !this.data.templates) return;
+            const validIds = new Set(this.data.templates.filter(t => !t.deleted).map(t => t.id));
+            this.data.templates.forEach(t => {
+                if (t.recommendedIds && Array.isArray(t.recommendedIds)) {
+                    t.recommendedIds = t.recommendedIds.filter(id => validIds.has(id));
+                    if (t.recommendedIds.length === 0) {
+                        delete t.recommendedIds;
+                    }
+                }
+            });
+            if (this.currentRecommendedIds && Array.isArray(this.currentRecommendedIds)) {
+                this.currentRecommendedIds = this.currentRecommendedIds.filter(id => validIds.has(id));
+            }
+        },
+
         saveData: async function() {
     if (!this.user) return;
     this.cleanPrimaryTemplates();
+    this.cleanRecommendedTemplates();
     const userDocRef = doc(db, "users", this.user.uid);
 
     const payload = {
@@ -3600,7 +3675,7 @@
             let safeTitle = this.escapeHtml(title);
 
             const existingModals = document.querySelectorAll('.dynamic-view-modal');
-            const baseZIndex = 2600; // <-- EZT MÓDOSÍTOTTUK 2600-ra
+            const baseZIndex = 3600; // <-- EZT MÓDOSÍTOTTUK 3600-ra
             const newZIndex = baseZIndex + (existingModals.length * 10);
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay dynamic-view-modal';
@@ -6048,7 +6123,7 @@
             safeContent += '</ul>';
 
             const existingModals = document.querySelectorAll('.dynamic-view-modal');
-            const baseZIndex = 2600;
+            const baseZIndex = 3600;
             const newZIndex = baseZIndex + (existingModals.length * 10);
 
             const overlay = document.createElement('div');
@@ -6715,16 +6790,17 @@
             this.renderPinnedTodo();
         },
 
-        toggleMenu: function(e, id) {
+        toggleMenu: function(e, id, context = 'card') {
             e.stopPropagation();
+            const menuId = (context === 'filler') ? `menu-filler-${id}` : `menu-${id}`;
             document.querySelectorAll('.dropdown-menu').forEach(el => {
-                if(el.id !== `menu-${id}`) {
+                if(el.id !== menuId) {
                     el.classList.remove('show');
                     const parentCard = el.closest('.card');
                     if (parentCard) parentCard.classList.remove('menu-open');
                 }
             });
-            const menu = document.getElementById(`menu-${id}`);
+            const menu = document.getElementById(menuId);
             if(menu) {
                 menu.classList.toggle('show');
                 const parentCard = menu.closest('.card');
@@ -6982,6 +7058,7 @@
                 this.updateFolderOptions('inputCategory', 'inputFolder');
                 document.getElementById('inputFolder').value = t.folderId ? t.folderId : "";
 
+                this.cleanRecommendedTemplates();
                 this.currentRecommendedIds = t.recommendedIds ? [...t.recommendedIds] : [];
                 document.getElementById('btnOpenRecSelector').innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
 
@@ -7281,7 +7358,7 @@
 
 			// A modal tartalmának generálásakor adjuk hozzá a .view-content osztályt
 			const existingModals = document.querySelectorAll('.dynamic-view-modal');
-			const baseZIndex = 2600;
+			const baseZIndex = 3600;
 			const newZIndex = baseZIndex + (existingModals.length * 10);
 			const overlay = document.createElement('div');
 			overlay.className = 'modal-overlay dynamic-view-modal';
@@ -7528,9 +7605,42 @@
             }
         },
 
+        useTicketTemplate: function(id, field) {
+            const t = this.data.templates.find(x => x.id === id);
+            if (!t) return;
+            this.currentProcessingTitle = t.title;
+            this.currentProcessingColor = t.color;
+            const textToCopy = (field === 'title') ? t.title : t.content;
+            this.copyToClipboard(textToCopy);
+        },
+
         prepareTemplate: function(id) {
             const t = this.data.templates.find(x => x.id === id);
             if(!t) return;
+            this.activeModals = this.activeModals || {};
+            let isAppend = false;
+            if (this.activeModals['fillerModal']) {
+                let allContent = t.content || '';
+                if (t.extraContents) allContent += ' ' + t.extraContents.join(' ');
+                const matches = allContent.match(/\{\{(.*?)\}\}/g);
+                let hasReal = false;
+                if (matches) {
+                    matches.forEach(m => {
+                        const key = m.replace(/[{}]/g, '').trim().toLowerCase();
+                        if (!key.match(/^info\d*$/) && !key.startsWith('info:') && !key.startsWith('link:')) {
+                            hasReal = true;
+                        }
+                    });
+                }
+                if (!hasReal) {
+                    const finalContent = this.stripInfoVariables(t.content || '');
+                    const finalExtras = t.extraContents ? t.extraContents.map(ext => this.stripInfoVariables(ext)) : [];
+                    this.copyToClipboard(finalContent);
+                    this.checkAndShowRecommendations(id, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, t.extraTitles || [], t.extraColors || []);
+                    return;
+                }
+                isAppend = true;
+            }
             this.currentProcessingTitle = t.title;
             this.currentProcessingColor = t.color;
             if (t.instructions) {
@@ -7544,7 +7654,7 @@
             this.tempExtraTitles = t.extraTitles ? [...t.extraTitles] : [];
             this.tempExtraTriggers = t.extraTriggers ? [...t.extraTriggers] : [];
             this.tempExtraColors = t.extraColors ? [...t.extraColors] : [];
-            this.processAndShowFiller(t.content, id);
+            this.processAndShowFiller(t.content, id, null, isAppend);
         },
 
         renderInstructionHtml: function(text, label) {
@@ -7583,6 +7693,20 @@
             </div>`;
         },
 
+        removeVariableFromText: function(text, m) {
+            if (!text || !m) return text;
+            let result = text;
+            const escapedM = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            let lineRegex = new RegExp(`^\\s*${escapedM}\\s*\\r?\\n`, 'gm');
+            let endRegex = new RegExp(`\\r?\\n\\s*${escapedM}\\s*$`, 'gm');
+            let inlineRegex = new RegExp(`\\s*${escapedM}\\s*`, 'g');
+            
+            if (lineRegex.test(result)) result = result.replace(lineRegex, '');
+            else if (endRegex.test(result)) result = result.replace(endRegex, '');
+            else result = result.replace(inlineRegex, ' ');
+            return result;
+        },
+
         stripInfoVariables: function(text) {
             if (!text) return text;
             let result = text;
@@ -7590,85 +7714,472 @@
             const matches = result.match(regex);
             if (matches) {
                 [...new Set(matches)].forEach(m => {
-                    const escapedM = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    let lineRegex = new RegExp(`^\\s*${escapedM}\\s*\\r?\\n`, 'gm');
-                    let endRegex = new RegExp(`\\r?\\n\\s*${escapedM}\\s*$`, 'gm');
-                    let inlineRegex = new RegExp(`\\s*${escapedM}\\s*`, 'g');
-                    
-                    if (lineRegex.test(result)) result = result.replace(lineRegex, '');
-                    else if (endRegex.test(result)) result = result.replace(endRegex, '');
-                    else result = result.replace(inlineRegex, ' ');
+                    result = this.removeVariableFromText(result, m);
                 });
             }
             return result;
         },
 
-        processAndShowFiller: function(contentToProcess, templateId = null, restoreTaskId = null) {
-            this.activeModals = this.activeModals || {};
-            if (this.activeModals['fillerModal'] && !restoreTaskId) {
-                this.minimizeModal('fillerModal');
+        cleanUnfilledVariablesForCopy: function(text) {
+            if (!text) return "";
+            const lines = text.split(/\r?\n/);
+            const cleanedLines = [];
+            
+            for (let line of lines) {
+                const lineWithoutVars = line.replace(/\{\{[^}]+\}\}/g, '').trim();
+                if (line.includes('{{') && lineWithoutVars === '') {
+                    continue;
+                }
+                
+                let cleanedLine = line.replace(/\{\{[^}]+\}\}/g, '');
+                cleanedLine = cleanedLine.replace(/([^\S\r\n]){2,}/g, '$1');
+                cleanedLine = cleanedLine.replace(/[ \t]+$/, '');
+                cleanedLines.push(cleanedLine);
             }
-            if (this.activeModals['recommendationModal'] && !restoreTaskId) {
-                this.minimizeModal('recommendationModal');
+            
+            return cleanedLines.join('\n');
+        },
+
+        createFillerCardNode: function(t) {
+            const safeTitle = this.escapeHtml(t.title);
+            const bgColor = t.color || '#ffffff';
+            const today = new Date().toISOString().split('T')[0];
+
+            let tagsHtml = '';
+            let tagsListHtml = '';
+            if (t.runTag) {
+                tagsListHtml += `<span style="display:inline-block; background:var(--primary); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">&lt;${this.escapeHtml(t.runTag)}&gt;</span>`;
+            }
+            if (t.tags && t.tags.length > 0) {
+                tagsListHtml += t.tags.map(tag => `<span style="display:inline-block; background:rgba(0,120,212,0.1); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">#${this.escapeHtml(tag)}</span>`).join('');
+            }
+            if (t.isPrimary) {
+                tagsListHtml += `<span style="display:inline-block; background:#fff9c4; color:#f57f17; border:1px solid #fbc02d; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-right:4px; margin-bottom:4px; font-weight:bold;">⭐ Primary</span>`;
+            }
+            if (tagsListHtml) {
+                tagsHtml = `<div style="margin-bottom: 8px;">${tagsListHtml}</div>`;
             }
 
-            this.currentProcessingTemplateId = templateId;
+            const div = document.createElement('div');
+            div.className = 'card';
+            if (t.isTodo) div.classList.add('todo-card');
+            if (t.isDatabase) div.classList.add('database-card');
+            div.style.backgroundColor = bgColor;
+            if (t.isPrimary) {
+                div.style.border = '2px solid #fbc02d';
+                div.style.boxShadow = '0 0 8px rgba(251, 192, 45, 0.35)';
+            }
+            div.setAttribute('data-id', t.id);
+
+            let menu = '';
+            let useBtn = '';
+            let quickViewBtn = '';
+            let mainContentHtml = '';
+
+            if (t.isTodo) {
+                if (t.todoDailyReset && t.lastResetDate !== today) {
+                    if (t.todoItems) t.todoItems.forEach(item => item.checked = false);
+                    t.lastResetDate = today;
+                    this.saveData();
+                }
+
+                let itemsHtml = '<div class="todo-list-container">';
+                if (t.todoItems) {
+                    t.todoItems.forEach((item, itemIdx) => {
+                        const isChecked = item.checked ? 'checked' : '';
+                        const textStyle = item.checked ? 'text-decoration: line-through; color: #888;' : '';
+                        const displayText = this.escapeHtml(item.text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim());
+
+                        itemsHtml += `
+                            <div class="todo-item" onclick="app.toggleTodoItem(event, ${t.id}, ${itemIdx}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">
+                                <input type="checkbox" ${isChecked} onclick="event.stopPropagation(); app.toggleTodoItem(event, ${t.id}, ${itemIdx}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">
+                                <span style="${textStyle}; cursor:pointer;">${displayText}</span>
+                            </div>
+                        `;
+                    });
+                }
+                itemsHtml += '</div>';
+
+                let hasTemplateMarkers = false;
+                if (t.todoItems) {
+                    hasTemplateMarkers = t.todoItems.some(item =>
+                        (item.text.includes('[') && item.text.includes(']')) ||
+                        (item.text.includes('{') && item.text.includes('}'))
+                    );
+                }
+
+                if (hasTemplateMarkers) {
+                    useBtn = `
+                        <div class="card-actions">
+                            <button class="card-btn use" style="width: 100%;" onclick="app.generateTodoTemplate(${t.id})">Generate template</button>
+                        </div>
+                    `;
+                }
+                mainContentHtml = itemsHtml;
+            } else if (t.isTicket) {
+                useBtn = `
+                    <div class="card-actions">
+                        <button class="card-btn use" style="flex: 1; background: var(--primary);" onclick="app.useTicketTemplate(${t.id}, 'title')">Copy Title</button>
+                        <button class="card-btn use" style="flex: 1; background: var(--clone);" onclick="app.useTicketTemplate(${t.id}, 'content')">Copy Desc</button>
+                    </div>
+                `;
+                quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTicketTemplate(${t.id})" title="View Details">👁️</button>`;
+                mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br>${this.escapeHtml(t.content)}`;
+            } else if (t.isDatabase) {
+                let dbItemsHtml = `<div class="db-template-list" id="db-list-filler-${t.id}">`;
+                if (t.dbItems) {
+                    t.dbItems.forEach((item, idx) => {
+                        const label = item.label || item.content;
+                        dbItemsHtml += `<div class="db-template-item" data-idx="${idx}" onclick="app.selectDbItem(${t.id}, ${idx}, 'filler')" style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #000000 !important;">${this.escapeHtml(label)}</div>`;
+                    });
+                }
+                dbItemsHtml += `</div>`;
+
+                mainContentHtml = `
+                    <input type="text" class="form-control" placeholder="🔍 Search database..." onkeyup="app.filterDbTemplate(${t.id}, this.value, 'filler')" style="margin-bottom: 8px; font-size: 0.85rem; padding: 6px;">
+                    ${dbItemsHtml}
+                `;
+
+                useBtn = `
+                    <div class="card-actions">
+                        <button class="card-btn use view-only" style="flex: 1;" onclick="app.viewDbTemplate(${t.id})">View</button>
+                        <button class="card-btn use" style="flex: 1; background: var(--success);" onclick="app.copyDbTemplate(event, ${t.id}, 'filler')">📋 Copy</button>
+                    </div>
+                `;
+                quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewDbTemplate(${t.id})" title="Expand Database">👁️</button>`;
+            } else {
+                let safeContent = this.escapeHtml(t.content || '');
+                safeContent = safeContent.replace(/^---\r?$/gm, '<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border); opacity: 0.6;">');
+                safeContent = safeContent.replace(/^## (.*?)\r?$/gm, '<h2 style="font-size: 1rem; font-weight: bold; color: #444; margin-top: 4px; margin-bottom: 2px;">$1</h2>');
+                safeContent = safeContent.replace(/^# (.*?)\r?$/gm, '<h1 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 2px;">$1</h1>');
+                safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                safeContent = safeContent.replace(/\*(.*?)\*/g, '<i>$1</i>');
+                safeContent = safeContent.replace(/__(.*?)__/g, '<u>$1</u>');
+                safeContent = safeContent.replace(/\[c:(.*?)\](.*?)\[\/c\]/g, '<span style="color:$1">$2</span>');
+                safeContent = safeContent.replace(/\n*(<hr[^>]*>)\n*/gi, '$1');
+                safeContent = safeContent.replace(/\n*(<h1[^>]*>.*?<\/h1>)\n*/gi, '$1');
+                safeContent = safeContent.replace(/\n*(<h2[^>]*>.*?<\/h2>)\n*/gi, '$1');
+                safeContent = safeContent.replace(/\{\{link:(.*?)\}\}/gi, (match, content) => {
+                    const parts = content.split('|');
+                    const displayText = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                    return `<span style="color: var(--primary); text-decoration: none;">${displayText}</span>`;
+                });
+                safeContent = safeContent.replace(/{{(.*?)}}/g, (match, p1) => {
+                    return `<span style="font-weight:bold;">{{${p1}}}</span>`;
+                });
+                mainContentHtml = safeContent;
+
+                if (t.isViewOnly) {
+                    useBtn = `<div class="card-actions"><button class="card-btn use view-only" style="width:100%" onclick="app.viewTemplate(${t.id})">View</button></div>`;
+                } else {
+                    useBtn = `
+                        <div class="card-actions">
+                            <button class="card-btn use" style="flex: 1;" onclick="app.prepareTemplate(${t.id})">Use</button>
+                            <button class="card-btn view-only card-view-btn-bottom" style="flex: 1;" onclick="app.viewTemplate(${t.id})">View</button>
+                        </div>
+                    `;
+                    quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTemplate(${t.id})" title="Quick View">👁️</button>`;
+                }
+            }
+
+            menu = `
+                <button class="card-menu-btn" onclick="app.toggleMenu(event, ${t.id}, 'filler')">⋮</button>
+                <div class="dropdown-menu" id="menu-filler-${t.id}">
+                    <div class="dropdown-item" onclick="app.toggleFavorite(event, ${t.id}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">⭐ ${t.isFavorite ? 'Unpin Favorite' : 'Pin Favorite'}</div>
+                    <div class="dropdown-item" onclick="app.togglePrimaryTemplate(${t.id}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">🌟 ${t.isPrimary ? 'Remove as primary template' : 'Select as primary template'}</div>
+                    <div class="dropdown-item" onclick="app.viewTemplate(${t.id})">👁️ View</div>
+                    <div class="dropdown-item" onclick="app.openEditor(${t.id})">✏️ Edit</div>
+                    <div class="dropdown-item" onclick="app.cloneTemplate(${t.id}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">📄 Create a copy</div>
+                    <div class="dropdown-item" onclick="app.moveSingleTemplate(${t.id}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">📂 Move to folder</div>
+                    <div class="dropdown-item" onclick="app.copyDirectUrl(${t.id})">🌐 Copy Direct URL</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item danger" onclick="app.moveToTrash(${t.id}); app.renderFillerTemplatesSide(app.currentProcessingTemplateId);">🗑️ Delete</div>
+                </div>
+            `;
+
+            div.innerHTML = `
+                ${quickViewBtn}
+                ${menu}
+                <div class="card-hover-trigger" style="flex: 1; display: flex; flex-direction: column; cursor: default;">
+                    <div class="card-title">${safeTitle}</div>
+                    ${tagsHtml}
+                    <div class="card-preview">${mainContentHtml}</div>
+                </div>
+                ${useBtn}
+            `;
+
+            return div;
+        },
+
+        renderFillerTemplatesSide: function(templateId) {
+            const container = document.getElementById('fillerTemplatesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const activeId = templateId || this.currentProcessingTemplateId;
+            const currentT = activeId ? this.data.templates.find(x => x.id === activeId) : null;
+            const targetFolderId = currentT ? (currentT.folderId || null) : (this.data.currentFolderId || null);
+            const targetCat = currentT ? currentT.category : this.data.currentCategory;
+
+            let filtered = this.data.templates.filter(t => {
+                if (t.deleted) return false;
+                if (activeId && t.id === activeId) return false;
+                if (this.fillerStack && this.fillerStack.some(s => s.templateId === t.id)) return false;
+                if (t.isTodo || t.lang === this.data.currentLang) {
+                    if (targetFolderId) {
+                        return t.folderId === targetFolderId;
+                    } else {
+                        if (targetCat && targetCat !== 'All') {
+                            return t.category === targetCat && !t.folderId;
+                        }
+                        return !t.folderId;
+                    }
+                }
+                return false;
+            });
+
+            filtered.sort((a, b) => {
+                const favA = a.isFavorite ? 1 : 0;
+                const favB = b.isFavorite ? 1 : 0;
+                if (favA !== favB) return favB - favA;
+                const orderA = (a.orderIndex !== undefined) ? a.orderIndex : 999999;
+                const orderB = (b.orderIndex !== undefined) ? b.orderIndex : 999999;
+                return orderA - orderB;
+            });
+
+            const sideEl = document.getElementById('fillerTemplatesSide');
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                if (sideEl) sideEl.style.display = 'none';
+                return;
+            }
+
+            if (sideEl) {
+                sideEl.style.display = 'flex';
+                sideEl.style.flexDirection = 'column';
+            }
+
+            filtered.forEach(t => {
+                const cardNode = this.createFillerCardNode(t);
+                container.appendChild(cardNode);
+            });
+        },
+
+        renderFillerStack: function() {
+            if (!this.fillerStack || this.fillerStack.length === 0) return;
+            
+            const previewSide = document.getElementById('fillerPreviewSide');
+            const inputsSide = document.getElementById('fillerInputsSide');
+            if (!previewSide || !inputsSide) return;
+
+            previewSide.style.display = 'none';
+            previewSide.innerHTML = '';
+            
+            inputsSide.style.display = 'flex';
+            inputsSide.style.flexDirection = 'column';
+            inputsSide.style.gap = '14px';
+            inputsSide.style.overflowY = 'auto';
+            inputsSide.style.minHeight = '0';
+            inputsSide.style.height = '100%';
+            inputsSide.innerHTML = '';
+
+            const total = this.fillerStack.length;
+            if (total > 1) {
+                document.getElementById('fillerModalTitle').innerText = `Fill Details (${total} templates)`;
+            } else {
+                document.getElementById('fillerModalTitle').innerText = this.fillerStack[0].title || "Fill Details";
+            }
+
+            this.fillerStack.forEach((item, stackIdx) => {
+                const baseColor = item.color || '#f8f9fa';
+                
+                // --- Preview Section ---
+                let strippedText = this.stripInfoVariables(item.tempContent || '');
+                let previewHtml = this.escapeHtml(strippedText);
+                previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                
+                const removeBtnHtml = total > 1 ? `<button class="btn btn-sm stack-remove-btn" style="background: transparent; color: #f8fafc; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.borderColor='#ef4444';" onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255,255,255,0.25)';" onclick="app.confirmRemoveStackItem(this, ${stackIdx})" title="Remove template from stack">✕</button>` : '';
+
+                let extrasHtml = '';
+                if (item.tempExtraContents && item.tempExtraContents.length > 0) {
+                    const validExtras = item.tempExtraContents.filter(e => e.trim() !== "");
+                    if (validExtras.length > 0) {
+                        item.tempExtraContents.forEach((ext, idx) => {
+                            if (ext.trim() !== "") {
+                                let safeExt = this.escapeHtml(this.stripInfoVariables(ext));
+                                safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                                const extraBgColor = (item.tempExtraColors && item.tempExtraColors[idx] && item.tempExtraColors[idx] !== '#ffffff') ? item.tempExtraColors[idx] : baseColor;
+                                const extraTitle = item.tempExtraTitles && item.tempExtraTitles[idx] ? this.escapeHtml(item.tempExtraTitles[idx]) : "Extra Content " + (idx + 1);
+                                extrasHtml += `
+                                    <div class="extra-preview-block" style="padding: 16px; border-radius: 8px; border: 1px solid ${extraBgColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), ${extraBgColor}; margin-top: 15px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 8px;">
+                                            <h4 style="color: var(--primary); margin: 0; font-size: 1rem;">${extraTitle}</h4>
+                                            <button class="btn btn-sm btn-folder" style="font-size:0.75rem; padding: 2px 8px;" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
+                                        </div>
+                                        <div class="extra-preview-content" data-stack-idx="${stackIdx}" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; color: #333; background: rgba(255,255,255,0.85); padding: 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }
+                }
+
+                const cardIdAttr = stackIdx === 0 ? 'id="fillerPreviewCard"' : '';
+                const titleIdAttr = stackIdx === 0 ? 'id="fillerPreviewTitle"' : '';
+                const contentIdAttr = stackIdx === 0 ? 'id="fillerPreviewContent"' : '';
+                const extrasIdAttr = stackIdx === 0 ? 'id="fillerPreviewExtrasWrapper"' : '';
+
+                // --- Inputs Section ---
+                let inputsContentHtml = '';
+                if (item.unplacedInstructions && item.unplacedInstructions.length > 0) {
+                    item.unplacedInstructions.forEach(instObj => {
+                        inputsContentHtml += this.renderInstructionHtml(instObj.text, "ℹ️");
+                    });
+                }
+                if (item.matches && item.matches.length > 0) {
+                    item.matches.forEach((m, mIdx) => {
+                        inputsContentHtml += this.generateVariableInputHtml(m, mIdx + 1, stackIdx, item.templateId);
+                    });
+                }
+
+                const inCardIdAttr = stackIdx === 0 ? 'id="fillerInputsCard"' : '';
+                const inTitleIdAttr = stackIdx === 0 ? 'id="fillerInputsTitle"' : '';
+                const inContainerIdAttr = stackIdx === 0 ? 'id="fillerInputs"' : '';
+
+                const headerTitleText = `${this.escapeHtml(item.title)}`;
+                const previewBg = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
+                const inputsBg = `linear-gradient(135deg, #f0f7ff 0%, #e1effe 100%)`;
+
+                const previewColHtml = `
+                    <div ${cardIdAttr} class="filler-preview-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${previewBg}; padding: 14px; border-radius: 10px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 6px;">
+                            <span ${titleIdAttr} style="font-size: 0.75rem; font-weight: 700; color: #57534e; text-transform: uppercase; letter-spacing: 0.8px;">PREVIEW</span>
+                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; color: #334155; font-size: 0.85rem; padding: 2px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="Copy Preview Text" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
+                        </div>
+                        <div ${contentIdAttr} class="filler-preview-content" data-stack-idx="${stackIdx}" style="white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.82rem; line-height: 1.45; color: #1e293b; background: rgba(255,255,255,0.85); padding: 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); flex: 1;">${previewHtml}</div>
+                        <div ${extrasIdAttr} class="filler-preview-extras-wrapper" data-stack-idx="${stackIdx}" style="${extrasHtml ? 'display: flex;' : 'display: none;'} flex-direction: column; gap: 12px; margin-top: 12px;">${extrasHtml}</div>
+                    </div>
+                `;
+
+                const inputsColHtml = `
+                    <div ${inCardIdAttr} class="filler-inputs-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${inputsBg}; padding: 14px; border-radius: 10px; border: 1px solid #c2e0ff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <span ${inTitleIdAttr} style="display: none;"></span>
+                        <div ${inContainerIdAttr} class="filler-inputs-section" data-stack-idx="${stackIdx}" style="display: flex; flex-direction: column; gap: 10px; flex: 1;">${inputsContentHtml}</div>
+                    </div>
+                `;
+
+                const unifiedFrameHtml = `
+                    <div class="filler-stack-item-frame" data-stack-idx="${stackIdx}" style="border: 1px solid #94a3b8; border-radius: 10px; margin-bottom: 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #ffffff; flex-shrink: 0;">
+                        <div class="filler-stack-header" style="background: linear-gradient(90deg, #1e293b, #334155); color: #ffffff; padding: 7px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0f172a;">
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; font-weight: 600; letter-spacing: 0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <span style="color: #f8fafc;">${headerTitleText}</span>
+                            </div>
+                            <div style="flex-shrink: 0; margin-left: 12px; display: flex; align-items: center;">
+                                ${removeBtnHtml}
+                            </div>
+                        </div>
+                        <div class="filler-stack-content-row" style="display: flex; gap: 16px; padding: 16px; align-items: stretch;">
+                            ${previewColHtml}
+                            ${inputsColHtml}
+                        </div>
+                    </div>
+                `;
+                inputsSide.insertAdjacentHTML('beforeend', unifiedFrameHtml);
+            });
+
+            const allInputs = inputsSide.querySelectorAll('input, select, textarea');
+            allInputs.forEach(el => {
+                el.oninput = () => this.updateLivePreview();
+                el.onchange = () => this.updateLivePreview();
+            });
+        },
+
+        confirmRemoveStackItem: function(btnEl, stackIdx) {
+            if (btnEl.getAttribute('data-confirming') !== 'true') {
+                btnEl.setAttribute('data-confirming', 'true');
+                btnEl.style.background = '#facc15';
+                btnEl.style.color = '#000000';
+                btnEl.style.transform = 'scale(1.15)';
+                btnEl.style.boxShadow = '0 0 10px rgba(250, 204, 21, 0.8)';
+                btnEl.title = 'Click again to confirm removing this template!';
+                
+                const resetHandler = (e) => {
+                    if (!document.body.contains(btnEl) || !btnEl.contains(e.target)) {
+                        if (document.body.contains(btnEl)) {
+                            btnEl.setAttribute('data-confirming', 'false');
+                            btnEl.style.background = 'transparent';
+                            btnEl.style.color = '#f8fafc';
+                            btnEl.style.borderColor = 'rgba(255,255,255,0.25)';
+                            btnEl.style.transform = 'scale(1)';
+                            btnEl.style.boxShadow = 'none';
+                            btnEl.title = 'Remove template from stack';
+                        }
+                        document.removeEventListener('click', resetHandler, true);
+                    }
+                };
+                setTimeout(() => {
+                    document.addEventListener('click', resetHandler, true);
+                }, 10);
+            } else {
+                this.removeStackItem(stackIdx);
+            }
+        },
+
+        removeStackItem: function(stackIdx) {
+            if (!this.fillerStack || !this.fillerStack[stackIdx]) return;
+            
+            let savedValues = [];
+            this.fillerStack.forEach((item, idx) => {
+                const containerSelector = `.filler-inputs-section[data-stack-idx="${idx}"]`;
+                const container = document.querySelector(containerSelector) || document.getElementById('fillerInputs');
+                if (container) {
+                    const inputs = container.querySelectorAll('input, select, textarea');
+                    savedValues[idx] = Array.from(inputs).map(el => {
+                        if (el.type === 'radio' || el.type === 'checkbox') return el.checked;
+                        return el.value;
+                    });
+                }
+            });
+
+            this.fillerStack.splice(stackIdx, 1);
+            savedValues.splice(stackIdx, 1);
+
+            if (this.fillerStack.length === 0) {
+                this.closeModal('fillerModal');
+                return;
+            }
+            this.currentProcessingTemplateId = this.fillerStack[0].templateId;
+            this.renderFillerStack();
+
+            this.fillerStack.forEach((item, idx) => {
+                const containerSelector = `.filler-inputs-section[data-stack-idx="${idx}"]`;
+                const container = document.querySelector(containerSelector) || document.getElementById('fillerInputs');
+                if (container && savedValues[idx]) {
+                    const inputs = container.querySelectorAll('input, select, textarea');
+                    Array.from(inputs).forEach((el, i) => {
+                        if (savedValues[idx][i] !== undefined) {
+                            if (el.type === 'radio' || el.type === 'checkbox') el.checked = savedValues[idx][i];
+                            else el.value = savedValues[idx][i];
+                        }
+                    });
+                }
+            });
+
+            this.renderFillerTemplatesSide(this.currentProcessingTemplateId);
+            this.updateLivePreview();
+        },
+
+        processAndShowFiller: function(contentToProcess, templateId = null, restoreTaskId = null, isAppend = false) {
+            this.activeModals = this.activeModals || {};
+
+            if (!isAppend) {
+                this.currentProcessingTemplateId = templateId;
+            }
             this.tempContent = contentToProcess;
             
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
             const titleText = t ? t.title : "Fill Details";
-            document.getElementById('fillerModalTitle').innerText = titleText;
-            document.getElementById('fillerInputsTitle').style.display = 'block';
             
-            if (t) {
-                document.getElementById('fillerPreviewTitle').innerText = t.title;
-                let strippedText = this.stripInfoVariables(contentToProcess || t.content || '');
-                let previewHtml = this.escapeHtml(strippedText);
-                previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
-                document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
-                const baseColor = t.color || '#f8f9fa';
-                document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
-                document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
-                
-                const extrasWrapper = document.getElementById('fillerPreviewExtrasWrapper');
-                if (extrasWrapper) {
-                    extrasWrapper.innerHTML = '';
-                    if (this.tempExtraContents && this.tempExtraContents.length > 0) {
-                        const validExtras = this.tempExtraContents.filter(e => e.trim() !== "");
-                        if (validExtras.length > 0) {
-                            extrasWrapper.style.display = 'flex';
-                            this.tempExtraContents.forEach((ext, idx) => {
-                                if (ext.trim() !== "") {
-                                    let safeExt = this.escapeHtml(this.stripInfoVariables(ext));
-                                    safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
-                                    const extraBgColor = (this.tempExtraColors && this.tempExtraColors[idx] && this.tempExtraColors[idx] !== '#ffffff') ? this.tempExtraColors[idx] : baseColor;
-                                    extrasWrapper.innerHTML += `
-                                        <div class="extra-preview-block" style="padding: 20px; border-radius: 8px; border: 1px solid ${extraBgColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${extraBgColor};">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
-                                                <h4 style="color: var(--primary); margin: 0; font-size: 1.1rem;">${this.tempExtraTitles && this.tempExtraTitles[idx] ? this.escapeHtml(this.tempExtraTitles[idx]) : "Extra Content " + (idx + 1)}</h4>
-                                                <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy</button>
-                                            </div>
-                                            <div class="extra-preview-content" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
-                                        </div>
-                                    `;
-                                }
-                            });
-                        } else {
-                            extrasWrapper.style.display = 'none';
-                        }
-                    } else {
-                        extrasWrapper.style.display = 'none';
-                    }
-                }
-                
-                document.getElementById('fillerPreviewSide').style.display = 'flex';
-                document.getElementById('fillerPreviewSide').style.flexDirection = 'column';
-            } else {
-                document.getElementById('fillerPreviewSide').style.display = 'none';
-            }
-            
-
-
             const h = new Date().getHours();
             const s = this.data.timeSettings;
             let str = "";
@@ -7776,23 +8287,32 @@
                 this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, this.tempExtraTitles, this.tempExtraColors);
                 return;
             }
-            // Swap matches to only contain real variables for input rendering
-            matches = realMatches;
 
-            const container = document.getElementById('fillerInputs');
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.innerHTML = '';
-            
-            if (this.unplacedInstructions && this.unplacedInstructions.length > 0) {
-                this.unplacedInstructions.forEach(instObj => {
-                    container.innerHTML += this.renderInstructionHtml(instObj.text, "ℹ️");
-                });
+            if (!isAppend || !this.fillerStack) {
+                this.fillerStack = [];
             }
+            
+            const stackItem = {
+                templateId: templateId,
+                title: titleText,
+                color: (t && t.color) ? t.color : (this.currentProcessingColor || '#f8f9fa'),
+                tempContent: this.tempContent,
+                tempExtraContents: this.tempExtraContents ? [...this.tempExtraContents] : [],
+                tempExtraTitles: this.tempExtraTitles ? [...this.tempExtraTitles] : [],
+                tempExtraColors: this.tempExtraColors ? [...this.tempExtraColors] : [],
+                tempExtraTriggers: this.tempExtraTriggers ? [...this.tempExtraTriggers] : [],
+                tempInstructions: this.tempInstructions ? [...this.tempInstructions] : [],
+                unplacedInstructions: this.unplacedInstructions ? [...this.unplacedInstructions] : [],
+                matches: realMatches
+            };
+            this.fillerStack.push(stackItem);
 
-            matches.forEach(m => {
-                container.innerHTML += this.generateVariableInputHtml(m);
-            });
+            if (!isAppend && this.activeModals['fillerModal'] && !restoreTaskId) {
+                this.minimizeModal('fillerModal');
+            }
+            if (!isAppend && this.activeModals['recommendationModal'] && !restoreTaskId) {
+                this.minimizeModal('recommendationModal');
+            }
 
             this.minimizedModals = this.minimizedModals || {};
             if (this.minimizedModals['fillerModal']) {
@@ -7801,24 +8321,21 @@
             }
             
             this.activeModals['fillerModal'] = {
-                taskId: restoreTaskId || 'task_' + Date.now() + Math.floor(Math.random()*1000),
-                title: titleText
+                taskId: restoreTaskId || (this.activeModals['fillerModal'] ? this.activeModals['fillerModal'].taskId : 'task_' + Date.now() + Math.floor(Math.random()*1000)),
+                title: this.fillerStack.length > 1 ? `Fill Details (${this.fillerStack.length} templates)` : titleText
             };
             
             document.getElementById('fillerModal').style.display = 'flex';
-            
-            const inputsContainer = document.getElementById('fillerInputs');
-            if (inputsContainer) {
-                inputsContainer.oninput = () => this.updateLivePreview();
-                inputsContainer.onchange = () => this.updateLivePreview();
-            }
+            this.renderFillerStack();
+            this.renderFillerTemplatesSide(this.currentProcessingTemplateId);
             this.updateLivePreview();
             
-            setTimeout(() => { const el = container.querySelector('input:not([disabled]), select, textarea'); if(el) el.focus(); }, 50);
+            setTimeout(() => { const container = document.getElementById('fillerInputsSide'); const el = container ? container.querySelector('input:not([disabled]), select, textarea') : null; if(el) el.focus(); }, 50);
         },
 		
-		filterDatabaseOptions: function(key, term) {
-            const select = document.getElementById(`val_${key}`);
+		filterDatabaseOptions: function(key, term, stackIdx = 0) {
+            const idPrefix = stackIdx === 0 ? '' : stackIdx + '_';
+            const select = document.getElementById(`val_${idPrefix}${key}`);
             if (!select) return;
             term = term.toLowerCase();
             const options = select.querySelectorAll('option');
@@ -7829,21 +8346,64 @@
             });
         },
 
-        checkDatabaseOther: function(key) {
-            const select = document.getElementById(`val_${key}`);
-            const container = document.getElementById(`db_other_container_${key}`);
+        checkDatabaseOther: function(key, stackIdx = 0) {
+            const idPrefix = stackIdx === 0 ? '' : stackIdx + '_';
+            const select = document.getElementById(`val_${idPrefix}${key}`);
+            const container = document.getElementById(`db_other_container_${idPrefix}${key}`);
             if (!select || !container) return;
             if (select.value === '__OTHER__') {
                 container.style.display = 'block';
-                setTimeout(() => document.getElementById(`db_new_label_${key}`).focus(), 50);
+                const lbl = document.getElementById(`db_new_label_${idPrefix}${key}`);
+                if (lbl) setTimeout(() => lbl.focus(), 50);
             } else {
                 container.style.display = 'none';
             }
         },
         
-        generateVariableInputHtml: function(m, orderValue = 1) {
+        toggleChecklistDefault: function(event, itemEl) {
+            if (event) event.preventDefault();
+            const tplIdAttr = itemEl.getAttribute('data-template-id');
+            const tplId = tplIdAttr ? parseInt(tplIdAttr) : this.currentProcessingTemplateId;
+            if (!tplId) {
+                alert("Alapértelmezett opciók mentése csak sablon megnyitásakor érhető el!");
+                return;
+            }
+            const tpl = this.data.templates.find(t => t.id === tplId);
+            if (!tpl) return;
+
+            const key = itemEl.getAttribute('data-var-key');
+            const optValue = itemEl.getAttribute('data-opt-val');
+            if (!key || optValue === null) return;
+
+            if (!tpl.defaultChecklistValues) tpl.defaultChecklistValues = {};
+            if (!Array.isArray(tpl.defaultChecklistValues[key])) tpl.defaultChecklistValues[key] = [];
+
+            const isDefault = tpl.defaultChecklistValues[key].includes(optValue);
+            const chk = itemEl.querySelector('input[type="checkbox"]');
+
+            if (isDefault) {
+                tpl.defaultChecklistValues[key] = tpl.defaultChecklistValues[key].filter(v => v !== optValue);
+                itemEl.classList.remove('is-default');
+                const badge = itemEl.querySelector('.golden-badge');
+                if (badge) badge.remove();
+                if (chk) chk.checked = false;
+            } else {
+                tpl.defaultChecklistValues[key].push(optValue);
+                itemEl.classList.add('is-default');
+                if (!itemEl.querySelector('.golden-badge')) {
+                    itemEl.insertAdjacentHTML('beforeend', `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>`);
+                }
+                if (chk) chk.checked = true;
+            }
+
+            this.saveData();
+            this.updateLivePreview();
+        },
+
+        generateVariableInputHtml: function(m, orderValue = 1, stackIdx = 0, templateId = null) {
             const key = m.replace(/[{}]/g, '').trim();
             const v = this.data.customVars ? this.data.customVars.find(cv => cv.key === key) : null;
+            const idPrefix = stackIdx === 0 ? '' : stackIdx + '_';
             let html = '';
 
             const infoMatch = key.match(/^info(\d+)$/i);
@@ -7863,25 +8423,41 @@
             } else if (key.toLowerCase() === 'gender') {
                 html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>Gender</label>
                         <div class="radio-group">
-                            <label class="radio-label"><input type="radio" name="val_gender" value="m" checked> Male</label>
-                            <label class="radio-label"><input type="radio" name="val_gender" value="f"> Female</label>
+                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="m" checked> Male</label>
+                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="f"> Female</label>
                         </div></div>`;
             } else if (v) {
-                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${this.escapeHtml(v.label)}</label>`;
+                let labelHtml = this.escapeHtml(v.label);
+                if (v.type === 'checklist') {
+                    labelHtml += ` <span class="checklist-info-icon" style="cursor: help; font-size: 0.95rem; margin-left: 6px;" title="💡 Tipp: Jobb klikkel kiválaszthatsz egy opciót defaultként ennél a sablonnál (Újra jobb klikk a törléshez).">ℹ️</span>`;
+                }
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label style="display: flex; align-items: center;">${labelHtml}</label>`;
 
                 if (v.type === 'checklist') {
                     if(Array.isArray(v.options)) {
+                        const targetTplId = templateId || this.currentProcessingTemplateId;
+                        const currentTpl = targetTplId ? this.data.templates.find(t => t.id === targetTplId) : null;
+                        const defaultVals = (currentTpl && currentTpl.defaultChecklistValues && Array.isArray(currentTpl.defaultChecklistValues[key])) 
+                                            ? currentTpl.defaultChecklistValues[key] 
+                                            : [];
+
                         v.options.forEach(opt => {
+                            const isDefault = defaultVals.includes(opt.value);
+                            const checkedAttr = isDefault ? 'checked' : '';
+                            const defaultClass = isDefault ? 'is-default' : '';
+                            const badgeHtml = isDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
+                            
                             html += `
-                            <div class="checklist-item">
-                                <input type="checkbox" class="chk_${key}" value="${this.escapeHtml(opt.value)}">
+                            <div class="checklist-item ${defaultClass}" data-var-key="${key}" data-opt-val="${this.escapeHtml(opt.value)}" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
+                                <input type="checkbox" class="chk_${idPrefix}${key}" value="${this.escapeHtml(opt.value)}" ${checkedAttr} onchange="app.updateLivePreview();">
                                 <span>${this.escapeHtml(opt.label)}</span>
+                                ${badgeHtml}
                             </div>`;
                         });
                     }
                 } else if (v.type === 'database') {
-                    html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value)" style="margin-bottom: 5px;">`;
-                    html += `<select class="form-control db-select" id="val_${key}" size="5" onchange="app.checkDatabaseOther('${key}')">`;
+                    html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value, ${stackIdx})" style="margin-bottom: 5px;">`;
+                    html += `<select class="form-control db-select" id="val_${idPrefix}${key}" size="5" onchange="app.checkDatabaseOther('${key}', ${stackIdx})">`;
                     html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                     if(Array.isArray(v.options)) {
                         v.options.forEach(opt => {
@@ -7889,11 +8465,11 @@
                         });
                     }
                     html += `</select>`;
-                    html += `<div id="db_other_container_${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
+                    html += `<div id="db_other_container_${idPrefix}${key}" style="display: none; margin-top: 10px; padding: 10px; background: #f3f2f1; border-radius: 4px; border: 1px solid #ccc;">
                                 <label style="font-size: 0.85rem;">New Label:</label>
-                                <input type="text" class="form-control" id="db_new_label_${key}" style="margin-bottom: 5px;" placeholder="Label">
+                                <input type="text" class="form-control" id="db_new_label_${idPrefix}${key}" style="margin-bottom: 5px;" placeholder="Label">
                                 <label style="font-size: 0.85rem;">New Content:</label>
-                                <textarea class="form-control" id="db_new_content_${key}" rows="2" placeholder="Content"></textarea>
+                                <textarea class="form-control" id="db_new_content_${idPrefix}${key}" rows="2" placeholder="Content"></textarea>
                              </div>`;
                 } else if (v.type === 'text') {
                     const todayStr = new Date().toISOString().split('T')[0];
@@ -7907,7 +8483,7 @@
                     }
                     const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                     
-                    html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                    html += `<textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                     
                     if (hasHistory) {
                         html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
@@ -7918,15 +8494,15 @@
                             const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
                             const isFirst = (i === 0);
                             const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
-                            const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                            const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${idPrefix}${key}_${i}');" title="Delete suggestion">&times;</span>`;
                             const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
                             
-                            html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
+                            html += `<button type="button" id="hist_btn_${idPrefix}${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${idPrefix}${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
                         });
                         html += `</div>`;
                     }
                 } else if (v.type === 'select') {
-                    html += `<select class="form-control" id="val_${key}">`;
+                    html += `<select class="form-control" id="val_${idPrefix}${key}">`;
                     v.options.forEach(o => html += `<option value="${this.escapeHtml(o)}">${this.escapeHtml(o)}</option>`);
                     html += `</select>`;
                 } else if (v.type === 'radio') {
@@ -7934,7 +8510,7 @@
                     v.options.forEach((o, i) => {
                         const val = typeof o === 'string' ? o : o.value;
                         const lbl = typeof o === 'string' ? o : o.label;
-                        html += `<label class="radio-label"><input type="radio" name="val_${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
+                        html += `<label class="radio-label"><input type="radio" name="val_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''}> ${this.escapeHtml(lbl)}</label>`;
                     });
                     html += `</div>`;
                 }
@@ -7951,7 +8527,7 @@
                 }
                 const prefillVal = this.data.settings.autoFillVars !== false ? lastVal : "";
                 
-                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                 
                 if (hasHistory) {
                     html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
@@ -7962,10 +8538,10 @@
                         const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
                         const isFirst = (i === 0);
                         const displayStyle = (isFirst && this.data.settings.autoFillVars !== false) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
-                        const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                        const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${idPrefix}${key}_${i}');" title="Delete suggestion">&times;</span>`;
                         const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
                         
-                        html += `<button type="button" id="hist_btn_${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
+                        html += `<button type="button" id="hist_btn_${idPrefix}${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${idPrefix}${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
                     });
                     html += `</div>`;
                 }
@@ -7974,161 +8550,197 @@
             return html;
         },
 		
-        updateLivePreview: function() {
-            if (!this.tempContent) return;
+        getVariableValueFromUI: function(key, stackIdx = 0) {
+            const idPrefix = stackIdx === 0 ? '' : stackIdx + '_';
+            const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
+            if (isInfo) return "";
             
-            let safeTxt = this.escapeHtml(this.tempContent);
-            let safeTxtExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.escapeHtml(ext)) : [];
-            
-            const regex = /\{\{([^}]+)\}\}/g;
-                let iteration = 0;
-            let processedMatches = new Set();
-            let mainMatches = new Set();
-            
-            while (iteration < 10) {
-                iteration++;
-                let currentMatches = [];
-                let m = safeTxt.match(regex);
-                if (m) {
-                    currentMatches.push(...m);
-                    m.forEach(x => mainMatches.add(x));
+            if (key.toLowerCase() === 'gender') {
+                const g = document.querySelector(`input[name="val_${idPrefix}gender"]:checked`) || document.querySelector('input[name="val_gender"]:checked');
+                if (g) {
+                    if (this.data.currentLang === 'de') return (g.value === 'm') ? "Herr" : "Frau";
+                    else return (g.value === 'm') ? "Mr." : "Ms.";
                 }
-                let currentMainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
+                return "";
+            }
+            
+            const checkboxes = document.querySelectorAll(`.chk_${idPrefix}${key}:checked`);
+            if (checkboxes.length > 0) {
+                let values = [];
+                checkboxes.forEach(chk => values.push(chk.value));
+                return values.join('\n');
+            }
+            const fallbackCheckboxes = stackIdx !== 0 ? document.querySelectorAll(`.chk_${key}:checked`) : null;
+            if (fallbackCheckboxes && fallbackCheckboxes.length > 0) {
+                let values = [];
+                fallbackCheckboxes.forEach(chk => values.push(chk.value));
+                return values.join('\n');
+            }
+            
+            const radio = document.querySelector(`input[name="val_${idPrefix}${key}"]:checked`) || document.querySelector(`input[name="val_${key}"]:checked`);
+            if (radio) return radio.value;
+            
+            const el = document.getElementById(`val_${idPrefix}${key}`) || document.getElementById(`val_${key}`);
+            if (el) {
+                if (el.classList.contains('db-select') && el.value === '__OTHER__') {
+                    const newLabelEl = document.getElementById(`db_new_label_${idPrefix}${key}`) || document.getElementById(`db_new_label_${key}`);
+                    const newContentEl = document.getElementById(`db_new_content_${idPrefix}${key}`) || document.getElementById(`db_new_content_${key}`);
+                    const newLabel = newLabelEl ? newLabelEl.value.trim() : "";
+                    const newContent = newContentEl ? newContentEl.value : "";
+                    const val = newContent || newLabel;
+                    const varObj = this.data.customVars ? this.data.customVars.find(cv => cv.key === key) : null;
+                    if (varObj && newLabel) {
+                        if (!varObj.options) varObj.options = [];
+                        if (!varObj.options.some(o => o.label === newLabel)) {
+                            varObj.options.push({ label: newLabel, value: val });
+                            this.saveData();
+                            if (this.data.currentMode === 'variables') this.renderVariables();
+                        }
+                    }
+                    return val;
+                }
+                return el.value;
+            }
+            return "";
+        },
 
-                safeTxtExtras.forEach((t, idx) => {
-                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
-                    if (!trigger || currentMainTextLower.includes(trigger)) {
-                        let em = t.match(regex);
-                        if (em) currentMatches.push(...em);
+        updateLivePreview: function() {
+            if (!this.fillerStack || this.fillerStack.length === 0) {
+                if (this.tempContent) {
+                    this.fillerStack = [{
+                        templateId: this.currentProcessingTemplateId,
+                        title: "Template",
+                        tempContent: this.tempContent,
+                        tempExtraContents: this.tempExtraContents || [],
+                        tempExtraTitles: this.tempExtraTitles || [],
+                        tempExtraColors: this.tempExtraColors || [],
+                        tempExtraTriggers: this.tempExtraTriggers || []
+                    }];
+                } else {
+                    return;
+                }
+            }
+
+            this.fillerStack.forEach((item, stackIdx) => {
+                let txt = item.tempContent || "";
+                let txtExtras = item.tempExtraContents ? [...item.tempExtraContents] : [];
+                let safeTxt = this.escapeHtml(txt);
+                let safeTxtExtras = txtExtras.map(ext => this.escapeHtml(ext));
+
+                const regex = /\{\{([^}]+)\}\}/g;
+                let iteration = 0;
+                let processedMatches = new Set();
+                let mainMatches = new Set();
+
+                while (iteration < 10) {
+                    iteration++;
+                    let currentMatches = [];
+                    let m = safeTxt.match(regex);
+                    if (m) {
+                        currentMatches.push(...m);
+                        m.forEach(x => mainMatches.add(x));
                     }
-                });
-                
-                currentMatches = [...new Set(currentMatches)].filter(x => !processedMatches.has(x));
-                if (currentMatches.length === 0) break;
-                
-                currentMatches.forEach(m => {
-                    processedMatches.add(m);
-                    const key = m.replace(/[{}]/g, '').trim();
-                    const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
-                    
-                    const existingBox = document.querySelector(`#fillerInputs .variable-box[data-key="${key}"]`);
-                    let isMain = mainMatches.has(m);
-                    
-                    if (!existingBox) {
-                        const html = this.generateVariableInputHtml(m, isMain ? 1 : 2);
-                        const container = document.getElementById('fillerInputs');
-                        if (container && html) {
-                            container.style.display = 'flex';
-                            container.style.flexDirection = 'column';
-                            container.insertAdjacentHTML('beforeend', html);
+                    let currentMainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
+
+                    safeTxtExtras.forEach((t, idx) => {
+                        let trigger = (item.tempExtraTriggers && item.tempExtraTriggers[idx]) ? item.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                        if (!trigger || currentMainTextLower.includes(trigger)) {
+                            let em = t.match(regex);
+                            if (em) currentMatches.push(...em);
                         }
-                    } else {
-                        existingBox.style.order = isMain ? '1' : '2';
-                    }
-                    
-                    let val = "";
-                    if (isInfo) {
-                        val = "";
-                    } else if (key.toLowerCase() === 'gender') {
-                        const g = document.querySelector('input[name="val_gender"]:checked');
-                        if (g) {
-                            if (this.data.currentLang === 'de') val = (g.value === 'm') ? "Herr" : "Frau";
-                            else val = (g.value === 'm') ? "Mr." : "Ms.";
-                        }
-                    } else {
-                        const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
-                        if (checkboxes.length > 0) {
-                            let values = [];
-                            checkboxes.forEach(chk => values.push(chk.value));
-                            val = values.join('\n');
-                        } else {
-                            const radio = document.querySelector(`input[name="val_${key}"]:checked`);
-                            if (radio) {
-                                val = radio.value;
+                    });
+
+                    currentMatches = [...new Set(currentMatches)].filter(x => !processedMatches.has(x));
+                    if (currentMatches.length === 0) break;
+
+                    currentMatches.forEach(matchStr => {
+                        processedMatches.add(matchStr);
+                        const key = matchStr.replace(/[{}]/g, '').trim();
+                        const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
+                        const isMain = mainMatches.has(matchStr);
+
+                        const containerSelector = `.filler-inputs-section[data-stack-idx="${stackIdx}"]`;
+                        const container = document.querySelector(containerSelector) || document.getElementById('fillerInputs');
+                        if (container) {
+                            const existingBox = container.querySelector(`.variable-box[data-key="${key}"]`);
+                            if (!existingBox) {
+                                const html = this.generateVariableInputHtml(matchStr, isMain ? 1 : 2, stackIdx, item.templateId);
+                                container.style.display = 'flex';
+                                container.style.flexDirection = 'column';
+                                container.insertAdjacentHTML('beforeend', html);
                             } else {
-                                const el = document.getElementById(`val_${key}`);
-                                if (el) {
-                                    if (el.classList.contains('db-select') && el.value === '__OTHER__') {
-                                        const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
-                                        const newContent = document.getElementById(`db_new_content_${key}`).value;
-                                        val = newContent || newLabel;
-                                    } else {
-                                        val = el.value;
-                                    }
+                                existingBox.style.order = isMain ? '1' : '2';
+                            }
+                        }
+
+                        const val = this.getVariableValueFromUI(key, stackIdx);
+                        const safeM = matchStr;
+                        const escapedVal = this.escapeHtml(val);
+                        let replaceText = "";
+                        if (!isInfo) {
+                            replaceText = val ? `<span style="font-weight:bold; color:red;">${escapedVal}</span>` : `<b>${safeM}</b>`;
+                        }
+
+                        safeTxt = safeTxt.split(safeM).join(replaceText);
+                        safeTxtExtras = safeTxtExtras.map(ext => ext.split(safeM).join(replaceText));
+                    });
+                }
+
+                const processedKeys = new Set([...processedMatches].map(m => m.replace(/[{}]/g, '').trim()));
+                const containerSelector = `.filler-inputs-section[data-stack-idx="${stackIdx}"]`;
+                const container = document.querySelector(containerSelector) || document.getElementById('fillerInputs');
+                if (container) {
+                    const boxes = container.querySelectorAll('.variable-box');
+                    boxes.forEach(box => {
+                        const boxKey = box.getAttribute('data-key');
+                        if (boxKey) {
+                            box.style.display = processedKeys.has(boxKey) ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                const previewContent = document.querySelector(`.filler-preview-content[data-stack-idx="${stackIdx}"]`) || document.getElementById('fillerPreviewContent');
+                if (previewContent) {
+                    previewContent.innerHTML = this.stripInfoVariables(safeTxt);
+                }
+
+                const extrasWrapper = document.querySelector(`.filler-preview-extras-wrapper[data-stack-idx="${stackIdx}"]`) || document.getElementById('fillerPreviewExtrasWrapper');
+                if (extrasWrapper && safeTxtExtras.length > 0) {
+                    const extraContentDivs = extrasWrapper.querySelectorAll('.extra-preview-content');
+                    let mainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
+
+                    extraContentDivs.forEach(div => {
+                        const idx = parseInt(div.getAttribute('data-idx'));
+                        if (!isNaN(idx)) {
+                            const ext = safeTxtExtras[idx];
+                            if (ext !== undefined) {
+                                let trigger = (item.tempExtraTriggers && item.tempExtraTriggers[idx]) ? item.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                                if (trigger && !mainTextLower.includes(trigger)) {
+                                    div.closest('.extra-preview-block').style.display = 'none';
+                                } else {
+                                    div.closest('.extra-preview-block').style.display = 'block';
+                                    div.innerHTML = this.stripInfoVariables(ext);
                                 }
                             }
                         }
-                    }
-                    
-                    const safeM = m;
-                    const escapedVal = this.escapeHtml(val);
-                    let replaceText = "";
-                    if (!isInfo) {
-                        replaceText = val ? `<span style="font-weight:bold; color:red;">${escapedVal}</span>` : `<b>${safeM}</b>`;
-                    }
-                    
-                    safeTxt = safeTxt.split(safeM).join(replaceText);
-                    safeTxtExtras = safeTxtExtras.map(ext => ext.split(safeM).join(replaceText));
-                });
-            }
-            
-            const processedKeys = new Set([...processedMatches].map(m => m.replace(/[{}]/g, '').trim()));
-            const container = document.getElementById('fillerInputs');
-            if (container) {
-                const boxes = container.querySelectorAll('.variable-box');
-                boxes.forEach(box => {
-                    const boxKey = box.getAttribute('data-key');
-                    if (boxKey) {
-                        if (processedKeys.has(boxKey)) {
-                            box.style.display = 'block';
-                        } else {
-                            box.style.display = 'none';
-                        }
-                    }
-                });
-            }
-            
-            const previewContent = document.getElementById('fillerPreviewContent');
-            if (previewContent) {
-                previewContent.innerHTML = this.stripInfoVariables(safeTxt);
-            }
-            
-            const extrasWrapper = document.getElementById('fillerPreviewExtrasWrapper');
-            if (extrasWrapper && safeTxtExtras.length > 0) {
-                const extraContentDivs = extrasWrapper.querySelectorAll('.extra-preview-content');
-                let mainTextLower = this.stripInfoVariables(safeTxt).replace(/<[^>]*>/g, '').replace(/\{\{.*?\}\}/g, '').toLowerCase();
-                
-                extraContentDivs.forEach(div => {
-                    const idx = parseInt(div.getAttribute('data-idx'));
-                    if (!isNaN(idx)) {
-                        const ext = safeTxtExtras[idx];
-                        if (ext !== undefined) {
-                            let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
-                            
-                            if (trigger && !mainTextLower.includes(trigger)) {
-                                div.closest('.extra-preview-block').style.display = 'none';
-                            } else {
-                                div.closest('.extra-preview-block').style.display = 'block';
-                                div.innerHTML = this.stripInfoVariables(ext);
-                            }
-                        }
-                    }
-                });
-            }
+                    });
+                }
+            });
         },
-		
-        processAndCopy: function() {
-            let txt = this.tempContent;
-            let txtExtras = this.tempExtraContents ? [...this.tempExtraContents] : [];
-            
+
+        processStackItemForCopy: function(stackIdx, saveHistory = false) {
+            if (!this.fillerStack || !this.fillerStack[stackIdx]) return null;
+            const item = this.fillerStack[stackIdx];
+            let txt = item.tempContent || "";
+            let txtExtras = item.tempExtraContents ? [...item.tempExtraContents] : [];
             let htmlTxt = this.escapeHtml(txt);
             let htmlTxtExtras = txtExtras.map(ext => this.escapeHtml(ext));
-            
+
             const regex = /\{\{([^}]+)\}\}/g;
             let historyChanged = false;
             let iteration = 0;
             let processedMatches = new Set();
-            
+
             while (iteration < 10) {
                 iteration++;
                 let currentMatches = [];
@@ -8137,82 +8749,48 @@
                 let currentMainTextLower = txt.replace(/\{\{.*?\}\}/g, '').toLowerCase();
 
                 htmlTxtExtras.forEach((t, idx) => {
-                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+                    let trigger = (item.tempExtraTriggers && item.tempExtraTriggers[idx]) ? item.tempExtraTriggers[idx].trim().toLowerCase() : "";
                     if (!trigger || currentMainTextLower.includes(trigger)) {
                         let em = t.match(regex);
                         if (em) currentMatches.push(...em);
                     }
                 });
-                
+
                 currentMatches = [...new Set(currentMatches)].filter(x => !processedMatches.has(x));
                 if (currentMatches.length === 0) break;
 
-                currentMatches.forEach(m => {
-                    processedMatches.add(m);
-                    const key = m.replace(/[{}]/g, '').trim();
+                currentMatches.forEach(matchStr => {
+                    processedMatches.add(matchStr);
+                    const key = matchStr.replace(/[{}]/g, '').trim();
                     const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
-                    let val = "";
+                    const val = this.getVariableValueFromUI(key, stackIdx);
 
                     if (isInfo) {
-                        val = "";
-                    } else if (key.toLowerCase() === 'gender') {
-                        const gElement = document.querySelector('input[name="val_gender"]:checked');
-                        if (gElement) {
-                            const g = gElement.value;
-                            if (this.data.currentLang === 'de') val = (g === 'm') ? "Herr" : "Frau";
-                            else val = (g === 'm') ? "Mr." : "Ms.";
-                        }
+                        txt = this.removeVariableFromText(txt, matchStr);
+                        txtExtras = txtExtras.map(ext => this.removeVariableFromText(ext, matchStr));
+                        const safeM = this.escapeHtml(matchStr);
+                        htmlTxt = this.removeVariableFromText(htmlTxt, safeM);
+                        htmlTxtExtras = htmlTxtExtras.map(ext => this.removeVariableFromText(ext, safeM));
                     } else {
-                        const checkboxes = document.querySelectorAll(`.chk_${key}:checked`);
-                        if(checkboxes.length > 0) {
-                            let values = [];
-                            checkboxes.forEach(chk => values.push(chk.value));
-                            val = values.join('\n');
+                        if (!val) {
+                            txt = this.removeVariableFromText(txt, matchStr);
+                            txtExtras = txtExtras.map(ext => this.removeVariableFromText(ext, matchStr));
                         } else {
-                            const radio = document.querySelector(`input[name="val_${key}"]:checked`);
-                            if (radio) {
-                                val = radio.value;
-                            } else {
-                                const el = document.getElementById(`val_${key}`);
-                                if (el) {
-                                    if (el.classList.contains('db-select') && el.value === '__OTHER__') {
-                                        const newLabel = document.getElementById(`db_new_label_${key}`).value.trim();
-                                        const newContent = document.getElementById(`db_new_content_${key}`).value;
-                                        val = newContent || newLabel;
-                                        const varObj = this.data.customVars.find(cv => cv.key === key);
-                                        if (varObj && newLabel) {
-                                            if (!varObj.options) varObj.options = [];
-                                            if (!varObj.options.some(o => o.label === newLabel)) {
-                                                varObj.options.push({ label: newLabel, value: val });
-                                                this.saveData(); 
-                                                if (this.data.currentMode === 'variables') this.renderVariables();
-                                            }
-                                        }
-                                    } else {
-                                        val = el.value;
-                                    }
-                                }
-                            }
+                            txt = txt.split(matchStr).join(val);
+                            txtExtras = txtExtras.map(ext => ext.split(matchStr).join(val));
                         }
-                    }
-                    
-                    if (isInfo) {
-                        txt = txt.split(m).join('');
-                        txtExtras = txtExtras.map(ext => ext.split(m).join(''));
-                        
-                        const safeM = this.escapeHtml(m);
-                        htmlTxt = htmlTxt.split(safeM).join('');
-                        htmlTxtExtras = htmlTxtExtras.map(ext => ext.split(safeM).join(''));
-                    } else {
-                        txt = txt.split(m).join(val);
-                        txtExtras = txtExtras.map(ext => ext.split(m).join(val));
-                        
-                        const safeM = this.escapeHtml(m);
-                        const replaceHtml = val ? `<span style="font-weight:bold; color:red;">${this.escapeHtml(val)}</span>` : "";
-                        htmlTxt = htmlTxt.split(safeM).join(replaceHtml);
-                        htmlTxtExtras = htmlTxtExtras.map(ext => ext.split(safeM).join(replaceHtml));
-                        
-                        if (val && val.trim() !== '') {
+
+                        const safeM = this.escapeHtml(matchStr);
+                        if (!val) {
+                            htmlTxt = this.removeVariableFromText(htmlTxt, safeM);
+                            htmlTxtExtras = htmlTxtExtras.map(ext => this.removeVariableFromText(ext, safeM));
+                        } else {
+                            const replaceHtml = `<span style="font-weight:bold; color:red;">${this.escapeHtml(val)}</span>`;
+                            htmlTxt = htmlTxt.split(safeM).join(replaceHtml);
+                            htmlTxtExtras = htmlTxtExtras.map(ext => ext.split(safeM).join(replaceHtml));
+                        }
+
+                        if (saveHistory && val && val.trim() !== '') {
                             const isSystem = key.toLowerCase() === 'gender';
                             if (!isSystem) {
                                 const today = new Date().toISOString().split('T')[0];
@@ -8222,17 +8800,13 @@
                                 if (!this.data.variableHistory.values[key]) {
                                     this.data.variableHistory.values[key] = [];
                                 }
-                                
-                                this.data.variableHistory.values[key] = this.data.variableHistory.values[key].filter(item => {
-                                    const itemVal = typeof item === 'string' ? item : item.v;
-                                    return itemVal !== val;
+                                this.data.variableHistory.values[key] = this.data.variableHistory.values[key].filter(itemVal => {
+                                    const vStr = typeof itemVal === 'string' ? itemVal : itemVal.v;
+                                    return vStr !== val;
                                 });
-                                
                                 const now = new Date();
                                 const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-                                
                                 this.data.variableHistory.values[key].unshift({ v: val, t: timeStr });
-                                
                                 const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
                                 if (varLimit === 0) {
                                     this.data.variableHistory.values[key] = [];
@@ -8245,43 +8819,93 @@
                     }
                 });
             }
-            
-            // Remove the old `stillHasVars` check that caused modal to reload! We resolved everything above!
-            
+
             if (historyChanged) this.saveData();
-            
+
             txt = this.stripInfoVariables(txt);
             let mainTextLower = txt.replace(/\{\{.*?\}\}/g, '').toLowerCase();
-            
+
             let txtExtrasFiltered = [];
             let htmlTxtExtrasFiltered = [];
             let extraTitlesFiltered = [];
             let extraColorsFiltered = [];
-            
-            if (this.tempExtraContents) {
-                this.tempExtraContents.forEach((ext, idx) => {
-                    let trigger = (this.tempExtraTriggers && this.tempExtraTriggers[idx]) ? this.tempExtraTriggers[idx].trim().toLowerCase() : "";
+
+            if (item.tempExtraContents) {
+                item.tempExtraContents.forEach((ext, idx) => {
+                    let trigger = (item.tempExtraTriggers && item.tempExtraTriggers[idx]) ? item.tempExtraTriggers[idx].trim().toLowerCase() : "";
                     if (!trigger || mainTextLower.includes(trigger)) {
                         if (txtExtras[idx] !== undefined) {
                             txtExtrasFiltered.push(txtExtras[idx]);
                             htmlTxtExtrasFiltered.push(htmlTxtExtras[idx]);
-                            extraTitlesFiltered.push((this.tempExtraTitles && this.tempExtraTitles[idx]) ? this.tempExtraTitles[idx] : "");
-                            extraColorsFiltered.push((this.tempExtraColors && this.tempExtraColors[idx]) ? this.tempExtraColors[idx] : "");
+                            extraTitlesFiltered.push((item.tempExtraTitles && item.tempExtraTitles[idx]) ? item.tempExtraTitles[idx] : "");
+                            extraColorsFiltered.push((item.tempExtraColors && item.tempExtraColors[idx]) ? item.tempExtraColors[idx] : "");
                         }
                     }
                 });
             }
-            
-            txtExtras = txtExtrasFiltered;
-            htmlTxtExtras = htmlTxtExtrasFiltered;
-            
-            this.copyToClipboard(txt);
+
+            return {
+                text: txt,
+                extras: txtExtrasFiltered,
+                htmlText: htmlTxt,
+                htmlExtras: htmlTxtExtrasFiltered,
+                extraTitles: extraTitlesFiltered,
+                extraColors: extraColorsFiltered
+            };
+        },
+
+        copyStackItem: function(stackIdx) {
+            const res = this.processStackItemForCopy(stackIdx, true);
+            if (res) {
+                let fullText = this.cleanUnfilledVariablesForCopy(res.text);
+                if (res.extras && res.extras.length > 0) {
+                    res.extras.forEach(ext => {
+                        const cleanExt = this.cleanUnfilledVariablesForCopy(ext);
+                        if (cleanExt.trim() !== '') {
+                            fullText += "\n\n" + cleanExt;
+                        }
+                    });
+                }
+                this.copyToClipboard(fullText);
+            }
+        },
+
+        processAndCopy: function() {
+            if (!this.fillerStack || this.fillerStack.length === 0) return;
+            let combinedTexts = [];
+            let lastRes = null;
+
+            this.fillerStack.forEach((item, idx) => {
+                const res = this.processStackItemForCopy(idx, true);
+                if (res) {
+                    lastRes = res;
+                    let fullText = this.cleanUnfilledVariablesForCopy(res.text);
+                    if (res.extras && res.extras.length > 0) {
+                        res.extras.forEach(ext => {
+                            const cleanExt = this.cleanUnfilledVariablesForCopy(ext);
+                            if (cleanExt.trim() !== '') {
+                                fullText += "\n\n" + cleanExt;
+                            }
+                        });
+                    }
+                    if (fullText.trim() !== '') {
+                        combinedTexts.push(fullText.trim());
+                    }
+                }
+            });
+
+            if (combinedTexts.length > 0) {
+                this.copyToClipboard(combinedTexts.join("\n\n---\n\n"));
+            }
             this.closeModal('fillerModal');
-            this.checkAndShowRecommendations(this.currentProcessingTemplateId, htmlTxt, htmlTxtExtras, null, extraTitlesFiltered, extraColorsFiltered);
+            if (this.fillerStack.length === 1 && lastRes) {
+                this.checkAndShowRecommendations(this.fillerStack[0].templateId, lastRes.htmlText, lastRes.htmlExtras, null, lastRes.extraTitles, lastRes.extraColors);
+            }
         },
 
         checkAndShowRecommendations: function(templateId, copiedText, extraContents = [], restoreTaskId = null, extraTitles = [], extraColors = []) {
             if(!templateId && (!this.unplacedInstructions || this.unplacedInstructions.length === 0)) return;
+            this.cleanRecommendedTemplates();
             const t = templateId ? this.data.templates.find(x => x.id === templateId) : null;
             
             const hasRecs = t && t.recommendedIds && t.recommendedIds.length > 0;
@@ -8399,7 +9023,7 @@
                         <div style="background: ${chosenColor}; padding: 15px; border-radius: 8px; border: 1px solid ${borderColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h4 style="margin: 0; color: #333;">${extraTitles && extraTitles[idx] ? this.escapeHtml(extraTitles[idx]) : "Extra Content " + (idx + 1)}:</h4>
-                                <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(this.parentElement.nextElementSibling.innerText)">📋 Copy Content</button>
+                                <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋 Copy Content</button>
                             </div>
                             <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 4px;">${ext}</div>
                         </div>
@@ -8519,6 +9143,7 @@
         },
 		
 		openRecommendationSelectorModal: function() {
+            this.cleanRecommendedTemplates();
             document.getElementById('searchRecSelector').value = '';
             this.renderRecommendationSelectorList();
             document.getElementById('recommendationSelectorModal').style.display = 'flex';
@@ -8880,6 +9505,13 @@
 
         initBackdropClose: function() {
             document.addEventListener('click', (event) => {
+                if (!event.target.closest('.taskbar-x-btn')) {
+                    if (this.taskbarConfirmStates && Object.keys(this.taskbarConfirmStates).length > 0) {
+                        this.taskbarConfirmStates = {};
+                        this.renderTaskbar();
+                    }
+                }
+
                 const closeBtn = event.target.closest('#floating-backdrop-close-btn');
                 if (closeBtn) {
                     event.stopPropagation();
@@ -8970,6 +9602,7 @@
                 state.tempExtraColors = this.tempExtraColors;
                 state.tempInstructions = this.tempInstructions;
                 state.unplacedInstructions = this.unplacedInstructions;
+                state.fillerStack = this.fillerStack;
                 
                 const container = document.getElementById('fillerInputs');
                 state.html = container.innerHTML;
@@ -9001,6 +9634,9 @@
 
         restoreModal: function(taskId) {
             this.minimizedStates = this.minimizedStates || {};
+            this.taskbarConfirmStates = this.taskbarConfirmStates || {};
+            delete this.taskbarConfirmStates[taskId];
+            
             const state = this.minimizedStates[taskId];
             if (!state) return;
             
@@ -9023,33 +9659,50 @@
                 this.tempExtraColors = state.tempExtraColors || [];
                 this.tempInstructions = state.tempInstructions;
                 this.unplacedInstructions = state.unplacedInstructions;
+                this.fillerStack = state.fillerStack || null;
                 
                 document.getElementById('fillerModalTitle').innerText = state.title;
                 document.getElementById('fillerInputsTitle').style.display = 'block';
                 
-                const t = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
-                if (t) {
-                    document.getElementById('fillerPreviewTitle').innerText = t.title;
-                    let strippedText = this.stripInfoVariables(state.tempContent || t.content || '');
-                    let previewHtml = this.escapeHtml(strippedText);
-                    previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
-                    document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
-                    const baseColor = t.color || '#f8f9fa';
-                    document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
-                    document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
-                    document.getElementById('fillerPreviewSide').style.display = 'block';
+                if (this.fillerStack && this.fillerStack.length > 0) {
+                    this.renderFillerStack();
+                    const container = document.getElementById('fillerInputs');
+                    if (container && state.values) {
+                        const inputs = container.querySelectorAll('input, select, textarea');
+                        Array.from(inputs).forEach((el, index) => {
+                            if (state.values[index] !== undefined) {
+                                if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
+                                else el.value = state.values[index];
+                            }
+                        });
+                    }
+                    this.updateLivePreview();
                 } else {
-                    document.getElementById('fillerPreviewSide').style.display = 'none';
+                    const t = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
+                    if (t) {
+                        document.getElementById('fillerPreviewTitle').innerText = t.title;
+                        let strippedText = this.stripInfoVariables(state.tempContent || t.content || '');
+                        let previewHtml = this.escapeHtml(strippedText);
+                        previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
+                        document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
+                        const baseColor = t.color || '#f8f9fa';
+                        document.getElementById('fillerPreviewCard').style.background = `linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), ${baseColor}`;
+                        document.getElementById('fillerPreviewCard').style.borderColor = baseColor;
+                        document.getElementById('fillerPreviewSide').style.display = 'block';
+                    } else {
+                        document.getElementById('fillerPreviewSide').style.display = 'none';
+                    }
+                    
+                    const container = document.getElementById('fillerInputs');
+                    container.innerHTML = state.html;
+                    
+                    const inputs = container.querySelectorAll('input, select, textarea');
+                    Array.from(inputs).forEach((el, index) => {
+                        if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
+                        else el.value = state.values[index];
+                    });
                 }
-                
-                const container = document.getElementById('fillerInputs');
-                container.innerHTML = state.html;
-                
-                const inputs = container.querySelectorAll('input, select, textarea');
-                Array.from(inputs).forEach((el, index) => {
-                    if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
-                    else el.value = state.values[index];
-                });
+                this.renderFillerTemplatesSide(this.currentProcessingTemplateId);
             } else if (modalId === 'recommendationModal') {
                 this.currentProcessingTemplateId = state.templateId;
                 this.unplacedInstructions = state.unplacedInstructions;
@@ -9064,10 +9717,14 @@
                 document.getElementById('recExtrasWrapper').style.display = state.displayExtras;
                 document.getElementById('recTemplatesSection').innerHTML = state.htmlRecs;
                 document.getElementById('recTemplatesSection').style.display = state.displayRecs;
+            } else if (modalId === 'ticketViewModal') {
+                const recT = state.templateId ? this.data.templates.find(x => x.id === state.templateId) : null;
+                if (recT) this.viewTicketTemplate(recT.id);
             }
             
             this.activeModals[modalId] = { taskId: state.taskId, title: state.title };
-            document.getElementById(modalId).style.display = 'flex';
+            const el = document.getElementById(modalId);
+            if (el) el.style.display = 'flex';
             
             delete this.minimizedStates[taskId];
             this.renderTaskbar();
@@ -9075,17 +9732,54 @@
 
         renderTaskbar: function() {
             this.minimizedStates = this.minimizedStates || {};
+            this.taskbarConfirmStates = this.taskbarConfirmStates || {};
             const taskbar = document.getElementById('taskbar');
             if (!taskbar) return;
             
             taskbar.innerHTML = '';
             for (const taskId in this.minimizedStates) {
                 const title = this.minimizedStates[taskId].title;
+                const isYellow = this.taskbarConfirmStates[taskId];
+                const btnClass = isYellow ? 'taskbar-x-btn confirm-yellow' : 'taskbar-x-btn';
+                const btnTitle = isYellow ? 'Kattints újra a végleges bezáráshoz!' : 'Bezárás (Kattints kétszer)';
+                
                 taskbar.innerHTML += `<div class="taskbar-btn" onclick="app.restoreModal('${taskId}')" title="Restore window">
                     <span>${this.escapeHtml(title)}</span>
-                    <span style="font-size: 1.2rem; margin-top:-2px;">🗖</span>
+                    <button class="${btnClass}" onclick="app.closeMinimizedModal(event, '${taskId}')" title="${btnTitle}">✕</button>
                 </div>`;
             }
+        },
+
+        closeMinimizedModal: function(e, taskId) {
+            e.stopPropagation();
+            this.taskbarConfirmStates = this.taskbarConfirmStates || {};
+            
+            if (!this.taskbarConfirmStates[taskId]) {
+                this.taskbarConfirmStates = {};
+                this.taskbarConfirmStates[taskId] = true;
+                this.renderTaskbar();
+                return;
+            }
+            
+            delete this.taskbarConfirmStates[taskId];
+            this.minimizedStates = this.minimizedStates || {};
+            const state = this.minimizedStates[taskId];
+            if (state) {
+                const modalId = state.modalId;
+                const el = document.getElementById(modalId);
+                if (el) {
+                    if (modalId.startsWith('db-modal-') || modalId.startsWith('view-modal-') || el.classList.contains('dynamic-view-modal')) {
+                        el.remove();
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+                if (this.activeModals && this.activeModals[modalId]) {
+                    delete this.activeModals[modalId];
+                }
+                delete this.minimizedStates[taskId];
+            }
+            this.renderTaskbar();
         },
 
         showConfirm: function(title, message, onConfirm, onCancel, confirmText = "Yes", confirmClass = "btn-danger", cancelText = "Cancel", cancelClass = "btn-secondary") {
@@ -9371,6 +10065,7 @@
                 const t = this.data.templates.find(x => x.id === id);
                 if(!t) return;
                 
+                this.cleanRecommendedTemplates();
                 this.currentRecommendedIds = t.recommendedIds ? [...t.recommendedIds] : [];
                 const recBtn = document.getElementById('dbBtnOpenRecSelector');
                 if (recBtn) recBtn.innerHTML = `<span>Template javaslatok (${this.currentRecommendedIds.length})</span><span style="color: var(--primary);">✎</span>`;
@@ -9524,6 +10219,7 @@
             let listId;
             if (context === 'modal') listId = `db-list-modal-${id}`;
             else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else if (context === 'filler') listId = `db-list-filler-${id}`;
             else listId = `db-list-card-${id}`;
             
             const list = document.getElementById(listId);
@@ -9540,6 +10236,7 @@
             let listId;
             if (context === 'modal') listId = `db-list-modal-${id}`;
             else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else if (context === 'filler') listId = `db-list-filler-${id}`;
             else listId = `db-list-card-${id}`;
             
             const list = document.getElementById(listId);
@@ -9574,6 +10271,7 @@
             let listId;
             if (context === 'modal') listId = `db-list-modal-${id}`;
             else if (context === 'rec') listId = `db-list-rec-${id}`;
+            else if (context === 'filler') listId = `db-list-filler-${id}`;
             else listId = `db-list-card-${id}`;
             
             const list = document.getElementById(listId);
@@ -9590,8 +10288,40 @@
             
             if (t && t.dbItems && t.dbItems[idx]) {
                 // Ha a content üres, a labelt másoljuk
-                                const contentToCopy = t.dbItems[idx].content || t.dbItems[idx].label;
+                const contentToCopy = t.dbItems[idx].content || t.dbItems[idx].label;
                 
+                this.activeModals = this.activeModals || {};
+                let isAppend = false;
+                if (this.activeModals['fillerModal']) {
+                    const matches = (contentToCopy || '').match(/\{\{(.*?)\}\}/g);
+                    let hasReal = false;
+                    if (matches) {
+                        matches.forEach(m => {
+                            const key = m.replace(/[{}]/g, '').trim().toLowerCase();
+                            if (!key.match(/^info\d*$/) && !key.startsWith('info:') && !key.startsWith('link:')) {
+                                hasReal = true;
+                            }
+                        });
+                    }
+                    if (!hasReal) {
+                        const finalContent = this.stripInfoVariables(contentToCopy || '');
+                        this.copyToClipboard(finalContent);
+                        if (event && event.currentTarget) {
+                            const btn = event.currentTarget;
+                            const origText = btn.innerHTML;
+                            btn.innerHTML = "✅ Copied!";
+                            btn.style.backgroundColor = "#2e7d32";
+                            setTimeout(() => { btn.innerHTML = origText; }, 1000);
+                        }
+                        return;
+                    }
+                    isAppend = true;
+                    if (context === 'modal' && event && event.currentTarget) {
+                        const modalOverlay = event.currentTarget.closest('.dynamic-view-modal');
+                        if (modalOverlay) modalOverlay.remove();
+                    }
+                }
+
                 // History formázás
                 this.currentProcessingTitle = t.title + " (" + (t.dbItems[idx].label || "Item") + ")";
                 this.currentProcessingColor = t.color;
@@ -9602,7 +10332,7 @@
                 this.tempExtraTitles = [];
                 this.tempExtraTriggers = [];
                 this.tempExtraColors = [];
-                this.processAndShowFiller(contentToCopy, id);
+                this.processAndShowFiller(contentToCopy, id, null, isAppend);
                 
                 // Vizuális visszajelzés csak akkor, ha nem nyílt meg a modal (azaz nem volt benne változó)
                 const modalOpened = document.getElementById('fillerModal').style.display === 'flex';
@@ -9633,7 +10363,7 @@
             dbItemsHtml += `</div>`;
 
             const existingModals = document.querySelectorAll('.dynamic-view-modal');
-            const baseZIndex = 2600;
+            const baseZIndex = 3600;
             const newZIndex = baseZIndex + (existingModals.length * 10);
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay dynamic-view-modal';
