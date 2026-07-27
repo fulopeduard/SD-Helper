@@ -8170,6 +8170,10 @@
 
             const allInputs = inputsSide.querySelectorAll('input, select, textarea');
             allInputs.forEach(el => {
+                if (el.type === 'checkbox' && Array.from(el.classList).some(c => c.startsWith('chk_'))) {
+                    el.addEventListener('change', () => this.handleChecklistChange(el));
+                    el.addEventListener('input', () => this.handleChecklistChange(el));
+                }
                 el.addEventListener('input', () => this.updateLivePreview());
                 el.addEventListener('change', () => this.updateLivePreview());
             });
@@ -8216,7 +8220,8 @@
                 if (container) {
                     const inputs = container.querySelectorAll('input, select, textarea');
                     savedValues[idx] = Array.from(inputs).map(el => {
-                        if (el.type === 'radio' || el.type === 'checkbox') return el.checked;
+                        if (el.type === 'checkbox') return { checked: el.checked, order: el.getAttribute('data-check-order') };
+                        if (el.type === 'radio') return el.checked;
                         return el.value;
                     });
                 }
@@ -8239,7 +8244,16 @@
                     const inputs = container.querySelectorAll('input, select, textarea');
                     Array.from(inputs).forEach((el, i) => {
                         if (savedValues[idx][i] !== undefined) {
-                            if (el.type === 'radio' || el.type === 'checkbox') el.checked = savedValues[idx][i];
+                            if (el.type === 'checkbox') {
+                                const val = savedValues[idx][i];
+                                el.checked = typeof val === 'object' ? val.checked : val;
+                                if (typeof val === 'object' && val.order) {
+                                    el.setAttribute('data-check-order', val.order);
+                                } else {
+                                    el.removeAttribute('data-check-order');
+                                }
+                                this.updateChecklistBadge(el);
+                            } else if (el.type === 'radio') el.checked = savedValues[idx][i];
                             else el.value = savedValues[idx][i];
                         }
                     });
@@ -8477,8 +8491,66 @@
                 if (chk) chk.checked = true;
             }
 
+            if (chk) this.handleChecklistChange(chk);
             this.saveData();
             this.updateLivePreview();
+        },
+
+        updateChecklistBadge: function(el) {
+            if (!el) return;
+            const itemDiv = el.closest('.checklist-item');
+            if (itemDiv) {
+                const badge = itemDiv.querySelector('.chk-order-badge');
+                if (badge) {
+                    if (el.checked && el.getAttribute('data-check-order')) {
+                        badge.innerText = '#' + el.getAttribute('data-check-order');
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.innerText = '';
+                        badge.style.display = 'none';
+                    }
+                }
+            }
+        },
+
+        handleChecklistChange: function(chkEl) {
+            if (!chkEl) return;
+            const className = Array.from(chkEl.classList).find(c => c.startsWith('chk_'));
+            if (!className) return;
+            
+            const groupCheckboxes = document.querySelectorAll(`.${className}`);
+            
+            if (chkEl.checked) {
+                if (!chkEl.getAttribute('data-check-order')) {
+                    let maxOrder = 0;
+                    groupCheckboxes.forEach(el => {
+                        const ord = parseInt(el.getAttribute('data-check-order') || '0');
+                        if (ord > maxOrder) maxOrder = ord;
+                    });
+                    chkEl.setAttribute('data-check-order', maxOrder + 1);
+                }
+            } else {
+                chkEl.removeAttribute('data-check-order');
+            }
+            
+            let checkedList = [];
+            groupCheckboxes.forEach(el => {
+                if (el.checked) {
+                    let ord = parseInt(el.getAttribute('data-check-order') || '0');
+                    if (ord === 0) ord = 999999;
+                    checkedList.push({ el: el, order: ord });
+                }
+            });
+            
+            checkedList.sort((a, b) => a.order - b.order);
+            
+            checkedList.forEach((item, idx) => {
+                item.el.setAttribute('data-check-order', idx + 1);
+            });
+            
+            groupCheckboxes.forEach(el => {
+                this.updateChecklistBadge(el);
+            });
         },
 
         generateVariableInputHtml: function(m, orderValue = 1, stackIdx = 0, templateId = null) {
@@ -8522,6 +8594,7 @@
                                             ? currentTpl.defaultChecklistValues[key] 
                                             : [];
 
+                        let defaultOrderCounter = 1;
                         v.options.forEach(opt => {
                             const val = typeof opt === 'string' ? opt : opt.value;
                             const lbl = typeof opt === 'string' ? opt : opt.label;
@@ -8529,11 +8602,17 @@
                             const checkedAttr = isDefault ? 'checked' : '';
                             const defaultClass = isDefault ? 'is-default' : '';
                             const badgeHtml = isDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
+                            const orderAttr = isDefault ? `data-check-order="${defaultOrderCounter++}"` : '';
+                            const orderBadgeStyle = isDefault ? 'display: inline-block;' : 'display: none;';
+                            const orderBadgeText = isDefault ? `#${defaultOrderCounter - 1}` : '';
                             
                             html += `
                             <div class="checklist-item ${defaultClass}" data-var-key="${key}" data-opt-val="${this.escapeHtml(val)}" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
-                                <input type="checkbox" class="chk_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${checkedAttr} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();">
-                                <span>${this.escapeHtml(lbl)}</span>
+                                <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; cursor: pointer; margin: 0; font-weight: normal;">
+                                    <input type="checkbox" class="chk_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${checkedAttr} ${orderAttr} onchange="app.handleChecklistChange(this); app.updateLivePreview();" oninput="app.handleChecklistChange(this); app.updateLivePreview();">
+                                    <span>${this.escapeHtml(lbl)}</span>
+                                </label>
+                                <span class="chk-order-badge" style="${orderBadgeStyle} background: #3b82f6; color: #ffffff; border-radius: 10px; padding: 1px 6px; font-size: 0.75rem; font-weight: 700; margin-left: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${orderBadgeText}</span>
                                 ${badgeHtml}
                             </div>`;
                         });
@@ -8657,14 +8736,24 @@
                 return "";
             }
             
-            const checkboxes = document.querySelectorAll(`.chk_${idPrefix}${key}:checked`);
+            const checkboxes = Array.from(document.querySelectorAll(`.chk_${idPrefix}${key}:checked`));
             if (checkboxes.length > 0) {
+                checkboxes.sort((a, b) => {
+                    const ordA = parseInt(a.getAttribute('data-check-order') || '999999');
+                    const ordB = parseInt(b.getAttribute('data-check-order') || '999999');
+                    return ordA - ordB;
+                });
                 let values = [];
                 checkboxes.forEach(chk => values.push(chk.value));
                 return values.join('\n');
             }
-            const fallbackCheckboxes = stackIdx !== 0 ? document.querySelectorAll(`.chk_${key}:checked`) : null;
+            const fallbackCheckboxes = stackIdx !== 0 ? Array.from(document.querySelectorAll(`.chk_${key}:checked`)) : null;
             if (fallbackCheckboxes && fallbackCheckboxes.length > 0) {
+                fallbackCheckboxes.sort((a, b) => {
+                    const ordA = parseInt(a.getAttribute('data-check-order') || '999999');
+                    const ordB = parseInt(b.getAttribute('data-check-order') || '999999');
+                    return ordA - ordB;
+                });
                 let values = [];
                 fallbackCheckboxes.forEach(chk => values.push(chk.value));
                 return values.join('\n');
@@ -9710,7 +9799,8 @@
                 
                 const inputs = container.querySelectorAll('input, select, textarea');
                 state.values = Array.from(inputs).map(el => {
-                    if (el.type === 'radio' || el.type === 'checkbox') return el.checked;
+                    if (el.type === 'checkbox') return { checked: el.checked, order: el.getAttribute('data-check-order') };
+                    if (el.type === 'radio') return el.checked;
                     return el.value;
                 });
             } else if (modalId === 'recommendationModal') {
@@ -9772,7 +9862,16 @@
                         const inputs = container.querySelectorAll('input, select, textarea');
                         Array.from(inputs).forEach((el, index) => {
                             if (state.values[index] !== undefined) {
-                                if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
+                                if (el.type === 'checkbox') {
+                                    const val = state.values[index];
+                                    el.checked = typeof val === 'object' ? val.checked : val;
+                                    if (typeof val === 'object' && val.order) {
+                                        el.setAttribute('data-check-order', val.order);
+                                    } else {
+                                        el.removeAttribute('data-check-order');
+                                    }
+                                    this.updateChecklistBadge(el);
+                                } else if (el.type === 'radio') el.checked = state.values[index];
                                 else el.value = state.values[index];
                             }
                         });
@@ -9799,7 +9898,16 @@
                     
                     const inputs = container.querySelectorAll('input, select, textarea');
                     Array.from(inputs).forEach((el, index) => {
-                        if (el.type === 'radio' || el.type === 'checkbox') el.checked = state.values[index];
+                        if (el.type === 'checkbox') {
+                            const val = state.values[index];
+                            el.checked = typeof val === 'object' ? val.checked : val;
+                            if (typeof val === 'object' && val.order) {
+                                    el.setAttribute('data-check-order', val.order);
+                            } else {
+                                    el.removeAttribute('data-check-order');
+                            }
+                            this.updateChecklistBadge(el);
+                        } else if (el.type === 'radio') el.checked = state.values[index];
                         else el.value = state.values[index];
                     });
                 }
