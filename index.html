@@ -3058,7 +3058,7 @@
                     this.currentProcessingColor = t.color;
                 }
             }
-            this.copyToClipboard(textToCopy);
+            this.copyToClipboard(this.cleanUnfilledVariablesForCopy(textToCopy));
             const originalText = btnElement.innerText;
             btnElement.innerText = "✅ Copied!";
             btnElement.style.background = "#d1fae5";
@@ -3145,6 +3145,10 @@
                 if (docSnap.exists()) {
                     const savedData = docSnap.data();
                     this.data.templates = savedData.templates || [];
+                    this.data.templates.forEach(t => {
+                        if (Array.isArray(t.instructions) && t.instruction !== undefined) delete t.instruction;
+                        if (Array.isArray(t.extraContents) && t.content2 !== undefined) delete t.content2;
+                    });
                     this.data.folders = savedData.folders || [];
                     this.data.categories = savedData.categories || ['General'];
                     this.data.customVars = savedData.customVars || [];
@@ -6871,19 +6875,24 @@
 
             if (id) {
                 const idx = this.data.templates.findIndex(t => t.id == id);
-                if (idx > -1) this.data.templates[idx] = {
-                    ...this.data.templates[idx],
-                    title, subtitle, category, lang, content, isViewOnly, color,
-                    instructions: instructions,
-                    extraContents: extraContents,
-                    extraTitles: extraTitles,
-                    extraTriggers: extraTriggers,
-                    extraColors: extraColors,
-                    folderId: folderId ? parseInt(folderId) : null,
-                    recommendedIds: recommendedIds,
-                    tags: tags,
-                    runTag: runTag
-                };
+                if (idx > -1) {
+                    const updated = {
+                        ...this.data.templates[idx],
+                        title, subtitle, category, lang, content, isViewOnly, color,
+                        instructions: instructions,
+                        extraContents: extraContents,
+                        extraTitles: extraTitles,
+                        extraTriggers: extraTriggers,
+                        extraColors: extraColors,
+                        folderId: folderId ? parseInt(folderId) : null,
+                        recommendedIds: recommendedIds,
+                        tags: tags,
+                        runTag: runTag
+                    };
+                    delete updated.instruction;
+                    delete updated.content2;
+                    this.data.templates[idx] = updated;
+                }
             } else {
                 this.data.templates.push({
                     id: Date.now(),
@@ -7023,7 +7032,7 @@
                 
                 // Instrukciók betöltése
                 document.getElementById('instructionsContainer').innerHTML = '';
-                if (t.instructions && t.instructions.length > 0) {
+                if (Array.isArray(t.instructions)) {
                     t.instructions.forEach(inst => this.addInstruction(inst));
                 } else if (t.instruction) {
                     // Visszafelé kompatibilitás a régi 1 db instrukcióval
@@ -7032,7 +7041,7 @@
                 
                 // Extra tartalmak betöltése
                 document.getElementById('extraContentsContainer').innerHTML = '';
-                if (t.extraContents && t.extraContents.length > 0) {
+                if (Array.isArray(t.extraContents)) {
                     t.extraContents.forEach((ext, idx) => {
                         const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
                         const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
@@ -7290,14 +7299,14 @@
             document.getElementById('inputContent').value = t.content;
             
             document.getElementById('instructionsContainer').innerHTML = '';
-            if (t.instructions && t.instructions.length > 0) {
+            if (Array.isArray(t.instructions)) {
                 t.instructions.forEach(inst => this.addInstruction(inst));
             } else if (t.instruction) {
                 this.addInstruction(t.instruction);
             }
 
             document.getElementById('extraContentsContainer').innerHTML = '';
-            if (t.extraContents && t.extraContents.length > 0) {
+            if (Array.isArray(t.extraContents)) {
                 t.extraContents.forEach((ext, idx) => {
                     const title = (t.extraTitles && t.extraTitles[idx]) ? t.extraTitles[idx] : '';
                     const trigger = (t.extraTriggers && t.extraTriggers[idx]) ? t.extraTriggers[idx] : '';
@@ -7633,24 +7642,24 @@
                     });
                 }
                 if (!hasReal) {
-                    const finalContent = this.stripInfoVariables(t.content || '');
-                    const finalExtras = t.extraContents ? t.extraContents.map(ext => this.stripInfoVariables(ext)) : [];
+                    const finalContent = this.cleanUnfilledVariablesForCopy(this.stripInfoVariables(t.content || ''));
+                    const finalExtras = t.extraContents ? t.extraContents.map(ext => this.cleanUnfilledVariablesForCopy(this.stripInfoVariables(ext))) : [];
                     this.copyToClipboard(finalContent);
-                    this.checkAndShowRecommendations(id, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, t.extraTitles || [], t.extraColors || []);
+                    this.checkAndShowRecommendations(id, finalContent, finalExtras, null, t.extraTitles || [], t.extraColors || []);
                     return;
                 }
                 isAppend = true;
             }
             this.currentProcessingTitle = t.title;
             this.currentProcessingColor = t.color;
-            if (t.instructions) {
+            if (Array.isArray(t.instructions)) {
                 this.tempInstructions = [...t.instructions];
             } else if (t.instruction) {
                 this.tempInstructions = [t.instruction];
             } else {
                 this.tempInstructions = [];
             }
-            this.tempExtraContents = t.extraContents ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
+            this.tempExtraContents = Array.isArray(t.extraContents) ? [...t.extraContents] : (t.content2 ? [t.content2] : []);
             this.tempExtraTitles = t.extraTitles ? [...t.extraTitles] : [];
             this.tempExtraTriggers = t.extraTriggers ? [...t.extraTriggers] : [];
             this.tempExtraColors = t.extraColors ? [...t.extraColors] : [];
@@ -7720,9 +7729,81 @@
             return result;
         },
 
+        formatPreviewText: function(text) {
+            if (!text) return "";
+            let formatted = text;
+            
+            // 1. Color Tags: [c:#3e95ff], [color=red], {c:#3e95ff}, {color="blue"}
+            formatted = formatted.replace(/(?:\[|\{)(?:c|color)[:=]\s*([^\]\}]+)(?:\]|\})/gi, (match, p1) => {
+                return `<span style="color: ${p1.replace(/['"]/g, '').trim()};">`;
+            });
+            formatted = formatted.replace(/(?:\[|\{)\/(?:c|color)(?:\]|\})/gi, '</span>');
+            
+            // 2. Background Color: [bg:yellow], [bgcolor=#ff0], [hilite=yellow]
+            formatted = formatted.replace(/(?:\[|\{)(?:bg|bgcolor|hilite|highlight)[:=]\s*([^\]\}]+)(?:\]|\})/gi, (match, p1) => {
+                return `<span style="background-color: ${p1.replace(/['"]/g, '').trim()};">`;
+            });
+            formatted = formatted.replace(/(?:\[|\{)\/(?:bg|bgcolor|hilite|highlight)(?:\]|\})/gi, '</span>');
+
+            // 3. Font Size: [size=16], [size:16px], [font-size=1.2em]
+            formatted = formatted.replace(/(?:\[|\{)(?:size|font-size)[:=]\s*([^\]\}]+)(?:\]|\})/gi, (match, p1) => {
+                let val = p1.replace(/['"]/g, '').trim();
+                let s = isNaN(val) ? val : val + 'px';
+                return `<span style="font-size: ${s};">`;
+            });
+            formatted = formatted.replace(/(?:\[|\{)\/(?:size|font-size)(?:\]|\})/gi, '</span>');
+
+            // 4. Font Family & Alignment
+            formatted = formatted.replace(/(?:\[|\{)font[:=]\s*([^\]\}]+)(?:\]|\})/gi, (match, p1) => {
+                return `<span style="font-family: ${p1.replace(/['"]/g, '').trim()};">`;
+            });
+            formatted = formatted.replace(/(?:\[|\{)\/font(?:\]|\})/gi, '</span>');
+            formatted = formatted.replace(/(?:\[|\{)align[:=]\s*([^\]\}]+)(?:\]|\})/gi, (match, p1) => {
+                return `<div style="text-align: ${p1.replace(/['"]/g, '').trim()};">`;
+            });
+            formatted = formatted.replace(/(?:\[|\{)\/align(?:\]|\})/gi, '</div>');
+            formatted = formatted.replace(/(?:\[|\{)(center|left|right|justify)(?:\]|\})/gi, '<div style="text-align: $1;">');
+            formatted = formatted.replace(/(?:\[|\{)\/(center|left|right|justify)(?:\]|\})/gi, '</div>');
+
+            // 5. Basic BBCode Formatting Tags: [b], [i], [u], [s], [sub], [sup], [code], [pre], [quote], [ul], [ol], [li], [table], [tr], [td], [th], [h1-h6]
+            formatted = formatted.replace(/(?:\[|\{)(b|i|u|s|sub|sup|code|pre|quote|ul|ol|li|table|tr|td|th|h[1-6])(?:\]|\})/gi, '<$1>');
+            formatted = formatted.replace(/(?:\[|\{)\/(b|i|u|s|sub|sup|code|pre|quote|ul|ol|li|table|tr|td|th|h[1-6])(?:\]|\})/gi, '</$1>');
+
+            // 6. Markdown Formatting Tags: **bold**, __bold__, *italic*, _italic_, ~~strikethrough~~, ++underline++
+            formatted = formatted.replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>');
+            formatted = formatted.replace(/__([^_]+)__/g, '<b>$1</b>');
+            formatted = formatted.replace(/\*([^\*]+)\*/g, '<i>$1</i>');
+            formatted = formatted.replace(/(^|[\s(])_([^_]+)_([\s),.]|$)/g, '$1<i>$2</i>$3');
+            formatted = formatted.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+            formatted = formatted.replace(/\+\+([^\+]+)\+\+/g, '<u>$1</u>');
+            return formatted;
+        },
+
         cleanUnfilledVariablesForCopy: function(text) {
             if (!text) return "";
-            const lines = text.split(/\r?\n/);
+            let cleanText = text.replace(/<br\s*[\/]?>/gi, '\n')
+                                .replace(/<\/p>/gi, '\n')
+                                .replace(/<\/div>/gi, '\n')
+                                .replace(/<\/h[1-6]>/gi, '\n')
+                                .replace(/<\/li>/gi, '\n')
+                                .replace(/<\/tr>/gi, '\n');
+            cleanText = cleanText.replace(/<[^>]*>/g, '');
+            cleanText = cleanText.replace(/(?:\[|\{)\/?(?:c|color|bg|bgcolor|hilite|highlight|size|font-size|font|align|center|left|right|justify|b|i|u|s|sub|sup|code|pre|quote|ul|ol|li|table|tr|td|th|h[1-6])(?:[:=][^\]\}]+)?(?:\]|\})/gi, '');
+            cleanText = cleanText.replace(/\*\*([^\*]+)\*\*/g, '$1')
+                                 .replace(/__([^_]+)__/g, '$1')
+                                 .replace(/\*([^\*]+)\*/g, '$1')
+                                 .replace(/(^|[\s(])_([^_]+)_([\s),.]|$)/g, '$1$2$3')
+                                 .replace(/~~([^~]+)~~/g, '$1')
+                                 .replace(/\+\+([^\+]+)\+\+/g, '$1');
+            cleanText = cleanText.replace(/&nbsp;/gi, ' ')
+                                 .replace(/&lt;/g, '<')
+                                 .replace(/&gt;/g, '>')
+                                 .replace(/&amp;/g, '&')
+                                 .replace(/&quot;/g, '"')
+                                 .replace(/&#039;/g, "'")
+                                 .replace(/&#39;/g, "'");
+
+            const lines = cleanText.split(/\r?\n/);
             const cleanedLines = [];
             
             for (let line of lines) {
@@ -7995,7 +8076,7 @@
                 
                 // --- Preview Section ---
                 let strippedText = this.stripInfoVariables(item.tempContent || '');
-                let previewHtml = this.escapeHtml(strippedText);
+                let previewHtml = this.formatPreviewText(strippedText);
                 previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                 
                 const removeBtnHtml = total > 1 ? `<button class="btn btn-sm stack-remove-btn" style="background: transparent; color: #f8fafc; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.borderColor='#ef4444';" onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255,255,255,0.25)';" onclick="app.confirmRemoveStackItem(this, ${stackIdx})" title="Remove template from stack">✕</button>` : '';
@@ -8006,7 +8087,7 @@
                     if (validExtras.length > 0) {
                         item.tempExtraContents.forEach((ext, idx) => {
                             if (ext.trim() !== "") {
-                                let safeExt = this.escapeHtml(this.stripInfoVariables(ext));
+                                let safeExt = this.formatPreviewText(this.stripInfoVariables(ext));
                                 safeExt = safeExt.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                                 const extraBgColor = (item.tempExtraColors && item.tempExtraColors[idx] && item.tempExtraColors[idx] !== '#ffffff') ? item.tempExtraColors[idx] : baseColor;
                                 const extraTitle = item.tempExtraTitles && item.tempExtraTitles[idx] ? this.escapeHtml(item.tempExtraTitles[idx]) : "Extra Content " + (idx + 1);
@@ -8281,10 +8362,10 @@
             }
 
             if (realMatches.length === 0) {
-                const finalContent = this.stripInfoVariables(this.tempContent);
-                const finalExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.stripInfoVariables(ext)) : [];
+                const finalContent = this.cleanUnfilledVariablesForCopy(this.stripInfoVariables(this.tempContent));
+                const finalExtras = this.tempExtraContents ? this.tempExtraContents.map(ext => this.cleanUnfilledVariablesForCopy(this.stripInfoVariables(ext))) : [];
                 this.copyToClipboard(finalContent);
-                this.checkAndShowRecommendations(this.currentProcessingTemplateId, this.escapeHtml(finalContent), finalExtras.map(e => this.escapeHtml(e)), null, this.tempExtraTitles, this.tempExtraColors);
+                this.checkAndShowRecommendations(this.currentProcessingTemplateId, finalContent, finalExtras, null, this.tempExtraTitles, this.tempExtraColors);
                 return;
             }
 
@@ -8624,8 +8705,8 @@
             this.fillerStack.forEach((item, stackIdx) => {
                 let txt = item.tempContent || "";
                 let txtExtras = item.tempExtraContents ? [...item.tempExtraContents] : [];
-                let safeTxt = this.escapeHtml(txt);
-                let safeTxtExtras = txtExtras.map(ext => this.escapeHtml(ext));
+                let safeTxt = txt;
+                let safeTxtExtras = [...txtExtras];
 
                 const regex = /\{\{([^}]+)\}\}/g;
                 let iteration = 0;
@@ -8701,7 +8782,7 @@
 
                 const previewContent = document.querySelector(`.filler-preview-content[data-stack-idx="${stackIdx}"]`) || document.getElementById('fillerPreviewContent');
                 if (previewContent) {
-                    previewContent.innerHTML = this.stripInfoVariables(safeTxt);
+                    previewContent.innerHTML = this.formatPreviewText(this.stripInfoVariables(safeTxt));
                 }
 
                 const extrasWrapper = document.querySelector(`.filler-preview-extras-wrapper[data-stack-idx="${stackIdx}"]`) || document.getElementById('fillerPreviewExtrasWrapper');
@@ -8719,7 +8800,7 @@
                                     div.closest('.extra-preview-block').style.display = 'none';
                                 } else {
                                     div.closest('.extra-preview-block').style.display = 'block';
-                                    div.innerHTML = this.stripInfoVariables(ext);
+                                    div.innerHTML = this.formatPreviewText(this.stripInfoVariables(ext));
                                 }
                             }
                         }
@@ -8912,7 +8993,7 @@
             const hasExtras = extraContents && extraContents.length > 0 && extraContents.some(e => e.trim() !== "");
             const hasUnplaced = this.unplacedInstructions && this.unplacedInstructions.length > 0;
             
-            document.getElementById('recCopiedText').innerHTML = copiedText;
+            document.getElementById('recCopiedText').innerHTML = this.formatPreviewText(copiedText);
             document.getElementById('recJustCopiedBox').style.backgroundColor = t ? (t.color || '#e6f2ff') : '#e6f2ff';
             document.getElementById('recJustCopiedBox').style.borderColor = t ? (t.color || '#005a9e') : '#005a9e';
 
@@ -9025,7 +9106,7 @@
                                 <h4 style="margin: 0; color: #333;">${extraTitles && extraTitles[idx] ? this.escapeHtml(extraTitles[idx]) : "Extra Content " + (idx + 1)}:</h4>
                                 <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋 Copy Content</button>
                             </div>
-                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 4px;">${ext}</div>
+                            <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 4px;">${this.formatPreviewText(ext)}</div>
                         </div>
                     `;
                 });
@@ -9682,7 +9763,7 @@
                     if (t) {
                         document.getElementById('fillerPreviewTitle').innerText = t.title;
                         let strippedText = this.stripInfoVariables(state.tempContent || t.content || '');
-                        let previewHtml = this.escapeHtml(strippedText);
+                        let previewHtml = this.formatPreviewText(strippedText);
                         previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, '<b>{{$1}}</b>');
                         document.getElementById('fillerPreviewContent').innerHTML = previewHtml;
                         const baseColor = t.color || '#f8f9fa';
@@ -10254,7 +10335,7 @@
                     const item = t.dbItems[idx];
                     const contentToShow = item.content || item.label;
                     
-                    let formatted = this.escapeHtml(contentToShow);
+                    let formatted = this.formatPreviewText(contentToShow);
                     // Változók kiemelése kék háttérrel, hogy látszódjon, ha van benne feldolgozandó tag
                     formatted = formatted.replace(/{{(.*?)}}/g, (match, p1) => {
                         return `<span style="font-weight:bold; color: var(--primary); background: rgba(0,120,212,0.1); padding: 2px 4px; border-radius: 3px;">{{${this.escapeHtml(p1)}}}</span>`;
@@ -10304,7 +10385,7 @@
                         });
                     }
                     if (!hasReal) {
-                        const finalContent = this.stripInfoVariables(contentToCopy || '');
+                        const finalContent = this.cleanUnfilledVariablesForCopy(this.stripInfoVariables(contentToCopy || ''));
                         this.copyToClipboard(finalContent);
                         if (event && event.currentTarget) {
                             const btn = event.currentTarget;
