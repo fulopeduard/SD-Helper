@@ -940,8 +940,8 @@
         .checklist-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid #eee; border-radius: 4px; transition: background 0.15s; }
         .checklist-item:hover { background: rgba(0,0,0,0.03); }
         .checklist-item.is-default { background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(255, 248, 220, 0.4)); border-left: 3px solid #f59e0b; }
-        .checklist-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; transition: all 0.2s; }
-        .checklist-item.is-default input[type="checkbox"] { accent-color: #f59e0b; filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.6)); }
+        .checklist-item input[type="checkbox"], .checklist-item input[type="radio"] { width: 18px; height: 18px; cursor: pointer; transition: all 0.2s; }
+        .checklist-item.is-default input[type="checkbox"], .checklist-item.is-default input[type="radio"] { accent-color: #f59e0b; filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.6)); }
         .golden-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #ffd700, #f59e0b); color: #000; font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; margin-left: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.2); text-transform: uppercase; letter-spacing: 0.5px; }
         .checklist-info-icon:hover { transform: scale(1.2); transition: transform 0.2s; }
 
@@ -1353,7 +1353,7 @@
         .card.database-card .db-template-list {
             flex: 1;
             margin-bottom: 0; /* Eltüntetjük a felesleges alsó margót */
-            max-height: 125px; /* Kicsit kompaktabb lista */
+            max-height: 126px; /* 3 sornyi default alapértelmezett lista */
         }
 
         @keyframes highlightTemplatePulse {
@@ -1984,9 +1984,20 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Color Coding</label>
-                <div class="color-picker-container" id="dbColorSwatches">
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div class="form-group">
+                        <label>Color Coding</label>
+                        <div class="color-picker-container" id="dbColorSwatches">
+                        </div>
+                    </div>
+                </div>
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label>Visible Labels (Preview)</label>
+                        <input type="number" class="form-control" id="dbInputVisibleCount" min="1" max="50" value="3" placeholder="e.g. 3">
+                        <span style="font-size: 0.75rem; color: #666;">Hány elem látszódjon egyszerre</span>
+                    </div>
                 </div>
             </div>
 
@@ -2024,7 +2035,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col" style="flex: 2;">
                     <div class="form-group">
                         <label>Type</label>
                         <select class="form-control" id="newVarType" onchange="app.toggleVarOptionsNew()">
@@ -2034,6 +2045,12 @@
 							<option value="checklist">Checklist (Multi-select)</option>
 							<option value="database">🗄️ Database (Searchable)</option> <option value="fixed">Fixed Text (Constant)</option>
 						</select>
+                    </div>
+                </div>
+                <div class="col" id="varDbSizeCol" style="flex: 1; display: none;">
+                    <div class="form-group">
+                        <label>Visible Rows (Size)</label>
+                        <input type="number" class="form-control" id="varDbSizeNew" min="1" max="50" value="5" placeholder="5">
                     </div>
                 </div>
             </div>
@@ -2469,16 +2486,16 @@
             background: rgba(0, 0, 0, 0.035);
             border: 1px solid rgba(0, 0, 0, 0.08);
             border-radius: 6px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
+            padding: 6px 10px;
+            margin-bottom: 7px;
         }
         .variable-box > label:first-child {
             margin-top: 0;
             color: #005a9e;
             font-size: 0.95rem;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             border-bottom: 1px solid rgba(0,0,0,0.05);
-            padding-bottom: 6px;
+            padding-bottom: 3px;
             display: block;
         }
     </style>
@@ -2494,27 +2511,27 @@
         <div class="modal-header" style="margin-top: -10px; flex-shrink: 0;">
             <span id="fillerModalTitle">Fill Details</span>
         </div>
-        <div class="modal-body" style="display: flex; gap: 20px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; margin-bottom: 10px;">
+        <div class="modal-body" style="display: flex; gap: 10px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; margin-bottom: 5px;">
             <div id="fillerPreviewSide" style="flex: 1; min-height: 0; height: 100%; overflow-y: auto; display: none;">
-                <div id="fillerPreviewCard" style="padding: 20px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
+                <div id="fillerPreviewCard" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 5px;">
                         <h4 id="fillerPreviewTitle" style="color: var(--primary); margin: 0; font-size: 1.1rem;"></h4>
-                        <button class="btn btn-sm btn-folder" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(document.getElementById('fillerPreviewContent').innerText))">📋 Copy</button>
+                        <button class="btn btn-sm btn-folder" onclick="app.processStackItemForCopy(0, true); app.copyToClipboard(app.cleanUnfilledVariablesForCopy(document.getElementById('fillerPreviewContent').innerText))">📋 Copy</button>
                     </div>
-                    <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
+                    <div id="fillerPreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.95rem; color: #333; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);"></div>
                 </div>
-                <div id="fillerPreviewExtrasWrapper" style="display: none; flex-direction: column; gap: 15px;"></div>
+                <div id="fillerPreviewExtrasWrapper" style="display: none; flex-direction: column; gap: 7px;"></div>
             </div>
             <div id="fillerInputsSide" style="flex: 1; min-width: 0; min-height: 0; height: 100%; overflow-y: auto; padding-right: 8px;">
-                <div id="fillerInputsCard" style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
-                    <h4 id="fillerInputsTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; display: none; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;">Fill Details</h4>
+                <div id="fillerInputsCard" style="padding: 12px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
+                    <h4 id="fillerInputsTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; display: none; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px;">Fill Details</h4>
                     <div id="fillerInputs"></div>
                 </div>
             </div>
             <div id="fillerTemplatesSide" style="width: 360px; min-width: 340px; max-width: 400px; flex-shrink: 0; min-height: 0; height: 100%; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column;">
-                <div style="padding: 20px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
-                    <h4 id="fillerTemplatesTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;">📂 Folder Templates</h4>
-                    <div id="fillerTemplatesContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                <div style="padding: 12px; border-radius: 8px; border: 1px solid #b0d4ff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #e6f7ff;">
+                    <h4 id="fillerTemplatesTitle" style="color: var(--primary); margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px;">📂 Folder Templates</h4>
+                    <div id="fillerTemplatesContainer" style="display: flex; flex-direction: column; gap: 7px;"></div>
                 </div>
             </div>
         </div>
@@ -5218,6 +5235,7 @@
                 document.getElementById('varKeyNew').value = v.key;
                 document.getElementById('varLabelNew').value = v.label;
                 document.getElementById('newVarType').value = v.type || 'text';
+                document.getElementById('varDbSizeNew').value = v.dbSize || 5;
 
                 if (v.type === 'checklist' || v.type === 'database' || v.type === 'radio') {
                     document.getElementById('varChecklistRowsNew').innerHTML = '';
@@ -5237,6 +5255,7 @@
                 document.getElementById('varKeyNew').value = "";
                 document.getElementById('varLabelNew').value = "";
                 document.getElementById('newVarType').value = forcedType;
+                document.getElementById('varDbSizeNew').value = 5;
                 document.getElementById('varChecklistRowsNew').innerHTML = '';
                 document.getElementById('varOptionsNew').value = "";
             }
@@ -5255,6 +5274,11 @@
             optEl.disabled = false;
             lblEl.disabled = false;
             lblEl.placeholder = "Question (e.g. Ticket Number?)";
+
+            const sizeCol = document.getElementById('varDbSizeCol');
+            if (sizeCol) {
+                sizeCol.style.display = (type === 'database') ? 'block' : 'none';
+            }
 
             if (type === 'checklist' || type === 'database' || type === 'radio') {
                 optContainer.style.display = 'none';
@@ -5323,7 +5347,8 @@
                 options = opts.split('\n').map(s => s.trim()).filter(s => s.length > 0);
             }
 
-            const newVarObj = { key, label, type, options };
+            const dbSize = parseInt(document.getElementById('varDbSizeNew').value) || 5;
+            const newVarObj = { key, label, type, options, dbSize };
 
             if (idxStr !== "") {
                 this.data.customVars[parseInt(idxStr)] = newVarObj;
@@ -6464,7 +6489,9 @@
                             </div>
                         `;
 						} else if (t.isDatabase) {
-                        let dbItemsHtml = `<div class="db-template-list" id="db-list-card-${t.id}">`;
+                        const dbVisible = t.dbVisibleCount || 3;
+                        const dbMaxHeight = dbVisible * 42;
+                        let dbItemsHtml = `<div class="db-template-list" id="db-list-card-${t.id}" style="max-height: ${dbMaxHeight}px !important;">`;
                         if (t.dbItems) {
                             t.dbItems.forEach((item, idx) => {
                     const label = item.label || item.content;
@@ -7907,7 +7934,9 @@
                 quickViewBtn = `<button class="card-view-btn card-view-btn-icon" onclick="app.viewTicketTemplate(${t.id})" title="View Details">👁️</button>`;
                 mainContentHtml = `<b>${this.escapeHtml(t.ticketType || 'Incident')}</b><br>${this.escapeHtml(t.content)}`;
             } else if (t.isDatabase) {
-                let dbItemsHtml = `<div class="db-template-list" id="db-list-filler-${t.id}">`;
+                const dbVisible = t.dbVisibleCount || 3;
+                const dbMaxHeight = dbVisible * 42;
+                let dbItemsHtml = `<div class="db-template-list" id="db-list-filler-${t.id}" style="max-height: ${dbMaxHeight}px !important;">`;
                 if (t.dbItems) {
                     t.dbItems.forEach((item, idx) => {
                         const label = item.label || item.content;
@@ -8058,7 +8087,7 @@
             
             inputsSide.style.display = 'flex';
             inputsSide.style.flexDirection = 'column';
-            inputsSide.style.gap = '14px';
+            inputsSide.style.gap = '7px';
             inputsSide.style.overflowY = 'auto';
             inputsSide.style.minHeight = '0';
             inputsSide.style.height = '100%';
@@ -8092,12 +8121,12 @@
                                 const extraBgColor = (item.tempExtraColors && item.tempExtraColors[idx] && item.tempExtraColors[idx] !== '#ffffff') ? item.tempExtraColors[idx] : baseColor;
                                 const extraTitle = item.tempExtraTitles && item.tempExtraTitles[idx] ? this.escapeHtml(item.tempExtraTitles[idx]) : "Extra Content " + (idx + 1);
                                 extrasHtml += `
-                                    <div class="extra-preview-block" style="padding: 16px; border-radius: 8px; border: 1px solid ${extraBgColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), ${extraBgColor}; margin-top: 15px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 8px;">
+                                    <div class="extra-preview-block" style="padding: 8px; border-radius: 8px; border: 1px solid ${extraBgColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), ${extraBgColor}; margin-top: 7px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 4px;">
                                             <h4 style="color: var(--primary); margin: 0; font-size: 1rem;">${extraTitle}</h4>
-                                            <button class="btn btn-sm btn-folder" style="font-size:0.75rem; padding: 2px 8px;" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
+                                            <button class="btn btn-sm btn-folder" style="font-size:0.75rem; padding: 2px 8px;" onclick="app.processStackItemForCopy(${stackIdx}, true); app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
                                         </div>
-                                        <div class="extra-preview-content" data-stack-idx="${stackIdx}" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; color: #333; background: rgba(255,255,255,0.85); padding: 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
+                                        <div class="extra-preview-content" data-stack-idx="${stackIdx}" data-idx="${idx}" style="white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; color: #333; background: rgba(255,255,255,0.85); padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);">${safeExt}</div>
                                     </div>
                                 `;
                             }
@@ -8132,26 +8161,26 @@
                 const inputsBg = `linear-gradient(135deg, #f0f7ff 0%, #e1effe 100%)`;
 
                 const previewColHtml = `
-                    <div ${cardIdAttr} class="filler-preview-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${previewBg}; padding: 14px; border-radius: 10px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 6px;">
+                    <div ${cardIdAttr} class="filler-preview-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${previewBg}; padding: 8px; border-radius: 10px; border: 1px solid ${baseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 3px;">
                             <span ${titleIdAttr} style="font-size: 0.75rem; font-weight: 700; color: #57534e; text-transform: uppercase; letter-spacing: 0.8px;">PREVIEW</span>
-                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; color: #334155; font-size: 0.85rem; padding: 2px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="Copy Preview Text" onclick="app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
+                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; color: #334155; font-size: 0.85rem; padding: 2px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="Copy Preview Text" onclick="app.processStackItemForCopy(${stackIdx}, true); app.copyToClipboard(app.cleanUnfilledVariablesForCopy(this.parentElement.nextElementSibling.innerText))">📋</button>
                         </div>
-                        <div ${contentIdAttr} class="filler-preview-content" data-stack-idx="${stackIdx}" style="white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.82rem; line-height: 1.45; color: #1e293b; background: rgba(255,255,255,0.85); padding: 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); flex: 1;">${previewHtml}</div>
-                        <div ${extrasIdAttr} class="filler-preview-extras-wrapper" data-stack-idx="${stackIdx}" style="${extrasHtml ? 'display: flex;' : 'display: none;'} flex-direction: column; gap: 12px; margin-top: 12px;">${extrasHtml}</div>
+                        <div ${contentIdAttr} class="filler-preview-content" data-stack-idx="${stackIdx}" style="white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.82rem; line-height: 1.45; color: #1e293b; background: rgba(255,255,255,0.85); padding: 6px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); flex: 1;">${previewHtml}</div>
+                        <div ${extrasIdAttr} class="filler-preview-extras-wrapper" data-stack-idx="${stackIdx}" style="${extrasHtml ? 'display: flex;' : 'display: none;'} flex-direction: column; gap: 6px; margin-top: 6px;">${extrasHtml}</div>
                     </div>
                 `;
 
                 const inputsColHtml = `
-                    <div ${inCardIdAttr} class="filler-inputs-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${inputsBg}; padding: 14px; border-radius: 10px; border: 1px solid #c2e0ff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                    <div ${inCardIdAttr} class="filler-inputs-col" data-stack-idx="${stackIdx}" style="flex: 1; min-width: 0; background: ${inputsBg}; padding: 8px; border-radius: 10px; border: 1px solid #c2e0ff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
                         <span ${inTitleIdAttr} style="display: none;"></span>
-                        <div ${inContainerIdAttr} class="filler-inputs-section" data-stack-idx="${stackIdx}" style="display: flex; flex-direction: column; gap: 10px; flex: 1;">${inputsContentHtml}</div>
+                        <div ${inContainerIdAttr} class="filler-inputs-section" data-stack-idx="${stackIdx}" style="display: flex; flex-direction: column; gap: 5px; flex: 1;">${inputsContentHtml}</div>
                     </div>
                 `;
 
                 const unifiedFrameHtml = `
                     <div class="filler-stack-item-frame" data-stack-idx="${stackIdx}" style="border: 1px solid #94a3b8; border-radius: 10px; margin-bottom: 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #ffffff; flex-shrink: 0;">
-                        <div class="filler-stack-header" style="background: linear-gradient(90deg, #1e293b, #334155); color: #ffffff; padding: 7px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0f172a;">
+                        <div class="filler-stack-header" style="background: linear-gradient(90deg, #1e293b, #334155); color: #ffffff; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0f172a;">
                             <div style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; font-weight: 600; letter-spacing: 0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 <span style="color: #f8fafc;">${headerTitleText}</span>
                             </div>
@@ -8159,7 +8188,7 @@
                                 ${removeBtnHtml}
                             </div>
                         </div>
-                        <div class="filler-stack-content-row" style="display: flex; gap: 16px; padding: 16px; align-items: stretch;">
+                        <div class="filler-stack-content-row" style="display: flex; gap: 8px; padding: 8px; align-items: stretch;">
                             ${previewColHtml}
                             ${inputsColHtml}
                         </div>
@@ -8474,24 +8503,38 @@
             if (!Array.isArray(tpl.defaultChecklistValues[key])) tpl.defaultChecklistValues[key] = [];
 
             const isDefault = tpl.defaultChecklistValues[key].includes(optValue);
-            const chk = itemEl.querySelector('input[type="checkbox"]');
+            const inputEl = itemEl.querySelector('input[type="checkbox"], input[type="radio"]');
+            const isRadio = inputEl && inputEl.type === 'radio';
 
             if (isDefault) {
                 tpl.defaultChecklistValues[key] = tpl.defaultChecklistValues[key].filter(v => v !== optValue);
                 itemEl.classList.remove('is-default');
                 const badge = itemEl.querySelector('.golden-badge');
                 if (badge) badge.remove();
-                if (chk) chk.checked = false;
+                if (inputEl) inputEl.checked = false;
             } else {
+                if (isRadio) {
+                    tpl.defaultChecklistValues[key] = [];
+                    const parentGroup = itemEl.closest('.radio-group');
+                    if (parentGroup) {
+                        parentGroup.querySelectorAll('.checklist-item').forEach(el => {
+                            el.classList.remove('is-default');
+                            const b = el.querySelector('.golden-badge');
+                            if (b) b.remove();
+                            const r = el.querySelector('input[type="radio"]');
+                            if (r) r.checked = false;
+                        });
+                    }
+                }
                 tpl.defaultChecklistValues[key].push(optValue);
                 itemEl.classList.add('is-default');
                 if (!itemEl.querySelector('.golden-badge')) {
                     itemEl.insertAdjacentHTML('beforeend', `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>`);
                 }
-                if (chk) chk.checked = true;
+                if (inputEl) inputEl.checked = true;
             }
 
-            if (chk) this.handleChecklistChange(chk);
+            if (inputEl && inputEl.type === 'checkbox') this.handleChecklistChange(inputEl);
             this.saveData();
             this.updateLivePreview();
         },
@@ -8574,14 +8617,35 @@
                     html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><div style="color: red; font-weight: bold;">❌ Nem található a megadott utasítás sablon: ${this.escapeHtml(tplName)}</div></div>`;
                 }
             } else if (key.toLowerCase() === 'gender') {
-                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>Gender</label>
-                        <div class="radio-group">
-                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="m" checked onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> Male</label>
-                            <label class="radio-label"><input type="radio" name="val_${idPrefix}gender" value="f" onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> Female</label>
+                const targetTplId = templateId || this.currentProcessingTemplateId;
+                const currentTpl = targetTplId ? this.data.templates.find(t => t.id === targetTplId) : null;
+                const defaultVals = (currentTpl && currentTpl.defaultChecklistValues && Array.isArray(currentTpl.defaultChecklistValues[key])) 
+                                    ? currentTpl.defaultChecklistValues[key] 
+                                    : [];
+                const hasDefault = defaultVals.length > 0;
+                const isMDefault = defaultVals.includes('m');
+                const isFDefault = defaultVals.includes('f');
+                const mChecked = (hasDefault ? isMDefault : true) ? 'checked' : '';
+                const fChecked = (hasDefault ? isFDefault : false) ? 'checked' : '';
+                const mClass = isMDefault ? 'is-default' : '';
+                const fClass = isFDefault ? 'is-default' : '';
+                const mBadge = isMDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
+                const fBadge = isFDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
+
+                html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label style="display: flex; align-items: center;">Gender <span class="checklist-info-icon" style="cursor: help; font-size: 0.95rem; margin-left: 6px;" title="💡 Tipp: Jobb klikkel kiválaszthatsz egy opciót defaultként ennél a sablonnál (Újra jobb klikk a törléshez).">ℹ️</span></label>
+                        <div class="radio-group" style="flex-direction: column; gap: 4px; align-items: stretch;">
+                            <div class="checklist-item ${mClass}" data-var-key="${key}" data-opt-val="m" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
+                                <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; cursor: pointer; margin: 0; font-weight: normal;"><input type="radio" name="val_${idPrefix}gender" value="m" ${mChecked} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> <span>Male</span></label>
+                                ${mBadge}
+                            </div>
+                            <div class="checklist-item ${fClass}" data-var-key="${key}" data-opt-val="f" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
+                                <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; cursor: pointer; margin: 0; font-weight: normal;"><input type="radio" name="val_${idPrefix}gender" value="f" ${fChecked} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> <span>Female</span></label>
+                                ${fBadge}
+                            </div>
                         </div></div>`;
             } else if (v) {
                 let labelHtml = this.escapeHtml(v.label);
-                if (v.type === 'checklist') {
+                if (v.type === 'checklist' || v.type === 'radio') {
                     labelHtml += ` <span class="checklist-info-icon" style="cursor: help; font-size: 0.95rem; margin-left: 6px;" title="💡 Tipp: Jobb klikkel kiválaszthatsz egy opciót defaultként ennél a sablonnál (Újra jobb klikk a törléshez).">ℹ️</span>`;
                 }
                 html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label style="display: flex; align-items: center;">${labelHtml}</label>`;
@@ -8619,7 +8683,7 @@
                     }
                 } else if (v.type === 'database') {
                     html += `<input type="text" class="form-control" placeholder="🔍 Keresés az adatbázisban..." onkeyup="app.filterDatabaseOptions('${key}', this.value, ${stackIdx})" style="margin-bottom: 5px;">`;
-                    html += `<select class="form-control db-select" id="val_${idPrefix}${key}" size="5" onchange="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" onclick="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" oninput="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();">`;
+                    html += `<select class="form-control db-select" id="val_${idPrefix}${key}" size="${v.dbSize || 5}" onchange="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" onclick="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();" oninput="app.checkDatabaseOther('${key}', ${stackIdx}); app.updateLivePreview();">`;
                     html += `<option value="__OTHER__" style="font-weight: bold; color: var(--primary);">➕ Other (Add new to Database)</option>`;
                     if(Array.isArray(v.options)) {
                         v.options.forEach(opt => {
@@ -8676,12 +8740,31 @@
                     }
                     html += `</select>`;
                 } else if (v.type === 'radio') {
-                    html += `<div class="radio-group">`;
+                    const targetTplId = templateId || this.currentProcessingTemplateId;
+                    const currentTpl = targetTplId ? this.data.templates.find(t => t.id === targetTplId) : null;
+                    const defaultVals = (currentTpl && currentTpl.defaultChecklistValues && Array.isArray(currentTpl.defaultChecklistValues[key])) 
+                                        ? currentTpl.defaultChecklistValues[key] 
+                                        : [];
+                    const hasDefault = defaultVals.length > 0;
+
+                    html += `<div class="radio-group" style="flex-direction: column; gap: 4px; align-items: stretch;">`;
                     if (Array.isArray(v.options)) {
                         v.options.forEach((o, i) => {
                             const val = typeof o === 'string' ? o : o.value;
                             const lbl = typeof o === 'string' ? o : o.label;
-                            html += `<label class="radio-label"><input type="radio" name="val_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${i===0?'checked':''} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();"> ${this.escapeHtml(lbl)}</label>`;
+                            const isDefault = defaultVals.includes(val);
+                            const checkedAttr = (hasDefault ? isDefault : (i === 0)) ? 'checked' : '';
+                            const defaultClass = isDefault ? 'is-default' : '';
+                            const badgeHtml = isDefault ? `<span class="golden-badge" title="Alapértelmezett ennél a sablonnál">★ Default</span>` : '';
+
+                            html += `
+                            <div class="checklist-item ${defaultClass}" data-var-key="${key}" data-opt-val="${this.escapeHtml(val)}" data-template-id="${targetTplId || ''}" oncontextmenu="app.toggleChecklistDefault(event, this)">
+                                <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; cursor: pointer; margin: 0; font-weight: normal;">
+                                    <input type="radio" name="val_${idPrefix}${key}" value="${this.escapeHtml(val)}" ${checkedAttr} onchange="app.updateLivePreview();" oninput="app.updateLivePreview();">
+                                    <span>${this.escapeHtml(lbl)}</span>
+                                </label>
+                                ${badgeHtml}
+                            </div>`;
                         });
                     }
                     html += `</div>`;
@@ -8701,8 +8784,8 @@
                 
                 html = `<div class="form-group variable-box" data-key="${key}" style="order: ${orderValue};"><label>${key}</label><textarea class="form-control" rows="3" style="min-height:60px; font-family:inherit;" id="val_${idPrefix}${key}" oninput="app.updateLivePreview();" onchange="app.updateLivePreview();" onclick="if(!this.hasAttribute('data-cleared') && this.value === \`${this.escapeHtml(lastVal).replace(/`/g, '\\`')}\` && this.value !== '') { this.value=''; this.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; }">${this.escapeHtml(prefillVal)}</textarea>`;
                 
+                html += `<div class="history-bubbles-container" id="hist_container_${idPrefix}${key}" style="display: ${hasHistory ? 'flex' : 'none'}; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                 if (hasHistory) {
-                    html += `<div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: thin;">`;
                     hArr.slice(0, varLimit).forEach((item, i) => {
                         const valStr = typeof item === 'string' ? item : item.v;
                         const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
@@ -8715,8 +8798,8 @@
                         
                         html += `<button type="button" id="hist_btn_${idPrefix}${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${idPrefix}${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
                     });
-                    html += `</div>`;
                 }
+                html += `</div>`;
                 html += `</div>`;
             }
             return html;
@@ -8910,6 +8993,45 @@
             });
         },
 
+        refreshVariableHistoryBubbles: function() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const varLimit = this.data.settings.varHistoryLimit !== undefined ? this.data.settings.varHistoryLimit : 5;
+            if (varLimit <= 0 || !this.data.variableHistory || this.data.variableHistory.date !== todayStr) return;
+
+            document.querySelectorAll('.history-bubbles-container').forEach(container => {
+                const id = container.id;
+                const match = id.match(/^hist_container_((?:\d+_)?)(.+)$/);
+                if (!match) return;
+                const idPrefix = match[1];
+                const key = match[2];
+                
+                let hArr = this.data.variableHistory.values[key] || [];
+                if (hArr.length > 0) {
+                    let bubblesHtml = '';
+                    hArr.slice(0, varLimit).forEach((item, i) => {
+                        const valStr = typeof item === 'string' ? item : item.v;
+                        const timeSpan = typeof item === 'string' ? '' : `<span class="hist-time" style="display:none; color:#888; font-size:0.75rem; margin-left:4px;">(${item.t})</span>`;
+                        const safeVal = this.escapeHtml(valStr);
+                        const displayVal = safeVal.length > 25 ? safeVal.substring(0, 25) + '...' : safeVal;
+                        
+                        const el = document.getElementById(`val_${idPrefix}${key}`);
+                        const isCleared = el && el.hasAttribute('data-cleared');
+                        const isFirst = (i === 0);
+                        const displayStyle = (isFirst && this.data.settings.autoFillVars !== false && !isCleared && el && el.value === valStr) ? 'display: none;' : 'display: inline-block; flex-shrink: 0;';
+                        const delBtn = `<span class="hist-del" style="display:none; color:red; margin-left:6px; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="event.stopPropagation(); app.deleteVarHistory('${key}', \`${safeVal.replace(/`/g, '\\\\`')}\`, 'hist_btn_${idPrefix}${key}_${i}');" title="Delete suggestion">&times;</span>`;
+                        const onContext = `event.preventDefault(); const t = this.querySelector('.hist-time'); const d = this.querySelector('.hist-del'); if(t) t.style.display = t.style.display === 'none' ? 'inline' : 'none'; if(d) d.style.display = d.style.display === 'none' ? 'inline' : 'none';`;
+                        
+                        bubblesHtml += `<button type="button" id="hist_btn_${idPrefix}${key}_${i}" style="${displayStyle} background: #e6f2ff; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); transition: background 0.2s; align-items:center;" onmouseover="this.style.background='#cce4f7'" onmouseout="this.style.background='#e6f2ff'" onclick="const el = document.getElementById('val_${idPrefix}${key}'); el.value = \`${safeVal.replace(/`/g, '\\\\`')}\`; el.setAttribute('data-cleared', 'true'); const hb = document.getElementById('hist_btn_${idPrefix}${key}_0'); if(hb) hb.style.display='inline-block'; app.updateLivePreview();" oncontextmenu="${onContext}">${displayVal}${timeSpan}${delBtn}</button>`;
+                    });
+                    container.innerHTML = bubblesHtml;
+                    container.style.display = 'flex';
+                } else {
+                    container.innerHTML = '';
+                    container.style.display = 'none';
+                }
+            });
+        },
+
         processStackItemForCopy: function(stackIdx, saveHistory = false) {
             if (!this.fillerStack || !this.fillerStack[stackIdx]) return null;
             const item = this.fillerStack[stackIdx];
@@ -9002,7 +9124,10 @@
                 });
             }
 
-            if (historyChanged) this.saveData();
+            if (historyChanged) {
+                this.saveData();
+                this.refreshVariableHistoryBubbles();
+            }
 
             txt = this.stripInfoVariables(txt);
             let mainTextLower = txt.replace(/\{\{.*?\}\}/g, '').toLowerCase();
@@ -9236,7 +9361,9 @@
                     if (recT.isDatabase) {
                         div.classList.add('database-card');
                         
-                        let dbItemsHtml = `<div class="db-template-list" id="db-list-rec-${recT.id}">`;
+                        const dbVisible = recT.dbVisibleCount || 3;
+                        const dbMaxHeight = dbVisible * 42;
+                        let dbItemsHtml = `<div class="db-template-list" id="db-list-rec-${recT.id}" style="max-height: ${dbMaxHeight}px !important;">`;
                         if (recT.dbItems) {
                             recT.dbItems.forEach((item, idx) => {
                                 const label = item.label || item.content;
@@ -10283,6 +10410,7 @@
                 document.getElementById('dbEditId').value = t.id;
                 document.getElementById('dbInputTitle').value = t.title;
                 document.getElementById('dbInputSubtitle').value = t.subtitle || '';
+                document.getElementById('dbInputVisibleCount').value = t.dbVisibleCount || 3;
 
                 const cat = this.data.categories.includes(t.category) ? t.category : this.data.categories[0];
                 document.getElementById('dbInputCategory').value = cat;
@@ -10312,6 +10440,7 @@
                 document.getElementById('dbEditId').value = "";
                 document.getElementById('dbInputTitle').value = "";
                 document.getElementById('dbInputSubtitle').value = "";
+                document.getElementById('dbInputVisibleCount').value = 3;
 
                 let defaultCat = "General";
                 if(this.data.currentCategory !== 'All' && this.data.currentCategory !== 'Trash') {
@@ -10383,12 +10512,14 @@
             if (items.length === 0) { alert("Please add at least one item to the database."); return; }
 
             const recommendedIds = this.currentRecommendedIds || [];
+            const dbVisibleCount = parseInt(document.getElementById('dbInputVisibleCount').value) || 3;
 
             const templateObj = {
                 title, subtitle, category, color,
                 folderId: folderId ? parseInt(folderId) : null,
                 isDatabase: true,
                 dbItems: items,
+                dbVisibleCount: dbVisibleCount,
                 deleted: false,
                 lang: this.data.currentLang,
                 recommendedIds: recommendedIds
@@ -10416,6 +10547,7 @@
             this.openDbEditor();
             document.getElementById('dbEditorTitle').innerText = "Clone Database";
             document.getElementById('dbInputTitle').value = t.title + " (Copy)";
+            document.getElementById('dbInputVisibleCount').value = t.dbVisibleCount || 3;
             
             document.getElementById('dbRowsContainer').innerHTML = '';
             if(t.dbItems) {
