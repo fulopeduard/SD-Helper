@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD Helper v251</title>
+    <title>SD Helper v269</title>
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
         :root {
@@ -8805,7 +8805,7 @@
             return html;
         },
 		
-        getVariableValueFromUI: function(key, stackIdx = 0) {
+        getVariableValueFromUI: function(key, stackIdx = 0, saveDb = false) {
             const idPrefix = stackIdx === 0 ? '' : stackIdx + '_';
             const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
             if (isInfo) return "";
@@ -8853,13 +8853,15 @@
                     const newLabel = newLabelEl ? newLabelEl.value.trim() : "";
                     const newContent = newContentEl ? newContentEl.value : "";
                     const val = newContent || newLabel;
-                    const varObj = this.data.customVars ? this.data.customVars.find(cv => cv.key === key) : null;
-                    if (varObj && newLabel) {
-                        if (!varObj.options) varObj.options = [];
-                        if (!varObj.options.some(o => o.label === newLabel)) {
-                            varObj.options.push({ label: newLabel, value: val });
-                            this.saveData();
-                            if (this.data.currentMode === 'variables') this.renderVariables();
+                    if (saveDb) {
+                        const varObj = this.data.customVars ? this.data.customVars.find(cv => cv.key === key) : null;
+                        if (varObj && newLabel) {
+                            if (!varObj.options) varObj.options = [];
+                            if (!varObj.options.some(o => o.label === newLabel)) {
+                                varObj.options.push({ label: newLabel, value: val });
+                                this.saveData();
+                                if (this.data.currentMode === 'variables') this.renderVariables();
+                            }
                         }
                     }
                     return val;
@@ -9067,7 +9069,7 @@
                     processedMatches.add(matchStr);
                     const key = matchStr.replace(/[{}]/g, '').trim();
                     const isInfo = key.toLowerCase().match(/^info\d+$/i) || key.toLowerCase().startsWith('info:');
-                    const val = this.getVariableValueFromUI(key, stackIdx);
+                    const val = this.getVariableValueFromUI(key, stackIdx, saveHistory);
 
                     if (isInfo) {
                         txt = this.removeVariableFromText(txt, matchStr);
