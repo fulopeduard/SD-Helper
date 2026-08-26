@@ -8943,13 +8943,18 @@
                         const val = this.getVariableValueFromUI(key, stackIdx);
                         const safeM = matchStr;
                         const escapedVal = this.escapeHtml(val);
-                        let replaceText = "";
-                        if (!isInfo) {
-                            replaceText = val ? `<span style="font-weight:bold; color:red;">${escapedVal}</span>` : `<b>${safeM}</b>`;
+                        
+                        if (val !== "" && val.trim() === "") {
+                            safeTxt = this.removeVariableFromText(safeTxt, matchStr);
+                            safeTxtExtras = safeTxtExtras.map(ext => this.removeVariableFromText(ext, matchStr));
+                        } else {
+                            let replaceText = "";
+                            if (!isInfo) {
+                                replaceText = val ? `<span style="font-weight:bold; color:red;">${escapedVal}</span>` : `<b>${matchStr}</b>`;
+                            }
+                            safeTxt = safeTxt.split(matchStr).join(replaceText);
+                            safeTxtExtras = safeTxtExtras.map(ext => ext.split(matchStr).join(replaceText));
                         }
-
-                        safeTxt = safeTxt.split(safeM).join(replaceText);
-                        safeTxtExtras = safeTxtExtras.map(ext => ext.split(safeM).join(replaceText));
                     });
                 }
 
@@ -9078,7 +9083,7 @@
                         htmlTxt = this.removeVariableFromText(htmlTxt, safeM);
                         htmlTxtExtras = htmlTxtExtras.map(ext => this.removeVariableFromText(ext, safeM));
                     } else {
-                        if (!val) {
+                        if (!val || val.trim() === "") {
                             txt = this.removeVariableFromText(txt, matchStr);
                             txtExtras = txtExtras.map(ext => this.removeVariableFromText(ext, matchStr));
                         } else {
@@ -9087,7 +9092,7 @@
                         }
 
                         const safeM = this.escapeHtml(matchStr);
-                        if (!val) {
+                        if (!val || val.trim() === "") {
                             htmlTxt = this.removeVariableFromText(htmlTxt, safeM);
                             htmlTxtExtras = htmlTxtExtras.map(ext => this.removeVariableFromText(ext, safeM));
                         } else {
